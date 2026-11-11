@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+
+  <!-- The order column sits right after the apparel policy it belongs to. -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/PawnTableDef[defName="Assign"]/columns/li[text()="Outfit"]</xpath>
+    <order>Append</order>
+    <value>
+      <li>OptimalLoadouts_StatOrder</li>
+    </value>
+  </Operation>
+
+</Patch>

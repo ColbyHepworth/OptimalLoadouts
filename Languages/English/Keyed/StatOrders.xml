@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Words used on several screens -->
+  <OL_Order_HigherFirst>Higher first</OL_Order_HigherFirst>
+  <OL_Order_LowerFirst>Lower first</OL_Order_LowerFirst>
+
+  <!-- Assign tab column -->
+  <OL_Column_Button>Stat orders</OL_Column_Button>
+  <OL_Column_NoOrder>—</OL_Column_NoOrder>
+  <OL_Column_Then>{0} › {1}</OL_Column_Then>
+  <OL_Column_More>{0} › …</OL_Column_More>
+  <OL_Column_NoOrderTip>{0} has no stat order. Pawns pick clothes the usual way.</OL_Column_NoOrderTip>
+  <OL_Column_TipHeader>Stat order for {0}:</OL_Column_TipHeader>
+  <OL_Column_TipLine>{0}. {1} ({2})</OL_Column_TipLine>
+  <OL_Column_WornHeader>Wearing:</OL_Column_WornHeader>
+  <OL_Column_WornServed>{0}: {1} {2}</OL_Column_WornServed>
+  <OL_Column_WornUsual>{0}: picked the usual way</OL_Column_WornUsual>
+  <OL_Column_ClickToEdit>Click to edit this policy's stat order.</OL_Column_ClickToEdit>
+
+  <!-- Stat order editor -->
+  <OL_Editor_Title>Stat orders</OL_Editor_Title>
+  <OL_Editor_Help>Pawns compare clothes on the first stat, then the next. The policy's checklist still decides what's allowed.</OL_Editor_Help>
+  <OL_Editor_Base>Base:</OL_Editor_Base>
+  <OL_Editor_NoBase>None</OL_Editor_NoBase>
+  <OL_Editor_BaseTip>The base policy's stats go under this policy's own.</OL_Editor_BaseTip>
+  <OL_Editor_AddStat>Add stat</OL_Editor_AddStat>
+  <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
+  <OL_Editor_FromBase>From base {0}:</OL_Editor_FromBase>
+  <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>
+  <OL_Editor_DirectionTip>Click to switch between preferring higher and lower values.</OL_Editor_DirectionTip>
+  <OL_Editor_MoveUp>Move up</OL_Editor_MoveUp>
+  <OL_Editor_MoveDown>Move down</OL_Editor_MoveDown>
+  <OL_Editor_Remove>Remove</OL_Editor_Remove>
+  <OL_Editor_Empty>No stats yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
+
+  <!-- Stat picker -->
+  <OL_StatPicker_Title>Add a stat</OL_StatPicker_Title>
+  <OL_StatPicker_PieceItself>The piece itself</OL_StatPicker_PieceItself>
+  <OL_StatPicker_GivesWearer>What it gives the wearer</OL_StatPicker_GivesWearer>
+  <OL_StatPicker_NoMatches>No stats match.</OL_StatPicker_NoMatches>
+
+</LanguageData>

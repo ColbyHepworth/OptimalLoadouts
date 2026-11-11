@@ -17,14 +17,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private readonly QuickSearchWidget search = new QuickSearchWidget();
         private Vector2 scroll;
 
-        public Dialog_PickStat(Action<StatDef> onPick, IEnumerable<StatDef> alreadyListed)
+        /// <param name="title">The window's title, "Add a stat" when null.</param>
+        public Dialog_PickStat(Action<StatDef> onPick, IEnumerable<StatDef> alreadyListed, string title = null)
         {
             this.onPick = onPick;
             this.alreadyListed = new HashSet<StatDef>(alreadyListed);
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
-            optionalTitle = "OL_StatPicker_Title".Translate();
+            optionalTitle = title ?? "OL_StatPicker_Title".Translate();
         }
 
         public override Vector2 InitialSize => new Vector2(420f, 560f);

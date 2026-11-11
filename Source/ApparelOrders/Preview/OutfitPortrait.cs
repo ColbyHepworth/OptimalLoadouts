@@ -9,6 +9,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
     /// Draws a pawn in an imagined outfit into one texture that's reused for the whole session. It's drawn again only
     /// when the pawn, its rotation, the outfit or the size changes, and the game's portrait cache is never touched.
     /// </summary>
+    [StaticConstructorOnStartup]
     public static class OutfitPortrait
     {
         /// <summary>The styling station's framing, the closest vanilla view to "how does this pawn look dressed".</summary>

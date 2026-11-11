@@ -19,6 +19,8 @@
   <OL_Preview_AsIfOnPolicy>{0}, as if on this policy</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
   <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's order instead.</OL_Preview_MaterialTip>
+  <OL_Preview_OrderLine>Order: {0}</OL_Preview_OrderLine>
+  <OL_Preview_NoOrderLine>No stat order, so the game's usual pick</OL_Preview_NoOrderLine>
   <OL_Preview_MaterialBest>Best for this order</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 
@@ -29,7 +31,6 @@
   <OL_Preview_NothingToPick>Nothing in storage this policy allows.</OL_Preview_NothingToPick>
   <OL_Preview_NoChanges>Keeps what they wear now.</OL_Preview_NoChanges>
   <OL_Preview_NothingWorn>Nothing here is worth wearing.</OL_Preview_NothingWorn>
-  <OL_Preview_New>new</OL_Preview_New>
   <OL_Preview_TakesOff>Takes off:</OL_Preview_TakesOff>
   <OL_Preview_Kept>Already wearing it.</OL_Preview_Kept>
   <OL_Preview_NotAllowed>Not allowed by this policy.</OL_Preview_NotAllowed>
@@ -46,6 +47,30 @@
   <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
   <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
   <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
+
+  <!-- Slot browser: every piece that could go in place of one -->
+  <OL_Slot_ClickToOpen>Click to see what else could go here.</OL_Slot_ClickToOpen>
+  <OL_Slot_Hint>Click a piece in the outfit to see what else could go there.</OL_Slot_Hint>
+  <OL_Slot_Header>In place of {0} ({1})</OL_Slot_Header>
+  <OL_Slot_Back>Back to the outfit</OL_Slot_Back>
+  <OL_Slot_RankHeader>#</OL_Slot_RankHeader>
+  <OL_Slot_RankTip>The order the colonist would choose these in, 1 being their pick. Click to sort by it.</OL_Slot_RankTip>
+  <OL_Slot_SortHint>Click to sort by this column, highest first, then lowest first, then back to the colonist's choice. Right-click goes the other way.</OL_Slot_SortHint>
+  <OL_Slot_AddColumn>Add a stat as a column.</OL_Slot_AddColumn>
+  <OL_Slot_AddColumnTitle>Add a column</OL_Slot_AddColumnTitle>
+  <OL_Slot_RemoveColumn>Remove this column.</OL_Slot_RemoveColumn>
+  <OL_Slot_AllowAllTip>Allow every item listed in this policy.</OL_Slot_AllowAllTip>
+  <OL_Slot_ClearAllTip>Forbid every item listed in this policy.</OL_Slot_ClearAllTip>
+  <OL_Slot_IsPick>The colonist's pick for this slot.</OL_Slot_IsPick>
+  <OL_Slot_NoValue>–</OL_Slot_NoValue>
+  <OL_Slot_Copies>{0} ×{1}</OL_Slot_Copies>
+  <OL_Slot_TipValue>{0}: {1}</OL_Slot_TipValue>
+  <OL_Slot_AlsoReplaces>Also replaces {0}.</OL_Slot_AlsoReplaces>
+  <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
+  <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
+  <OL_Slot_GameWontWear>The game won't put this on.</OL_Slot_GameWontWear>
+  <OL_Slot_ClickToTry>Click to try it on. The checkbox allows or forbids it in this policy.</OL_Slot_ClickToTry>
+  <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 
   <!-- Material picker for imagined pieces -->
   <OL_MaterialPicker_Title>Imagine pieces in</OL_MaterialPicker_Title>

@@ -20,7 +20,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public const int MaxSwaps = 30;
 
         /// <summary>The apparel check's threshold: a piece scoring below it is never put on.</summary>
-        private const float MinimumGain = 0.05f;
+        internal const float MinimumGain = 0.05f;
 
         private static readonly List<OrderLine> NoLines = new List<OrderLine>();
 
@@ -134,7 +134,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// The check's tests on a piece that scored well enough: biocoding, body and life stage, and for a real piece in
         /// storage, its outfit stand and reach. Imagined pieces are nowhere, so they skip the last two.
         /// </summary>
-        private static bool CanPutOn(Pawn pawn, Apparel piece, bool fromStorage)
+        internal static bool CanPutOn(Pawn pawn, Apparel piece, bool fromStorage)
         {
             if (CompBiocodable.IsBiocoded(piece) && !CompBiocodable.IsBiocodedFor(piece, pawn))
             {
@@ -160,7 +160,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return pawn.CanReserveAndReach(target, PathEndMode.OnCell, pawn.NormalMaxDanger());
         }
 
-        private static void SetNeededWarmth(Pawn pawn)
+        internal static void SetNeededWarmth(Pawn pawn)
         {
             if (NeededWarmthField == null || pawn.Map == null)
             {

@@ -32,6 +32,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private static readonly Dictionary<PieceSource, List<Apparel>> pieces = new Dictionary<PieceSource, List<Apparel>>();
         private static float gatheredAt;
+
+        /// <summary>The open tab's pieces for the open slot, allowed or not, for the slot browser.</summary>
+        private static List<Apparel> slotPieces;
+
+        private static (PieceSource source, ThingDef slotOf) slotPiecesFor;
+
+        /// <summary>What the open slot was opened for. It closes when any of these changes, since its pieces no longer apply.</summary>
+        private static (Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material) slotOpenedFor;
+
+        /// <summary>The item whose slot was opened last, so a new outfit opens the same slot when it has one.</summary>
+        private static ThingDef lastSlotOf;
         private static (Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material, int version) predictedFor;
         private static List<Apparel> predictedFrom;
         private static PredictedOutfit prediction;
@@ -43,9 +54,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             OutfitPortrait.Forget();
             ImaginedPieces.Forget();
             PieceSources.Forget();
+            SlotBrowserPanel.Close();
+            lastSlotOf = null;
             chosenPawn = null;
             shownPolicy = null;
             pieces.Clear();
+            slotPieces = null;
             gatheredAt = float.MinValue;
             predictedFor = default;
             predictedFrom = null;
@@ -53,7 +67,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             scroll = Vector2.zero;
         }
 
-        public static void Draw(Rect rect, ApparelPolicy policy)
+        /// <summary>
+        /// Draws the preview into <paramref name="rect"/>. With a <paramref name="slotRect"/>, an open slot's pieces get
+        /// that panel of their own; without one (Rect.zero, on narrow screens), they take the outfit list's place.
+        /// </summary>
+        public static void Draw(Rect rect, Rect slotRect, ApparelPolicy policy)
         {
             if (Current.Game != shownGame)
             {
@@ -62,10 +80,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             Rect section = rect;
             section.yMin += TabDrawer.TabHeight;
+            Rect slotSection = slotRect;
+            if (slotSection.width > 0f)
+            {
+                slotSection.yMin = section.yMin;
+            }
             Widgets.DrawMenuSection(section);
             try
             {
-                DrawContents(section, policy);
+                DrawContents(section, slotSection, policy);
             }
             catch (Exception e)
             {
@@ -73,7 +96,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void DrawContents(Rect section, ApparelPolicy policy)
+        private static void DrawContents(Rect section, Rect slotSection, ApparelPolicy policy)
         {
             List<Pawn> pawns = Colonists(policy);
             if (pawns.Count == 0 || policy == null)
@@ -91,42 +114,159 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 scroll = Vector2.zero;
             }
             Pawn pawn = chosenPawn;
+            if (SlotBrowserPanel.IsOpen && slotOpenedFor != (pawn, policy, source, material))
+            {
+                SlotBrowserPanel.Close();
+            }
             GatherPieces(pawn, policy);
             DrawSourceTabs(section);
             PredictedOutfit outfit = PredictionFor(pawn, policy);
 
             Rect inner = section.ContractedBy(UiStyle.Gap);
-            float y = inner.y;
-            DrawPawnRow(new Rect(inner.x, y, inner.width, UiStyle.RowHeight), pawn, pawns, policy);
-            y += UiStyle.RowHeight;
-            string sourceText = SourceText(pawn, policy);
-            // "As if on this policy" can run to a second line.
-            float sourceHeight = Mathf.Max(UiStyle.RowHeight, Text.CalcHeight(sourceText, inner.width));
-            using (new TextBlock(TextAnchor.MiddleCenter))
+            float y = DrawControls(inner, pawn, pawns, policy, outfit);
+            Rect list = new Rect(inner.x, y, inner.width, inner.yMax - y);
+            bool slotHasOwnPanel = slotSection.width > 0f;
+            if (slotHasOwnPanel)
             {
-                UiStyle.Note(new Rect(inner.x, y, inner.width, sourceHeight), sourceText);
+                // The slot panel always shows a slot: the one picked last if the outfit still has it, else the outermost.
+                KeepSlotOpen(outfit);
+                DrawOutfitList(list, outfit);
+                Widgets.DrawMenuSection(slotSection);
+                Rect slotArea = slotSection.ContractedBy(UiStyle.Gap);
+                if (!SlotBrowserPanel.IsOpen)
+                {
+                    using (new TextBlock(TextAnchor.MiddleCenter))
+                    {
+                        UiStyle.Note(slotArea, "OL_Slot_Hint".Translate());
+                    }
+                }
+                else if (slotPieces != null)
+                {
+                    DrawSlot(slotArea, pawn, policy, outfit, showBack: false);
+                }
             }
-            y += sourceHeight;
+            else if (SlotBrowserPanel.IsOpen && slotPieces != null)
+            {
+                DrawSlot(list, pawn, policy, outfit, showBack: true);
+            }
+            else
+            {
+                DrawOutfitList(list, outfit);
+            }
+        }
+
+        private static void DrawSlot(Rect area, Pawn pawn, ApparelPolicy policy, PredictedOutfit outfit, bool showBack)
+        {
+            if (SlotBrowserPanel.Draw(area, pawn, policy, outfit.Worn, slotPieces, showBack))
+            {
+                // The filter changed, so gather and predict again now rather than at the next refresh.
+                gatheredAt = float.MinValue;
+            }
+        }
+
+        private static void KeepSlotOpen(PredictedOutfit outfit)
+        {
+            if (SlotBrowserPanel.IsOpen)
+            {
+                return;
+            }
+            List<Apparel> worn = InListOrder(outfit.Worn);
+            if (worn.Count == 0)
+            {
+                return;
+            }
+            BodyDef body = chosenPawn.RaceProps.body;
+            Apparel sameSlot = lastSlotOf == null ? null : worn.FirstOrDefault(piece => !ApparelUtility.CanWearTogether(piece.def, lastSlotOf, body));
+            OpenSlot(sameSlot ?? worn[0]);
+        }
+
+        private static void OpenSlot(Apparel piece)
+        {
+            SlotBrowserPanel.Open(piece);
+            slotOpenedFor = (chosenPawn, shownPolicy, source, material);
+            slotPieces = null;
+            lastSlotOf = piece.def;
+        }
+
+        /// <summary>Whether the piece fills the slot that's open, so its outfit row shows which slot the list is for.</summary>
+        private static bool InOpenSlot(Apparel piece)
+        {
+            ThingDef slotOf = SlotBrowserPanel.SlotOf;
+            return slotOf != null && !ApparelUtility.CanWearTogether(piece.def, slotOf, chosenPawn.RaceProps.body);
+        }
+
+        /// <summary>The outfit outermost layer first, as the list shows it.</summary>
+        private static List<Apparel> InListOrder(IReadOnlyList<Apparel> worn)
+        {
+            return worn.OrderByDescending(piece => piece.def.apparel.LastLayer.drawOrder).ToList();
+        }
+
+        /// <summary>The colonist, where pieces come from, the material, the order, the drawing and a status line. Returns the y below them.</summary>
+        private static float DrawControls(Rect area, Pawn pawn, List<Pawn> pawns, ApparelPolicy policy, PredictedOutfit outfit)
+        {
+            float y = area.y;
+            DrawPawnRow(new Rect(area.x, y, area.width, UiStyle.RowHeight), pawn, pawns);
+            y += UiStyle.RowHeight;
+            y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), SourceText(pawn, policy));
             if (source != PieceSource.InStorage)
             {
-                Rect button = new Rect(inner.x, y, inner.width, UiStyle.RowHeight);
-                if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(material.Label)))
+                Rect button = new Rect(area.x, y, area.width, UiStyle.RowHeight);
+                if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(material.Label).ToString().Truncate(button.width)))
                 {
                     Find.WindowStack.Add(new Dialog_PickMaterial(choice => material = choice));
                 }
                 TooltipHandler.TipRegion(button, "OL_Preview_MaterialTip".Translate());
                 y += UiStyle.RowHeight;
             }
+            y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), OrderText(policy));
             y += UiStyle.Gap;
-            DrawPortrait(new Rect(inner.x, y, inner.width, PortraitSize), pawn, outfit);
+            DrawPortrait(new Rect(area.x, y, area.width, PortraitSize), pawn, Drawn(outfit));
             y += PortraitSize + UiStyle.Gap;
             string status = StatusText(outfit);
             if (status != null)
             {
-                UiStyle.Note(new Rect(inner.x, y, inner.width, UiStyle.RowHeight), status);
-                y += UiStyle.RowHeight;
+                y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), status);
             }
-            DrawOutfitList(new Rect(inner.x, y, inner.width, inner.yMax - y), outfit);
+            return y;
+        }
+
+        /// <summary>A centred grey note as tall as its text needs, at least a row. Returns its height.</summary>
+        private static float DrawWrappedNote(Rect at, string text)
+        {
+            float height = Mathf.Max(UiStyle.RowHeight, Text.CalcHeight(text, at.width));
+            using (new TextBlock(TextAnchor.MiddleCenter))
+            {
+                UiStyle.Note(new Rect(at.x, at.y, at.width, height), text);
+            }
+            return height;
+        }
+
+        /// <summary>The policy's stat order in one line, so it's clear what ranks the allowed pieces.</summary>
+        private static string OrderText(ApparelPolicy policy)
+        {
+            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy);
+            if (lines == null || lines.Count == 0)
+            {
+                return "OL_Preview_NoOrderLine".Translate();
+            }
+            string order = lines
+                .Select(line => line.stat.LabelCap.ToString())
+                .Aggregate((earlier, later) => "OL_Column_Then".Translate(earlier, later).ToString());
+            return "OL_Preview_OrderLine".Translate(order);
+        }
+
+        /// <summary>The outfit to draw: as predicted, or with the piece being tried on in place of its slot's.</summary>
+        private static IReadOnlyList<Apparel> Drawn(PredictedOutfit outfit)
+        {
+            Apparel tried = SlotBrowserPanel.TriedOn;
+            if (tried == null)
+            {
+                return outfit.Worn;
+            }
+            BodyDef body = chosenPawn.RaceProps.body;
+            List<Apparel> drawn = outfit.Worn.Where(worn => ApparelUtility.CanWearTogether(worn.def, tried.def, body)).ToList();
+            drawn.Add(tried);
+            return drawn;
         }
 
         /// <summary>Every colonist who can wear apparel, the policy's own first.</summary>
@@ -146,12 +286,26 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// <summary>Gathers each source's pieces at most once a second, for the tab counts and the prediction.</summary>
         private static void GatherPieces(Pawn pawn, ApparelPolicy policy)
         {
+            bool slotPiecesMissing = SlotBrowserPanel.IsOpen && (slotPieces == null || slotPiecesFor != (source, SlotBrowserPanel.SlotOf));
             if (pawn == predictedFor.pawn && policy == predictedFor.policy && material == predictedFor.material
-                && Time.realtimeSinceStartup - gatheredAt < RefreshSeconds)
+                && Time.realtimeSinceStartup - gatheredAt < RefreshSeconds && !slotPiecesMissing)
             {
                 return;
             }
             gatheredAt = Time.realtimeSinceStartup;
+            if (SlotBrowserPanel.IsOpen)
+            {
+                try
+                {
+                    slotPieces = PieceSources.For(pawn, policy, source, material, SlotBrowserPanel.SlotOf);
+                }
+                catch (Exception e)
+                {
+                    Log.ErrorOnce("[Optimal Loadouts] Couldn't gather a slot's pieces for the preview: " + e, "OptimalLoadouts.GatherSlot".GetHashCode());
+                    slotPieces = new List<Apparel>();
+                }
+                slotPiecesFor = (source, SlotBrowserPanel.SlotOf);
+            }
             foreach (PieceSource each in Sources)
             {
                 try
@@ -257,7 +411,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return pawn.outfits.CurrentApparelPolicy == policy ? from : "OL_Preview_AsIfOnPolicy".Translate(from).ToString();
         }
 
-        private static void DrawPawnRow(Rect row, Pawn pawn, List<Pawn> pawns, ApparelPolicy policy)
+        private static void DrawPawnRow(Rect row, Pawn pawn, List<Pawn> pawns)
         {
             Rect previous = new Rect(row.x, row.y + (row.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
             Rect next = new Rect(row.xMax - UiStyle.IconSize, previous.y, UiStyle.IconSize, UiStyle.IconSize);
@@ -286,10 +440,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void DrawPortrait(Rect area, Pawn pawn, PredictedOutfit outfit)
+        private static void DrawPortrait(Rect area, Pawn pawn, IReadOnlyList<Apparel> outfit)
         {
             Rect portrait = new Rect(area.center.x - PortraitSize / 2f, area.y, PortraitSize, PortraitSize);
-            GUI.DrawTexture(portrait, OutfitPortrait.Draw(pawn, outfit.Worn, rotation, portrait.size));
+            GUI.DrawTexture(portrait, OutfitPortrait.Draw(pawn, outfit, rotation, portrait.size));
             Rect turnLeft = new Rect(portrait.x - UiStyle.IconSize - UiStyle.Gap, portrait.center.y - UiStyle.IconSize / 2f, UiStyle.IconSize, UiStyle.IconSize);
             Rect turnRight = new Rect(portrait.xMax + UiStyle.Gap, turnLeft.y, UiStyle.IconSize, UiStyle.IconSize);
             if (Widgets.ButtonImage(turnLeft, TexUI.RotLeftTex, true, "OL_Preview_Turn".Translate()))
@@ -304,6 +458,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private static string StatusText(PredictedOutfit outfit)
         {
+            if (SlotBrowserPanel.TriedOn != null)
+            {
+                return "OL_Slot_TryingOn".Translate(SlotBrowserPanel.TriedOn.LabelCap);
+            }
             if (!outfit.Settled)
             {
                 return "OL_Preview_Unsettled".Translate(OutfitPredictor.MaxSwaps);
@@ -329,7 +487,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private static void DrawOutfitList(Rect rect, PredictedOutfit outfit)
         {
-            List<Apparel> worn = outfit.Worn.OrderByDescending(piece => piece.def.apparel.LastLayer.drawOrder).ToList();
+            List<Apparel> worn = InListOrder(outfit.Worn);
             int rows = worn.Count + (outfit.TakenOff.Count > 0 ? outfit.TakenOff.Count + 1 : 0);
             Rect view = new Rect(0f, 0f, rect.width - GenUI.ScrollBarWidth, rows * UiStyle.RowHeight);
             Widgets.BeginScrollView(rect, ref scroll, view);
@@ -345,15 +503,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private static void DrawOutfitRows(Rect view, List<Apparel> worn, PredictedOutfit outfit)
         {
-            // Imagined outfits are all new, so only storage marks what changes.
-            bool marksChanges = source == PieceSource.InStorage;
             float y = 0f;
             foreach (Apparel piece in worn)
             {
+                // Pieces kept from what the pawn wears now are dimmed, so what's put on stands out.
                 bool isNew = outfit.PutOn.Contains(piece);
-                string tag = marksChanges && isNew ? "OL_Preview_New".Translate().ToString() : null;
                 string tooltip = isNew ? WhyPutOn(piece, outfit) : "OL_Preview_Kept".Translate().ToString();
-                DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, marksChanges && !isNew, tag, tooltip);
+                string why = tooltip == null ? "OL_Slot_ClickToOpen".Translate().ToString() : tooltip + "\n\n" + "OL_Slot_ClickToOpen".Translate();
+                DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, !isNew, why, opensSlot: true);
                 y += UiStyle.RowHeight;
             }
             if (outfit.TakenOff.Count > 0)
@@ -362,33 +519,34 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 y += UiStyle.RowHeight;
                 foreach (Apparel piece in outfit.TakenOff)
                 {
-                    DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, true, null, WhyTakenOff(piece, outfit));
+                    DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, true, WhyTakenOff(piece, outfit), opensSlot: false);
                     y += UiStyle.RowHeight;
                 }
             }
         }
 
-        private static void DrawPieceRow(Rect row, Apparel piece, bool dimmed, string tag, string tooltip)
+        /// <summary>One piece of the outfit. A worn piece's row opens its slot. The ⓘ button opens its info card.</summary>
+        private static void DrawPieceRow(Rect row, Apparel piece, bool dimmed, string tooltip, bool opensSlot)
         {
-            if (UiStyle.ClickableRow(row))
+            Rect info = new Rect(row.xMax - Widgets.InfoCardButtonSize, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f,
+                Widgets.InfoCardButtonSize, Widgets.InfoCardButtonSize);
+            Widgets.InfoCardButton(info.x, info.y, piece);
+            row.xMax = info.x - UiStyle.Gap;
+            if (opensSlot && InOpenSlot(piece))
             {
-                Find.WindowStack.Add(new Dialog_InfoCard(piece));
+                Widgets.DrawHighlightSelected(row);
+            }
+            if (opensSlot && UiStyle.ClickableRow(row))
+            {
+                OpenSlot(piece);
             }
             TooltipHandler.TipRegion(row, tooltip);
             Rect icon = new Rect(row.x, row.y + (row.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
             Widgets.ThingIcon(icon, piece, dimmed ? 0.5f : 1f);
-            float tagWidth = tag == null ? 0f : Text.CalcSize(tag).x + UiStyle.Gap;
-            Rect label = new Rect(icon.xMax + UiStyle.Gap, row.y, row.width - icon.width - UiStyle.Gap - tagWidth, row.height);
+            Rect label = new Rect(icon.xMax + UiStyle.Gap, row.y, row.width - icon.width - UiStyle.Gap, row.height);
             using (new TextBlock(TextAnchor.MiddleLeft, dimmed ? ColoredText.SubtleGrayColor : Color.white))
             {
-                Widgets.Label(label, piece.LabelCap.Truncate(label.width));
-            }
-            if (tag != null)
-            {
-                using (new TextBlock(TextAnchor.MiddleRight))
-                {
-                    Widgets.Label(new Rect(row.xMax - tagWidth, row.y, tagWidth, row.height), tag);
-                }
+                Widgets.Label(label, PieceLabel.Of(piece).Truncate(label.width));
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using OptimalLoadouts.ApparelOrders.Preview;
 using OptimalLoadouts.Orders;
 using RimWorld;
 using Verse;
@@ -35,7 +36,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 {
                     return;
                 }
-                IReadOnlyList<OrderLine> lines = orders.EffectiveLines(pawn.outfits.CurrentApparelPolicy);
+                IReadOnlyList<OrderLine> lines = orders.EffectiveLines(PreviewPolicy.PolicyOf(pawn));
                 if (lines.Count == 0)
                 {
                     return;

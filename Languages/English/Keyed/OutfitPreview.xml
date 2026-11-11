@@ -3,14 +3,32 @@
 
   <!-- Outfit preview in Manage apparel policies -->
   <OL_Preview_Pawn>{0} ({1} of {2})</OL_Preview_Pawn>
-  <OL_Preview_PreviousPawn>Previous colonist on this policy</OL_Preview_PreviousPawn>
-  <OL_Preview_NextPawn>Next colonist on this policy</OL_Preview_NextPawn>
-  <OL_Preview_FromStorage>From what's in storage now</OL_Preview_FromStorage>
-  <OL_Preview_NoPawn>No colonist uses this policy yet.</OL_Preview_NoPawn>
+  <OL_Preview_PawnOption>{0} ({1})</OL_Preview_PawnOption>
+  <OL_Preview_PreviousPawn>Previous colonist</OL_Preview_PreviousPawn>
+  <OL_Preview_NextPawn>Next colonist</OL_Preview_NextPawn>
+  <OL_Preview_NoPawn>No colonists on this map.</OL_Preview_NoPawn>
   <OL_Preview_Turn>Turn</OL_Preview_Turn>
+
+  <!-- Where the pieces come from -->
+  <OL_Preview_SourceAllowed>Allowed ({0})</OL_Preview_SourceAllowed>
+  <OL_Preview_SourceCraftable>Craftable ({0})</OL_Preview_SourceCraftable>
+  <OL_Preview_SourceStorage>In storage ({0})</OL_Preview_SourceStorage>
+  <OL_Preview_FromAllowed>From everything this policy allows, made new</OL_Preview_FromAllowed>
+  <OL_Preview_FromCraftable>From what the colony can make now</OL_Preview_FromCraftable>
+  <OL_Preview_FromStorage>From what's in storage now</OL_Preview_FromStorage>
+  <OL_Preview_AsIfOnPolicy>{0}, as if on this policy</OL_Preview_AsIfOnPolicy>
+  <OL_Preview_Material>Material: {0}</OL_Preview_Material>
+  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's order instead.</OL_Preview_MaterialTip>
+  <OL_Preview_MaterialBest>Best for this order</OL_Preview_MaterialBest>
+  <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
+
+  <!-- What the outfit comes to -->
   <OL_Preview_Unsettled>Still changing after {0} swaps.</OL_Preview_Unsettled>
+  <OL_Preview_NothingAllowed>This policy allows nothing this colonist can wear.</OL_Preview_NothingAllowed>
+  <OL_Preview_NothingCraftable>The colony can't make anything this policy allows yet.</OL_Preview_NothingCraftable>
   <OL_Preview_NothingToPick>Nothing in storage this policy allows.</OL_Preview_NothingToPick>
   <OL_Preview_NoChanges>Keeps what they wear now.</OL_Preview_NoChanges>
+  <OL_Preview_NothingWorn>Nothing here is worth wearing.</OL_Preview_NothingWorn>
   <OL_Preview_New>new</OL_Preview_New>
   <OL_Preview_TakesOff>Takes off:</OL_Preview_TakesOff>
   <OL_Preview_Kept>Already wearing it.</OL_Preview_Kept>
@@ -28,5 +46,9 @@
   <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
   <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
   <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
+
+  <!-- Material picker for imagined pieces -->
+  <OL_MaterialPicker_Title>Imagine pieces in</OL_MaterialPicker_Title>
+  <OL_MaterialPicker_NoMatches>No material matches.</OL_MaterialPicker_NoMatches>
 
 </LanguageData>

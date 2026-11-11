@@ -10,8 +10,9 @@ using Verse.AI;
 namespace OptimalLoadouts.ApparelOrders.Preview
 {
     /// <summary>
-    /// Works out the outfit a pawn will end up in by playing the game's apparel check forward: the same candidates,
-    /// the same score with every mod's changes, the same tests, one swap at a time on an imagined outfit.
+    /// Works out the outfit a pawn would end up in under a policy by playing the game's apparel check forward: the same
+    /// score with every mod's changes, the same tests, one swap at a time on an imagined outfit. The pawn's real policy
+    /// and clothes are never changed.
     /// </summary>
     public static class OutfitPredictor
     {
@@ -26,15 +27,20 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The check's shared warmth need, which it sets for each pawn before scoring. Null if the game renames it.</summary>
         private static readonly AccessTools.FieldRef<NeededWarmth> NeededWarmthField = FindNeededWarmth();
 
-        public static PredictedOutfit Predict(Pawn pawn)
+        /// <summary>
+        /// The outfit the pawn would end up in under the policy, picking from pieces gathered by
+        /// <see cref="PieceSources.For"/>. From storage it starts from what the pawn wears, as the game would. Imagined
+        /// pieces start from nothing, so the outfit shows what the policy picks on its own.
+        /// </summary>
+        public static PredictedOutfit Predict(Pawn pawn, ApparelPolicy policy, PieceSource source, IReadOnlyList<Apparel> pieces)
         {
-            ApparelPolicy policy = pawn.outfits.CurrentApparelPolicy;
-            var now = new List<Apparel>(pawn.apparel.WornApparel);
+            bool fromStorage = source == PieceSource.InStorage;
+            var now = fromStorage ? new List<Apparel>(pawn.apparel.WornApparel) : new List<Apparel>();
             var outfit = new List<Apparel>(now);
             var notAllowed = now.Where(piece => MustTakeOff(pawn, policy, piece)).ToList();
             outfit.RemoveAll(notAllowed.Contains);
 
-            List<Apparel> candidates = Candidates(pawn, policy);
+            var candidates = new List<Apparel>(pieces);
             bool nothingToPick = candidates.Count == 0;
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy) ?? NoLines;
             SetNeededWarmth(pawn);
@@ -44,9 +50,10 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             for (int i = 0; i < MaxSwaps; i++)
             {
                 PredictedSwap swap;
+                using (new PreviewPolicy(pawn, policy))
                 using (new ImaginedOutfit(pawn, outfit))
                 {
-                    swap = BestSwap(pawn, outfit, candidates, lines);
+                    swap = BestSwap(pawn, outfit, candidates, lines, fromStorage);
                 }
                 if (swap == null)
                 {
@@ -66,7 +73,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// The piece the check would put on next, scored against the imagined outfit already in place. On equal scores
         /// the later piece wins, as the check compares with "less than".
         /// </summary>
-        private static PredictedSwap BestSwap(Pawn pawn, List<Apparel> outfit, List<Apparel> candidates, IReadOnlyList<OrderLine> lines)
+        private static PredictedSwap BestSwap(Pawn pawn, List<Apparel> outfit, List<Apparel> candidates, IReadOnlyList<OrderLine> lines,
+            bool fromStorage)
         {
             List<float> wornScores = outfit.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
             Apparel best = null;
@@ -77,7 +85,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 float score = JobGiver_OptimizeApparel.ApparelScoreGain(pawn, candidate, wornScores);
                 // The check's other tests, reach among them, run only for a piece that would win, as in the game.
-                if (score >= MinimumGain && score >= bestScore && CanPutOn(pawn, candidate))
+                if (score >= MinimumGain && score >= bestScore && CanPutOn(pawn, candidate, fromStorage))
                 {
                     if (best != null)
                     {
@@ -123,42 +131,10 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         }
 
         /// <summary>
-        /// The pieces the check scores, gathered as it gathers them (outfit stands included): allowed, stored, not
-        /// forbidden, not burning and the right gender.
+        /// The check's tests on a piece that scored well enough: biocoding, body and life stage, and for a real piece in
+        /// storage, its outfit stand and reach. Imagined pieces are nowhere, so they skip the last two.
         /// </summary>
-        private static List<Apparel> Candidates(Pawn pawn, ApparelPolicy policy)
-        {
-            var things = new List<Thing>();
-            pawn.Map.listerThings.GetAllThings(in things, ThingRequestGroup.Apparel, null, true);
-            foreach (IHaulSource source in pawn.Map.haulDestinationManager.AllHaulSourcesListForReading)
-            {
-                foreach (Thing held in source.GetDirectlyHeldThings())
-                {
-                    if (held is Apparel)
-                    {
-                        things.Add(held);
-                    }
-                }
-            }
-            var candidates = new List<Apparel>();
-            foreach (Thing thing in things)
-            {
-                if (thing is Apparel piece
-                    && !candidates.Contains(piece)
-                    && policy.filter.Allows(piece)
-                    && piece.IsInAnyStorage()
-                    && !piece.IsForbidden(pawn)
-                    && !piece.IsBurning()
-                    && (piece.def.apparel.gender == Gender.None || piece.def.apparel.gender == pawn.gender))
-                {
-                    candidates.Add(piece);
-                }
-            }
-            return candidates;
-        }
-
-        /// <summary>The check's tests on a piece that scored well enough: biocoding, body, outfit stand, life stage and reach.</summary>
-        private static bool CanPutOn(Pawn pawn, Apparel piece)
+        private static bool CanPutOn(Pawn pawn, Apparel piece, bool fromStorage)
         {
             if (CompBiocodable.IsBiocoded(piece) && !CompBiocodable.IsBiocodedFor(piece, pawn))
             {
@@ -167,6 +143,10 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             if (!ApparelUtility.HasPartsToWear(pawn, piece.def) || !piece.def.apparel.developmentalStageFilter.Has(pawn.DevelopmentalStage))
             {
                 return false;
+            }
+            if (!fromStorage)
+            {
+                return true;
             }
             LocalTargetInfo target = piece;
             if (piece.ParentHolder is IApparelSource source && source is Thing holder)

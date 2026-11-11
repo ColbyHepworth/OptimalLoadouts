@@ -233,10 +233,14 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
+        /// <summary>Goes up whenever any order or base changes, so work done from the orders knows to start over.</summary>
+        public int Version { get; private set; }
+
         /// <summary>Forgets the resolved orders, so the next lookup reads the current lines and bases.</summary>
         public void NotifyChanged()
         {
             resolved.Clear();
+            Version++;
         }
 
         private bool SamePolicies(List<ApparelPolicy> policies)

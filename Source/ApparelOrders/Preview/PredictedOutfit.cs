@@ -4,7 +4,7 @@ using RimWorld;
 
 namespace OptimalLoadouts.ApparelOrders.Preview
 {
-    /// <summary>The outfit a pawn will end up in from what's in storage now, and the swaps that get it there.</summary>
+    /// <summary>The outfit a pawn would end up in under a policy, and the swaps that get it there.</summary>
     public sealed class PredictedOutfit
     {
         /// <summary>The final outfit.</summary>
@@ -25,7 +25,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>False when the pawn was still finding better pieces at the swap limit.</summary>
         public bool Settled { get; }
 
-        /// <summary>True when storage holds nothing the policy allows.</summary>
+        /// <summary>True when the source offered no piece the policy allows.</summary>
         public bool NothingToPick { get; }
 
         public PredictedOutfit(IReadOnlyList<Apparel> worn, IReadOnlyList<Apparel> putOn, IReadOnlyList<Apparel> takenOff,

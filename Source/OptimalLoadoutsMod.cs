@@ -13,6 +13,7 @@ namespace OptimalLoadouts
             var harmony = new Harmony("groovy.optimalloadouts");
             TryPatch(harmony, typeof(ApparelScoreGainPatch), "pawns pick apparel the usual way, ignoring stat orders");
             TryPatch(harmony, typeof(ApparelPolicyCopyFromPatch), "duplicated apparel policies start without a stat order");
+            TryPatch(harmony, typeof(ManageApparelPoliciesPatch), "Manage apparel policies has no outfit preview");
         }
 
         private static void TryPatch(Harmony harmony, Type patch, string whatHappensInstead)

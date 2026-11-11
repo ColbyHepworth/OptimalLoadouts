@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Outfit preview in Manage apparel policies -->
+  <OL_Preview_Pawn>{0} ({1} of {2})</OL_Preview_Pawn>
+  <OL_Preview_PreviousPawn>Previous colonist on this policy</OL_Preview_PreviousPawn>
+  <OL_Preview_NextPawn>Next colonist on this policy</OL_Preview_NextPawn>
+  <OL_Preview_FromStorage>From what's in storage now</OL_Preview_FromStorage>
+  <OL_Preview_NoPawn>No colonist uses this policy yet.</OL_Preview_NoPawn>
+  <OL_Preview_Turn>Turn</OL_Preview_Turn>
+  <OL_Preview_Unsettled>Still changing after {0} swaps.</OL_Preview_Unsettled>
+  <OL_Preview_NothingToPick>Nothing in storage this policy allows.</OL_Preview_NothingToPick>
+  <OL_Preview_NoChanges>Keeps what they wear now.</OL_Preview_NoChanges>
+  <OL_Preview_New>new</OL_Preview_New>
+  <OL_Preview_TakesOff>Takes off:</OL_Preview_TakesOff>
+  <OL_Preview_Kept>Already wearing it.</OL_Preview_Kept>
+  <OL_Preview_NotAllowed>Not allowed by this policy.</OL_Preview_NotAllowed>
+  <OL_Preview_ReplacedBy>Replaced by {0}.</OL_Preview_ReplacedBy>
+
+  <!-- Why a piece won -->
+  <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
+  <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
+  <OL_Preview_WhyNoOrder>This policy has no stat order, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
+  <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
+
+  <!-- Why the runner-up lost -->
+  <OL_Preview_RunnerUpWorse>Runner-up: {0}, worse on {1} by {2}.</OL_Preview_RunnerUpWorse>
+  <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
+  <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
+  <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
+
+</LanguageData>

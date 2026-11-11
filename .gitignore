@@ -1,0 +1,11 @@
+bin/
+obj/
+
+# Editor and OS files
+.idea/
+.vs/
+.vscode/
+*.user
+*.DotSettings.user
+Thumbs.db
+.DS_Store

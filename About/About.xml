@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Optimal Loadouts</name>
+  <author>Groovy</author>
+  <packageId>groovy.optimalloadouts</packageId>
+  <modVersion>0.1</modVersion>
+  <url>https://github.com/ColbyHepworth/OptimalLoadouts</url>
+  <supportedVersions>
+    <li>1.7</li>
+  </supportedVersions>
+  <description>Pawns wear and carry the best gear for their job. Set an ordered list of stats for each job, and pawns pick what's best on the first stat, then the next. Works with and without Combat Extended.</description>
+</ModMetaData>

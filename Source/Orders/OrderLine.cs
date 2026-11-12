@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using OptimalLoadouts.ApparelOrders;
 using RimWorld;
 using Verse;
 
@@ -35,23 +35,7 @@ namespace OptimalLoadouts.Orders
         /// </summary>
         public bool CountsOn(ThingDef apparel)
         {
-            if (layer == null)
-            {
-                return true;
-            }
-            List<ApparelLayerDef> layers = apparel.apparel?.layers;
-            if (layers == null)
-            {
-                return false;
-            }
-            for (int i = 0; i < layers.Count; i++)
-            {
-                if ((layers[i] == layer) != allButLayer)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return LayerScope.Covers(apparel, layer, allButLayer);
         }
 
         public OrderLine Copy()

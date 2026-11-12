@@ -9,17 +9,15 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// A policy's stat order, the Stat order tab of its column in Manage apparel policies: its base, its own lines to
-    /// edit, the lines it gets from its base, and a button to add a stat.
+    /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, its
+    /// own lines to edit, the lines it gets from its base, and a button to add a stat.
     /// </summary>
     public static class StatOrderPanel
     {
         private const float NumberWidth = 28f;
         private const float DirectionWidth = 110f;
         private const float LayerWidth = 120f;
-        private const float BaseButtonWidth = 200f;
         private const float AddButtonWidth = 160f;
-        private const float BaseHeadingGap = 4f;
 
         private static Vector2 linesScroll;
 
@@ -31,7 +29,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             float y = rect.y;
-            DrawBaseRow(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
+            BasePicker.Draw(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
             y += UiStyle.RowHeight + UiStyle.Gap / 2f;
 
             string noteText = "OL_Editor_Note".Translate();
@@ -42,35 +40,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             y += noteHeight + UiStyle.Gap;
 
             DrawLines(new Rect(rect.x, y, rect.width, rect.yMax - y), orders, policy);
-        }
-
-        private static void DrawBaseRow(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy)
-        {
-            string baseLabel = "OL_Editor_Base".Translate();
-            float labelWidth = Text.CalcSize(baseLabel).x;
-            using (new TextBlock(TextAnchor.MiddleLeft))
-            {
-                Widgets.Label(new Rect(row.x, row.y, labelWidth, row.height), baseLabel);
-            }
-            Rect button = new Rect(row.x + labelWidth + UiStyle.Gap / 2f, row.y, Mathf.Min(BaseButtonWidth, row.width - labelWidth - UiStyle.Gap / 2f), row.height);
-            ApparelPolicy basePolicy = orders.BaseOf(policy);
-            string label = basePolicy?.label ?? "OL_Editor_NoBase".Translate();
-            TooltipHandler.TipRegion(button, "OL_Editor_BaseTip".Translate());
-            if (Widgets.ButtonText(button, label.Truncate(button.width - 12f)))
-            {
-                var options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("OL_Editor_NoBase".Translate(), () => orders.SetBase(policy, null)),
-                };
-                foreach (ApparelPolicy candidate in Current.Game.outfitDatabase.AllOutfits)
-                {
-                    if (orders.CanBeBase(policy, candidate))
-                    {
-                        options.Add(new FloatMenuOption(candidate.label, () => orders.SetBase(policy, candidate)));
-                    }
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
         }
 
         /// <summary>The policy's own lines, then each base's heading and lines, then the add button, scrolling together.</summary>
@@ -104,12 +73,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 if (from != currentSource)
                 {
                     currentSource = from;
-                    y += BaseHeadingGap;
+                    y += UiStyle.HeadingGap;
                     using (new TextBlock(TextAnchor.MiddleLeft))
                     {
-                        UiStyle.Note(new Rect(0f, y, viewRect.width, UiStyle.RowHeight - BaseHeadingGap), "OL_Editor_FromBase".Translate(from.label));
+                        UiStyle.Note(new Rect(0f, y, viewRect.width, UiStyle.RowHeight - UiStyle.HeadingGap), "OL_Editor_FromBase".Translate(from.label));
                     }
-                    y += UiStyle.RowHeight - BaseHeadingGap;
+                    y += UiStyle.RowHeight - UiStyle.HeadingGap;
                 }
                 DrawBaseLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), line);
                 y += UiStyle.RowHeight;
@@ -148,7 +117,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             TooltipHandler.TipRegion(layerButton, "OL_Layer_Tip".Translate());
             if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(line).Truncate(LayerWidth - 12f)))
             {
-                Find.WindowStack.Add(new FloatMenu(LayerOptions(orders, policy, index)));
+                Find.WindowStack.Add(new FloatMenu(OrderLineText.LayerOptions((layer, allBut) => orders.SetLayer(policy, index, layer, allBut))));
             }
             x += LayerWidth + UiStyle.IconGap;
 
@@ -184,22 +153,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
                     "OL_Editor_BaseLine".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line)));
             }
-        }
-
-        /// <summary>Every layer, every layer but utility, then each layer some apparel is worn on.</summary>
-        private static List<FloatMenuOption> LayerOptions(ApparelOrdersComponent orders, ApparelPolicy policy, int index)
-        {
-            var options = new List<FloatMenuOption>
-            {
-                new FloatMenuOption("OL_Layer_All".Translate(), () => orders.SetLayer(policy, index, null, false)),
-                new FloatMenuOption("OL_Layer_AllBut".Translate(ApparelLayerDefOf.Belt.label),
-                    () => orders.SetLayer(policy, index, ApparelLayerDefOf.Belt, true)),
-            };
-            foreach (ApparelLayerDef layer in OrderLineText.WornLayers)
-            {
-                options.Add(new FloatMenuOption(layer.LabelCap, () => orders.SetLayer(policy, index, layer, false)));
-            }
-            return options;
         }
 
         private static string DirectionLabel(OrderLine line)

@@ -10,8 +10,8 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Patches
 {
     /// <summary>
-    /// Widens Manage apparel policies (and makes it taller where the screen has room), gives the policy's column two
-    /// tabs (vanilla's filter, and its stat order), and draws the outfit preview beside them, with a panel for a slot's
+    /// Widens Manage apparel policies (and makes it taller where the screen has room), gives the policy's column three
+    /// tabs (vanilla's filter, its priorities and its limits), and draws the outfit preview beside them, with a panel for a slot's
     /// pieces beside that where the screen is wide enough. The filter is a little wider than vanilla's, which other
     /// mods that draw on it (Apparel Policy Builder's button, at its right edge) follow. Windows that replace this one
     /// with their own subclass (Choose Your Outfit) are left alone, since they lay out the space themselves.
@@ -118,17 +118,25 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 Widgets.DrawMenuSection(__state.policyColumn);
                 StatOrderPanel.Draw(__state.policyColumn.ContractedBy(UiStyle.Gap), policy);
             }
+            else if (tab == PolicyTab.Forbids)
+            {
+                Widgets.DrawMenuSection(__state.policyColumn);
+                ForbidsPanel.Draw(__state.policyColumn.ContractedBy(UiStyle.Gap), policy);
+            }
             // After the section's frame, so the open tab covers the frame's top edge, as on vanilla's filter.
-            DrawPolicyTabs(__state.policyColumn);
+            DrawPolicyTabs(__state.policyColumn, policy);
             OutfitPreviewPanel.Draw(__state.preview, __state.slot, policy);
         }
 
-        private static void DrawPolicyTabs(Rect column)
+        private static void DrawPolicyTabs(Rect column, ApparelPolicy policy)
         {
+            int forbids = ForbidsPanel.Count(policy);
+            string forbidsLabel = forbids > 0 ? "OL_Policy_LimitsTabCount".Translate(forbids) : "OL_Policy_LimitsTab".Translate();
             var tabs = new List<TabRecord>
             {
                 new TabRecord("OL_Policy_AllowedItemsTab".Translate(), () => tab = PolicyTab.AllowedItems, tab == PolicyTab.AllowedItems),
-                new TabRecord("OL_Policy_StatOrderTab".Translate(), () => tab = PolicyTab.StatOrder, tab == PolicyTab.StatOrder),
+                new TabRecord("OL_Policy_PrioritiesTab".Translate(), () => tab = PolicyTab.StatOrder, tab == PolicyTab.StatOrder),
+                new TabRecord(forbidsLabel, () => tab = PolicyTab.Forbids, tab == PolicyTab.Forbids),
             };
             using (new TextBlock(GameFont.Small, TextAnchor.UpperLeft))
             {
@@ -154,6 +162,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
         {
             AllowedItems,
             StatOrder,
+            Forbids,
         }
     }
 }

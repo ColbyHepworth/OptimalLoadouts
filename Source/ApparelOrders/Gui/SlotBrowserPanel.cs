@@ -423,7 +423,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 TriedOn = piece == TriedOn ? null : piece;
             }
             // Imagined pieces may share an ID, so each row's place in the list keeps its tooltip apart.
-            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines), Gen.HashCombineInt(replacing.def.shortHash, (int)row.y));
+            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines, policy), Gen.HashCombineInt(replacing.def.shortHash, (int)row.y));
 
             bool dimmed = !choice.Pickable;
             using (new TextBlock(TextAnchor.MiddleCenter, dimmed ? ColoredText.SubtleGrayColor : Color.white))
@@ -445,7 +445,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return filterChanged;
         }
 
-        private static string Tooltip(SlotChoice choice, bool isPick, IReadOnlyList<OrderLine> lines)
+        private static string Tooltip(SlotChoice choice, bool isPick, IReadOnlyList<OrderLine> lines, ApparelPolicy policy)
         {
             var parts = new List<string> { choice.Piece.LabelCap };
             if (isPick)
@@ -464,7 +464,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (!choice.TypeAllowed)
             {
-                parts.Add("OL_Preview_NotAllowed".Translate());
+                ApparelForbid forbiddenBy = ApparelForbids.ForbiddenBy(policy, choice.Piece.def);
+                parts.Add(forbiddenBy != null
+                    ? "OL_Forbid_SlotTip".Translate(OrderLineText.ForbidCap(forbiddenBy).UncapitalizeFirst()).Resolve()
+                    : "OL_Preview_NotAllowed".Translate().Resolve());
             }
             else if (!choice.Allowed)
             {

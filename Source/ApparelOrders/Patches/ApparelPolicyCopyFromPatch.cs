@@ -3,7 +3,7 @@ using RimWorld;
 
 namespace OptimalLoadouts.ApparelOrders.Patches
 {
-    /// <summary>Duplicating an apparel policy copies its stat order and base too.</summary>
+    /// <summary>Duplicating an apparel policy copies its stat order, forbids and base too.</summary>
     [HarmonyPatch(typeof(ApparelPolicy), nameof(ApparelPolicy.CopyFrom))]
     public static class ApparelPolicyCopyFromPatch
     {

@@ -16,6 +16,9 @@ namespace OptimalLoadouts.Gui
         /// <summary>The space between icon buttons in a row.</summary>
         public const float IconGap = 4f;
 
+        /// <summary>The space above a heading inside a list, such as the lines a policy gets from its base.</summary>
+        public const float HeadingGap = 4f;
+
         /// <summary>The width a vertical scrollbar takes from a scroll view.</summary>
         public const float ScrollbarWidth = 16f;
 

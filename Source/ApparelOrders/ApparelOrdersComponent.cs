@@ -7,8 +7,9 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// Every apparel policy's stat order in the current game: saved with it, resolved with bases, and edited only
-    /// through these methods so the resolved orders stay current. Saves record this class's full name, so it keeps it.
+    /// Every apparel policy's stat order and forbids in the current game: saved with it, resolved with bases, and edited
+    /// only through these methods so the resolved orders and the policies' checklists stay current. Saves record this
+    /// class's full name, so it keeps it.
     /// </summary>
     public class ApparelOrdersComponent : GameComponent
     {
@@ -53,7 +54,10 @@ namespace OptimalLoadouts.ApparelOrders
         public override void FinalizeInit()
         {
             PieceStats.ClearCache();
+            ApparelForbids.ClearCache();
             NotifyChanged();
+            // Items from a mod added since the last save are caught too.
+            ApparelForbids.ApplyAll();
         }
 
         /// <summary>The policy's own order, or null when it has none.</summary>
@@ -101,6 +105,8 @@ namespace OptimalLoadouts.ApparelOrders
                 NotifyChanged();
                 resolvedForPolicies.Clear();
                 resolvedForPolicies.AddRange(policies);
+                // A deleted base takes its forbids with it, so what they unticked in policies built on it ticks back.
+                ApparelForbids.ApplyAll();
             }
             if (resolved.TryGetValue(policy, out List<OrderLine> lines))
             {
@@ -162,7 +168,7 @@ namespace OptimalLoadouts.ApparelOrders
                 return;
             }
             GetOrCreate(policy).basePolicy = basePolicy;
-            NotifyChanged();
+            ForbidsChanged();
         }
 
         public void AddLine(ApparelPolicy policy, StatDef stat)
@@ -215,6 +221,75 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
+        /// <summary>The policy's own forbids, then its base's, then that base's. A base that would loop back is ignored.</summary>
+        public List<ApparelForbid> EffectiveForbids(ApparelPolicy policy)
+        {
+            var forbids = new List<ApparelForbid>();
+            var visited = new HashSet<ApparelPolicy>();
+            for (ApparelPolicy current = policy; current != null && visited.Add(current); current = BaseOf(current))
+            {
+                ApparelOrder order = OrderFor(current);
+                if (order == null)
+                {
+                    break;
+                }
+                forbids.AddRange(order.forbids);
+            }
+            return forbids;
+        }
+
+        /// <summary>Adds a forbid on the stat at the lowest value any apparel has, so it catches nothing until it's moved.</summary>
+        public void AddForbid(ApparelPolicy policy, StatDef stat)
+        {
+            GetOrCreate(policy).forbids.Add(new ApparelForbid(stat, ApparelForbids.RangeOf(stat).min));
+            ForbidsChanged();
+        }
+
+        public void RemoveForbid(ApparelPolicy policy, int index)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.forbids.Count)
+            {
+                return;
+            }
+            order.forbids.RemoveAt(index);
+            ForbidsChanged();
+        }
+
+        /// <summary>Sets whether a forbid rules out values above or below its threshold, and the threshold.</summary>
+        public void SetForbid(ApparelPolicy policy, int index, bool forbidAbove, float threshold)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.forbids.Count)
+            {
+                return;
+            }
+            ApparelForbid forbid = order.forbids[index];
+            if (forbid.forbidAbove == forbidAbove && forbid.threshold == threshold)
+            {
+                return;
+            }
+            forbid.forbidAbove = forbidAbove;
+            forbid.threshold = threshold;
+            // A slider sends a new threshold each frame it's dragged. Only a changed checklist needs the preview redone.
+            if (ApparelForbids.ApplyAll())
+            {
+                NotifyChanged();
+            }
+        }
+
+        public void SetForbidLayer(ApparelPolicy policy, int index, ApparelLayerDef layer, bool allBut)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.forbids.Count)
+            {
+                return;
+            }
+            order.forbids[index].layer = layer;
+            order.forbids[index].allButLayer = layer != null && allBut;
+            ForbidsChanged();
+        }
+
         /// <summary>Limits a line to a layer, or to every layer but it, or (with no layer) lets it count on every layer.</summary>
         public void SetLayer(ApparelPolicy policy, int index, ApparelLayerDef layer, bool allBut)
         {
@@ -244,12 +319,22 @@ namespace OptimalLoadouts.ApparelOrders
             }
             ApparelOrder copy = GetOrCreate(to);
             copy.lines = source.lines.Select(line => line.Copy()).ToList();
+            copy.forbids = source.forbids.Select(forbid => forbid.Copy()).ToList();
+            // The game copies the checklist, so the copy's forbids unticked the same items.
+            copy.unticked = new List<ThingDef>(source.unticked);
             copy.basePolicy = source.basePolicy != to ? source.basePolicy : null;
-            NotifyChanged();
+            ForbidsChanged();
         }
 
         /// <summary>Goes up whenever any order or base changes, so work done from the orders knows to start over.</summary>
         public int Version { get; private set; }
+
+        /// <summary>Resolves the orders again and writes every policy's forbids into its checklist.</summary>
+        private void ForbidsChanged()
+        {
+            NotifyChanged();
+            ApparelForbids.ApplyAll();
+        }
 
         /// <summary>Forgets the resolved orders, so the next lookup reads the current lines and bases.</summary>
         public void NotifyChanged()

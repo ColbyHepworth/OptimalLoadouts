@@ -18,8 +18,8 @@
   <OL_Preview_FromStorage>From what's in storage now</OL_Preview_FromStorage>
   <OL_Preview_AsIfOnPolicy>{0}, as if on this policy</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
-  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's order instead.</OL_Preview_MaterialTip>
-  <OL_Preview_MaterialBest>Best for this order</OL_Preview_MaterialBest>
+  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's priorities instead.</OL_Preview_MaterialTip>
+  <OL_Preview_MaterialBest>Best for its priorities</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 
   <!-- What the outfit comes to -->
@@ -37,7 +37,7 @@
   <!-- Why a piece won -->
   <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
-  <OL_Preview_WhyNoOrder>This policy has no stat order, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
+  <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
 
   <!-- Why the runner-up lost -->

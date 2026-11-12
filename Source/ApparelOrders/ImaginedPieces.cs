@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 
-namespace OptimalLoadouts.ApparelOrders.Preview
+namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
     /// Pieces made only to be judged and drawn, never spawned. One per item type, material and quality, kept until the
@@ -38,7 +38,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         }
 
         /// <summary>Drops every piece, so a loaded game doesn't keep the previous one's.</summary>
-        public static void Forget()
+        public static void ClearCache()
         {
             pieces.Clear();
         }

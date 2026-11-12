@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
-using OptimalLoadouts.ApparelOrders.Preview;
 using OptimalLoadouts.Orders;
 using RimWorld;
 using Verse;
@@ -15,17 +14,10 @@ namespace OptimalLoadouts.ApparelOrders.Patches
     [HarmonyPatch(typeof(JobGiver_OptimizeApparel), nameof(JobGiver_OptimizeApparel.ApparelScoreGain))]
     public static class ApparelScoreGainPatch
     {
-        /// <summary>
-        /// Other mods mark a piece "never wear this" with -1000 or lower. Vanilla subtracts the replaced pieces' scores
-        /// from it, which can lift it a little, and a real preference stays far above this. Under CE, a worn required
-        /// piece can push a real gain lower, but required apparel is left to the game anyway.
-        /// </summary>
-        internal const float NeverWear = -500f;
-
         [HarmonyPriority(Priority.First)]
         private static void Postfix(Pawn pawn, Apparel ap, ref float __result)
         {
-            if (__result <= NeverWear || pawn?.outfits == null || pawn.apparel == null || ap == null)
+            if (__result <= ApparelScoreBands.NeverWear || pawn?.outfits == null || pawn.apparel == null || ap == null)
             {
                 return;
             }

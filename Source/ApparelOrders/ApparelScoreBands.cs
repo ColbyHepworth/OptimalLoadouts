@@ -9,6 +9,13 @@ namespace OptimalLoadouts.ApparelOrders
     /// </summary>
     public static class ApparelScoreBands
     {
+        /// <summary>
+        /// At or below this, a score gain is a "never wear this". Halfway, since subtracting the replaced pieces' scores
+        /// can lift such a mark a little. Under CE, a worn required piece can push a real gain lower, but required apparel
+        /// is left to the game anyway.
+        /// </summary>
+        internal const float NeverWear = -500f;
+
         /// <summary>Each line's score band. The game and other mods mark "never wear this" with -1000 or lower.</summary>
         private const float BandSize = 1000f;
 

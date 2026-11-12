@@ -2,7 +2,7 @@ using System;
 using RimWorld;
 using Verse;
 
-namespace OptimalLoadouts.ApparelOrders.Preview
+namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
     /// Makes the stat order judge one pawn by another policy until disposed. Nothing is written to the pawn: setting

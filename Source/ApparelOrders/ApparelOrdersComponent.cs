@@ -19,12 +19,34 @@ namespace OptimalLoadouts.ApparelOrders
         private readonly Dictionary<ApparelPolicy, List<OrderLine>> resolved = new Dictionary<ApparelPolicy, List<OrderLine>>();
         private readonly List<ApparelPolicy> resolvedForPolicies = new List<ApparelPolicy>();
 
+        /// <summary>The last game's component, so scoring a piece doesn't search the game's components each time.</summary>
+        private static ApparelOrdersComponent remembered;
+
+        private readonly Game game;
+
         public ApparelOrdersComponent(Game game)
         {
+            this.game = game;
+            remembered = this;
         }
 
         /// <summary>The current game's orders, or null outside a game.</summary>
-        public static ApparelOrdersComponent Current => Verse.Current.Game?.GetComponent<ApparelOrdersComponent>();
+        public static ApparelOrdersComponent Current
+        {
+            get
+            {
+                Game current = Verse.Current.Game;
+                if (current == null)
+                {
+                    return null;
+                }
+                if (remembered == null || remembered.game != current)
+                {
+                    remembered = current.GetComponent<ApparelOrdersComponent>();
+                }
+                return remembered;
+            }
+        }
 
         public override void ExposeData()
         {
@@ -55,6 +77,7 @@ namespace OptimalLoadouts.ApparelOrders
         {
             PieceStats.ClearCache();
             ApparelForbids.ClearCache();
+            ImaginedPieces.ClearCache();
             NotifyChanged();
             // Items from a mod added since the last save are caught too.
             ApparelForbids.ApplyAll();

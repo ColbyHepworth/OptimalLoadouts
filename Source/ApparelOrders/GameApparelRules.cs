@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using OptimalLoadouts.ApparelOrders.Patches;
 using RimWorld;
 using Verse;
 
@@ -48,7 +47,7 @@ namespace OptimalLoadouts.ApparelOrders
         /// </summary>
         public static string WhyModRulesOut(Apparel piece, float score)
         {
-            if (score > ApparelScoreGainPatch.NeverWear)
+            if (score > ApparelScoreBands.NeverWear)
             {
                 return null;
             }

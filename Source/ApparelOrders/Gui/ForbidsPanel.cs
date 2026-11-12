@@ -133,11 +133,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.Label(value, OrderLineText.ValueText(forbid.stat, forbid.threshold));
             }
-            if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(forbid.layer, forbid.allButLayer).Truncate(LayerWidth - 12f)))
+            if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(forbid.layers, LayerWidth - 12f)))
             {
-                Find.WindowStack.Add(new FloatMenu(OrderLineText.LayerOptions((layer, allBut) => orders.SetForbidLayer(policy, index, layer, allBut))));
+                Find.WindowStack.Add(new Dialog_PickLayers(forbid.layers, layers => orders.SetForbidLayers(policy, index, layers)));
             }
-            TooltipHandler.TipRegion(layerButton, "OL_Forbid_LayerTip".Translate());
+            TooltipHandler.TipRegion(layerButton, OrderLineText.LayerTip("OL_Forbid_LayerTip".Translate(), forbid.layers));
             using (new TextBlock(TextAnchor.MiddleRight, ColoredText.SubtleGrayColor))
             {
                 Widgets.Label(count, caught.Count == 1 ? "OL_Forbid_CountOne".Translate() : "OL_Forbid_Count".Translate(caught.Count));

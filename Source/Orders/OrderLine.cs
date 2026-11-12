@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using OptimalLoadouts.ApparelOrders;
 using RimWorld;
 using Verse;
@@ -5,7 +6,7 @@ using Verse;
 namespace OptimalLoadouts.Orders
 {
     /// <summary>
-    /// One line of a stat order: either a stat, with whether higher or lower values are better and, for apparel, the layer
+    /// One line of a stat order: either a stat, with whether higher or lower values are better and, for apparel, the layers
     /// it counts on; or a locked item, worth 1 on a piece of that item and 0 on anything else.
     /// </summary>
     public class OrderLine : IExposable
@@ -15,11 +16,11 @@ namespace OptimalLoadouts.Orders
 
         public bool lowerIsBetter;
 
-        /// <summary>Apparel only: the layer this line counts on, or null for every layer.</summary>
-        public ApparelLayerDef layer;
-
-        /// <summary>With a layer: count every layer except it ("all but utility").</summary>
-        public bool allButLayer;
+        /// <summary>
+        /// Apparel only: the layers this line counts on, or empty for every layer. A piece on several layers counts if any
+        /// one is in it.
+        /// </summary>
+        public List<ApparelLayerDef> layers = new List<ApparelLayerDef>();
 
         /// <summary>The locked item on an item line, or null on a stat line.</summary>
         public ThingDef item;
@@ -46,30 +47,29 @@ namespace OptimalLoadouts.Orders
         public Def Subject => IsItem ? item : (Def)stat;
 
         /// <summary>
-        /// Whether this line counts a piece of this item: every piece when it has no layer, otherwise a piece on its
-        /// layer (or, for "all but", a piece on any other layer). A piece on several layers counts if any one matches.
-        /// Item lines have no layer.
+        /// Whether this line counts a piece of this item: every piece when it has no layers, otherwise a piece on one of
+        /// them. Item lines have no layers.
         /// </summary>
         public bool CountsOn(ThingDef apparel)
         {
-            return IsItem || LayerScope.Covers(apparel, layer, allButLayer);
+            return IsItem || LayerScope.Covers(apparel, layers);
         }
 
         public OrderLine Copy()
         {
-            return new OrderLine(stat, lowerIsBetter) { layer = layer, allButLayer = allButLayer, item = item };
+            return new OrderLine(stat, lowerIsBetter) { layers = new List<ApparelLayerDef>(layers), item = item };
         }
 
         public void ExposeData()
         {
             Scribe_Defs.Look(ref stat, "stat");
             Scribe_Values.Look(ref lowerIsBetter, "lowerIsBetter", false);
-            Scribe_Defs.Look(ref layer, "layer");
-            Scribe_Values.Look(ref allButLayer, "allButLayer", false);
+            Scribe_Collections.Look(ref layers, "layers", LookMode.Def);
             Scribe_Defs.Look(ref item, "item");
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && layer == null)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                allButLayer = false;
+                layers = layers ?? new List<ApparelLayerDef>();
+                layers.RemoveAll(layer => layer == null);
             }
         }
     }

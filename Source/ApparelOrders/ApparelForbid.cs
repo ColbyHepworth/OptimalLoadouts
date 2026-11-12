@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RimWorld;
 using Verse;
 
@@ -19,11 +20,8 @@ namespace OptimalLoadouts.ApparelOrders
 
         public float threshold;
 
-        /// <summary>The layer this forbid covers, or null for every layer.</summary>
-        public ApparelLayerDef layer;
-
-        /// <summary>With a layer: cover every layer except it ("all but utility").</summary>
-        public bool allButLayer;
+        /// <summary>The layers this forbid covers, or empty for every layer.</summary>
+        public List<ApparelLayerDef> layers = new List<ApparelLayerDef>();
 
         public ApparelForbid()
         {
@@ -38,7 +36,7 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>Whether this forbid rules out the item, judged in its usual material at normal quality.</summary>
         public bool Forbids(ThingDef apparel)
         {
-            if (stat == null || !LayerScope.Covers(apparel, layer, allButLayer))
+            if (stat == null || !LayerScope.Covers(apparel, layers))
             {
                 return false;
             }
@@ -51,7 +49,7 @@ namespace OptimalLoadouts.ApparelOrders
 
         public ApparelForbid Copy()
         {
-            return new ApparelForbid(stat, threshold) { forbidAbove = forbidAbove, layer = layer, allButLayer = allButLayer };
+            return new ApparelForbid(stat, threshold) { forbidAbove = forbidAbove, layers = new List<ApparelLayerDef>(layers) };
         }
 
         public void ExposeData()
@@ -59,11 +57,11 @@ namespace OptimalLoadouts.ApparelOrders
             Scribe_Defs.Look(ref stat, "stat");
             Scribe_Values.Look(ref forbidAbove, "forbidAbove", false);
             Scribe_Values.Look(ref threshold, "threshold", 0f);
-            Scribe_Defs.Look(ref layer, "layer");
-            Scribe_Values.Look(ref allButLayer, "allButLayer", false);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && layer == null)
+            Scribe_Collections.Look(ref layers, "layers", LookMode.Def);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                allButLayer = false;
+                layers = layers ?? new List<ApparelLayerDef>();
+                layers.RemoveAll(layer => layer == null);
             }
         }
     }

@@ -179,8 +179,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             }
             foreach (KeyValuePair<ApparelLayerDef, List<ThingDef>> layer in apparel.ByLayer)
             {
-                // By the game's own test of headgear: full head, upper head or eyes.
-                if (layer.Value.Count(PawnApparelGenerator.IsHeadgear) * 2 > layer.Value.Count)
+                if (ApparelLayers.MostlyHeadgear(layer.Value))
                 {
                     apparel.OnHead.Add(layer.Key);
                 }

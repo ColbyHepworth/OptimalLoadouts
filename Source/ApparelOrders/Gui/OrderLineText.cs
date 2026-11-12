@@ -7,53 +7,49 @@ using Verse;
 
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
-    /// <summary>How a line's or a forbid's layer pick reads, the same on every screen that shows one.</summary>
+    /// <summary>How a line's or a forbid's layers read, the same on every screen that shows them.</summary>
     public static class OrderLineText
     {
-        private static List<ApparelLayerDef> wornLayers;
-
-        /// <summary>The pick on its own, for the layer button: "All layers", "Outer" or "All but utility".</summary>
-        public static string LayerLabel(OrderLine line)
+        /// <summary>
+        /// The layers on their own, for the layer button: "All layers", their names when they fit the width
+        /// ("Headgear, outer"), or "3 layers". One layer keeps its name, cut short if it must be.
+        /// </summary>
+        public static string LayerLabel(List<ApparelLayerDef> layers, float width)
         {
-            return LayerLabel(line.layer, line.allButLayer);
-        }
-
-        public static string LayerLabel(ApparelLayerDef layer, bool allButLayer)
-        {
-            if (layer == null)
+            if (layers.Count == 0)
             {
                 return "OL_Layer_All".Translate();
             }
-            return allButLayer ? "OL_Layer_AllBut".Translate(layer.label) : layer.LabelCap.Resolve();
-        }
-
-        /// <summary>Every layer, every layer but utility, then each layer some apparel is worn on.</summary>
-        public static List<FloatMenuOption> LayerOptions(Action<ApparelLayerDef, bool> pick)
-        {
-            var options = new List<FloatMenuOption>
+            string names = string.Join(", ", layers.Select(layer => layer.label)).CapitalizeFirst();
+            if (layers.Count == 1 || Text.CalcSize(names).x <= width)
             {
-                new FloatMenuOption("OL_Layer_All".Translate(), () => pick(null, false)),
-                new FloatMenuOption("OL_Layer_AllBut".Translate(ApparelLayerDefOf.Belt.label), () => pick(ApparelLayerDefOf.Belt, true)),
-            };
-            foreach (ApparelLayerDef layer in WornLayers)
-            {
-                options.Add(new FloatMenuOption(layer.LabelCap, () => pick(layer, false)));
+                return names.Truncate(width);
             }
-            return options;
+            return "OL_Layer_Count".Translate(layers.Count).Resolve();
         }
 
-        /// <summary>A forbid as the limit it sets, on a line of its own: "Mass at most 5 kg on all but utility".</summary>
+        /// <summary>A layer button's tooltip: what it does, then the layers picked when there are any.</summary>
+        public static string LayerTip(string what, List<ApparelLayerDef> layers)
+        {
+            return layers.Count == 0 ? what : what + "\n\n" + LayerNames(layers).CapitalizeFirst() + ".";
+        }
+
+        /// <summary>The layers in a sentence: "headgear and outer". Empty for every layer.</summary>
+        public static string LayerNames(List<ApparelLayerDef> layers)
+        {
+            return layers.Select(layer => layer.label).ToCommaList(useAnd: true);
+        }
+
+        /// <summary>A forbid as the limit it sets, on a line of its own: "Mass at most 5 kg on outer and middle".</summary>
         public static string ForbidCap(ApparelForbid forbid)
         {
             string value = ValueText(forbid.stat, forbid.threshold);
             string rule = forbid.forbidAbove
                 ? "OL_Forbid_RuleAtMost".Translate(forbid.stat.label, value)
                 : "OL_Forbid_RuleAtLeast".Translate(forbid.stat.label, value);
-            if (forbid.layer != null)
+            if (forbid.layers.Count > 0)
             {
-                rule = forbid.allButLayer
-                    ? "OL_Layer_StatAllBut".Translate(rule, forbid.layer.label)
-                    : "OL_Layer_StatOn".Translate(rule, forbid.layer.label);
+                rule = "OL_Layer_StatOn".Translate(rule, LayerNames(forbid.layers));
             }
             return rule.CapitalizeFirst();
         }
@@ -66,8 +62,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// The line's stat with its layer, lower case for use inside a sentence: "sharp armor on outer". An item line is
-        /// its item: "cowboy hat".
+        /// The line's stat with its layers, lower case for use inside a sentence: "sharp armor on headgear and outer". An
+        /// item line is its item: "cowboy hat".
         /// </summary>
         public static string StatOnLayer(OrderLine line)
         {
@@ -75,40 +71,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return line.item.label;
             }
-            if (line.layer == null)
+            if (line.layers.Count == 0)
             {
                 return line.stat.label;
             }
-            return line.allButLayer
-                ? "OL_Layer_StatAllBut".Translate(line.stat.label, line.layer.label)
-                : "OL_Layer_StatOn".Translate(line.stat.label, line.layer.label);
+            return "OL_Layer_StatOn".Translate(line.stat.label, LayerNames(line.layers));
         }
 
-        /// <summary>The line's stat with its layer, capitalized, for a line of its own.</summary>
+        /// <summary>The line's stat with its layers, capitalized, for a line of its own.</summary>
         public static string StatOnLayerCap(OrderLine line)
         {
             return StatOnLayer(line).CapitalizeFirst();
-        }
-
-        /// <summary>The layers some apparel is worn on, in the order the game draws them.</summary>
-        public static IReadOnlyList<ApparelLayerDef> WornLayers
-        {
-            get
-            {
-                if (wornLayers == null)
-                {
-                    var used = new HashSet<ApparelLayerDef>();
-                    foreach (ThingDef def in DefDatabase<ThingDef>.AllDefsListForReading)
-                    {
-                        if (def.IsApparel && def.apparel.layers != null)
-                        {
-                            used.AddRange(def.apparel.layers);
-                        }
-                    }
-                    wornLayers = used.OrderBy(layer => layer.drawOrder).ThenBy(layer => layer.label).ToList();
-                }
-                return wornLayers;
-            }
         }
     }
 }

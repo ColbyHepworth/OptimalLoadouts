@@ -409,28 +409,27 @@ namespace OptimalLoadouts.ApparelOrders
             }
         }
 
-        public void SetForbidLayer(ApparelPolicy policy, int index, ApparelLayerDef layer, bool allBut)
+        /// <summary>Sets the layers a forbid covers. Every layer picked, or none, means every layer.</summary>
+        public void SetForbidLayers(ApparelPolicy policy, int index, IEnumerable<ApparelLayerDef> layers)
         {
             ApparelOrder order = OrderFor(policy);
             if (order == null || index < 0 || index >= order.forbids.Count)
             {
                 return;
             }
-            order.forbids[index].layer = layer;
-            order.forbids[index].allButLayer = layer != null && allBut;
+            order.forbids[index].layers = LayerScope.Normalized(layers);
             ForbidsChanged();
         }
 
-        /// <summary>Limits a line to a layer, or to every layer but it, or (with no layer) lets it count on every layer.</summary>
-        public void SetLayer(ApparelPolicy policy, int index, ApparelLayerDef layer, bool allBut)
+        /// <summary>Sets the layers a line counts on. Every layer picked, or none, means every layer.</summary>
+        public void SetLayers(ApparelPolicy policy, int index, IEnumerable<ApparelLayerDef> layers)
         {
             ApparelOrder order = OrderFor(policy);
             if (order == null || index < 0 || index >= order.lines.Count)
             {
                 return;
             }
-            order.lines[index].layer = layer;
-            order.lines[index].allButLayer = layer != null && allBut;
+            order.lines[index].layers = LayerScope.Normalized(layers);
             NotifyChanged();
         }
 

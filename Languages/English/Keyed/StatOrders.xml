@@ -26,9 +26,12 @@
   <OL_Editor_MoveDown>Move down</OL_Editor_MoveDown>
   <OL_Editor_Remove>Remove</OL_Editor_Remove>
   <OL_Layer_All>All layers</OL_Layer_All>
-  <OL_Layer_AllBut>All but {0}</OL_Layer_AllBut>
+  <OL_Layer_Count>{0} layers</OL_Layer_Count>
   <OL_Layer_StatOn>{0} on {1}</OL_Layer_StatOn>
-  <OL_Layer_StatAllBut>{0} on all but {1}</OL_Layer_StatAllBut>
+  <OL_Layer_Head>Head</OL_Layer_Head>
+  <OL_Layer_Body>Body</OL_Layer_Body>
+  <OL_LayerPicker_Title>Layers</OL_LayerPicker_Title>
+  <OL_LayerPicker_LastTip>It needs at least one layer. Tick another first, or tick All layers.</OL_LayerPicker_LastTip>
   <OL_Layer_Tip>Which layers this stat counts on. A piece only counts on this line when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
   <OL_Editor_LockedItem>locked</OL_Editor_LockedItem>
   <OL_Editor_LockedItemTip>Pawns wear {0} over anything not locked, in any material and quality, and it stays allowed. Lock or unlock items in the slot browser, or remove this line to unlock it. Click for its info card.</OL_Editor_LockedItemTip>

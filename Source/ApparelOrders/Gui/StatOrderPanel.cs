@@ -157,10 +157,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             Rect layerButton = new Rect(x, row.y + UiStyle.IconGap / 2f, LayerWidth, row.height - UiStyle.IconGap);
-            TooltipHandler.TipRegion(layerButton, "OL_Layer_Tip".Translate());
-            if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(line).Truncate(LayerWidth - 12f)))
+            TooltipHandler.TipRegion(layerButton, OrderLineText.LayerTip("OL_Layer_Tip".Translate(), line.layers));
+            if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(line.layers, LayerWidth - 12f)))
             {
-                Find.WindowStack.Add(new FloatMenu(OrderLineText.LayerOptions((layer, allBut) => orders.SetLayer(policy, index, layer, allBut))));
+                Find.WindowStack.Add(new Dialog_PickLayers(line.layers, layers => orders.SetLayers(policy, index, layers)));
             }
             x += LayerWidth + UiStyle.IconGap;
 

@@ -28,6 +28,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return "OL_Layer_Count".Translate(layers.Count).Resolve();
         }
 
+        /// <summary>The material a policy's limits judge apparel in: "Usual material", "Best material for each limit" or the material's name.</summary>
+        public static string MaterialLabel(LimitMaterial material)
+        {
+            if (material.IsBest)
+            {
+                return "OL_Forbid_MaterialBest".Translate();
+            }
+            return material.Stuff != null ? material.Stuff.LabelCap.Resolve() : "OL_Forbid_MaterialUsual".Translate().Resolve();
+        }
+
         /// <summary>A layer button's tooltip: what it does, then the layers picked when there are any.</summary>
         public static string LayerTip(string what, List<ApparelLayerDef> layers)
         {

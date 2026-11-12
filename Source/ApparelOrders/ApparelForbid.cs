@@ -33,14 +33,14 @@ namespace OptimalLoadouts.ApparelOrders
             this.threshold = threshold;
         }
 
-        /// <summary>Whether this forbid rules out the item, judged in its usual material at normal quality.</summary>
-        public bool Forbids(ThingDef apparel)
+        /// <summary>Whether this forbid rules out the item, judged in the material at normal quality.</summary>
+        public bool Forbids(ThingDef apparel, LimitMaterial material)
         {
             if (stat == null || !LayerScope.Covers(apparel, layers))
             {
                 return false;
             }
-            if (!ApparelForbids.TryValueOf(apparel, stat, out float value))
+            if (!ApparelForbids.TryValueOf(apparel, stat, material, forbidAbove, out float value))
             {
                 return false;
             }

@@ -12,8 +12,13 @@ namespace OptimalLoadouts.ApparelOrders
     /// </summary>
     public static class ApparelForbids
     {
-        private static readonly Dictionary<(ThingDef def, StatDef stat), float?> values = new Dictionary<(ThingDef, StatDef), float?>();
-        private static readonly Dictionary<StatDef, FloatRange> ranges = new Dictionary<StatDef, FloatRange>();
+        private static readonly Dictionary<(ThingDef def, StatDef stat, ThingDef stuff), float?> values =
+            new Dictionary<(ThingDef, StatDef, ThingDef), float?>();
+        private static readonly Dictionary<(ThingDef def, StatDef stat, bool forbidAbove), float?> bestValues =
+            new Dictionary<(ThingDef, StatDef, bool), float?>();
+
+        private static readonly Dictionary<(StatDef stat, LimitMaterial material), FloatRange> ranges =
+            new Dictionary<(StatDef, LimitMaterial), FloatRange>();
         private static List<ThingDef> apparel;
 
         /// <summary>Every item an apparel policy's checklist lists.</summary>
@@ -43,13 +48,14 @@ namespace OptimalLoadouts.ApparelOrders
             }
             bool changed = orders.KeepLockedAllowed(policy).Count > 0;
             List<ApparelForbid> forbids = orders.EffectiveForbids(policy);
+            LimitMaterial material = order.LimitMaterial;
             var locked = new HashSet<ThingDef>(orders.LockedItems(policy));
             var caught = new HashSet<ThingDef>();
             if (forbids.Count > 0)
             {
                 foreach (ThingDef def in Apparel)
                 {
-                    if (!locked.Contains(def) && forbids.Any(forbid => forbid.Forbids(def)))
+                    if (!locked.Contains(def) && forbids.Any(forbid => forbid.Forbids(def, material)))
                     {
                         caught.Add(def);
                     }
@@ -92,12 +98,16 @@ namespace OptimalLoadouts.ApparelOrders
             return changed;
         }
 
-        /// <summary>The items a forbid catches in the policy, for its count and tooltip: all but its locked items. With no policy, nothing is locked.</summary>
+        /// <summary>
+        /// The items a forbid catches in the policy, for its count and tooltip: all but its locked items, judged in the
+        /// policy's material. With no policy, nothing is locked and the usual material is used.
+        /// </summary>
         public static List<ThingDef> Caught(ApparelPolicy policy, ApparelForbid forbid)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             var locked = new HashSet<ThingDef>(orders?.LockedItems(policy) ?? Enumerable.Empty<ThingDef>());
-            return Apparel.Where(def => !locked.Contains(def) && forbid.Forbids(def)).ToList();
+            LimitMaterial material = orders?.LimitMaterialOf(policy) ?? LimitMaterial.Usual;
+            return Apparel.Where(def => !locked.Contains(def) && forbid.Forbids(def, material)).ToList();
         }
 
         /// <summary>The first of the policy's forbids that catches the item, or null. A locked item is never caught.</summary>
@@ -108,13 +118,17 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return null;
             }
-            return orders.EffectiveForbids(policy).FirstOrDefault(forbid => forbid.Forbids(def));
+            LimitMaterial material = orders.LimitMaterialOf(policy);
+            return orders.EffectiveForbids(policy).FirstOrDefault(forbid => forbid.Forbids(def, material));
         }
 
-        /// <summary>The lowest and highest value any apparel has on the stat, for a forbid's slider.</summary>
-        public static FloatRange RangeOf(StatDef stat)
+        /// <summary>
+        /// The lowest and highest value any apparel has on the stat in the material a policy judges in, for a forbid's
+        /// slider. With the best material, every material each item can be made of counts.
+        /// </summary>
+        public static FloatRange RangeOf(StatDef stat, LimitMaterial material)
         {
-            if (ranges.TryGetValue(stat, out FloatRange known))
+            if (ranges.TryGetValue((stat, material), out FloatRange known))
             {
                 return known;
             }
@@ -122,28 +136,55 @@ namespace OptimalLoadouts.ApparelOrders
             float highest = float.MinValue;
             foreach (ThingDef def in Apparel)
             {
-                if (TryValueOf(def, stat, out float value))
+                if (TryValueOf(def, stat, material, false, out float most))
                 {
-                    lowest = System.Math.Min(lowest, value);
-                    highest = System.Math.Max(highest, value);
+                    highest = System.Math.Max(highest, most);
+                }
+                if (TryValueOf(def, stat, material, true, out float least))
+                {
+                    lowest = System.Math.Min(lowest, least);
                 }
             }
             FloatRange range = lowest > highest ? new FloatRange(0f, 0f) : new FloatRange(lowest, highest);
-            ranges[stat] = range;
+            ranges[(stat, material)] = range;
             return range;
         }
 
         /// <summary>
-        /// An item's value on a stat, the way a forbid judges it: a piece in its usual material at normal quality, read
-        /// as the order reads it. False when the item can't be imagined.
+        /// An item's value on a stat, the way a forbid judges it: a piece in the material at normal quality, read as the
+        /// order reads it. With <see cref="LimitMaterial.Best"/>, the best value any material gives for the forbid's
+        /// direction: the lowest for an "at most" (<paramref name="forbidAbove"/>), the highest otherwise. False when the
+        /// item can't be imagined in any.
         /// </summary>
-        public static bool TryValueOf(ThingDef def, StatDef stat, out float value)
+        public static bool TryValueOf(ThingDef def, StatDef stat, LimitMaterial material, bool forbidAbove, out float value)
         {
-            if (!values.TryGetValue((def, stat), out float? known))
+            if (!material.IsBest || !def.MadeFromStuff)
+            {
+                return TryValueIn(def, stat, material.StuffFor(def), out value);
+            }
+            // The Limits tab asks every frame, and trying every material is slow, so the answer is kept.
+            if (!bestValues.TryGetValue((def, stat, forbidAbove), out float? best))
+            {
+                foreach (ThingDef stuff in GenStuff.AllowedStuffsFor(def))
+                {
+                    if (TryValueIn(def, stat, stuff, out float inStuff) && (best == null || (forbidAbove ? inStuff < best : inStuff > best)))
+                    {
+                        best = inStuff;
+                    }
+                }
+                bestValues[(def, stat, forbidAbove)] = best;
+            }
+            value = best ?? 0f;
+            return best.HasValue;
+        }
+
+        private static bool TryValueIn(ThingDef def, StatDef stat, ThingDef stuff, out float value)
+        {
+            if (!values.TryGetValue((def, stat, stuff), out float? known))
             {
                 try
                 {
-                    Apparel piece = ImaginedPieces.For(def, GenStuff.DefaultStuffFor(def), QualityCategory.Normal);
+                    Apparel piece = ImaginedPieces.For(def, stuff, QualityCategory.Normal);
                     known = piece == null ? (float?)null : PieceStats.Value(piece, stat);
                 }
                 catch (System.Exception e)
@@ -153,7 +194,7 @@ namespace OptimalLoadouts.ApparelOrders
                         ("OptimalLoadouts.ForbidValue" + def.defName + stat.defName).GetHashCode());
                     known = null;
                 }
-                values[(def, stat)] = known;
+                values[(def, stat, stuff)] = known;
             }
             value = known ?? 0f;
             return known.HasValue;
@@ -163,6 +204,7 @@ namespace OptimalLoadouts.ApparelOrders
         public static void ClearCache()
         {
             values.Clear();
+            bestValues.Clear();
             ranges.Clear();
             apparel = null;
         }

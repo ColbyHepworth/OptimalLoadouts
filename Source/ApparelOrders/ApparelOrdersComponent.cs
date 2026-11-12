@@ -372,7 +372,7 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>Adds a forbid on the stat at the lowest value any apparel has, so it catches nothing until it's moved.</summary>
         public void AddForbid(ApparelPolicy policy, StatDef stat)
         {
-            GetOrCreate(policy).forbids.Add(new ApparelForbid(stat, ApparelForbids.RangeOf(stat).min));
+            GetOrCreate(policy).forbids.Add(new ApparelForbid(stat, ApparelForbids.RangeOf(stat, LimitMaterialOf(policy)).min));
             ForbidsChanged();
         }
 
@@ -433,6 +433,23 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
+        /// <summary>The material the policy's limits judge apparel in, its base's limits included. Usual when it has none set.</summary>
+        public LimitMaterial LimitMaterialOf(ApparelPolicy policy)
+        {
+            return OrderFor(policy)?.LimitMaterial ?? LimitMaterial.Usual;
+        }
+
+        /// <summary>Sets the material the policy's limits judge apparel in, and applies them again.</summary>
+        public void SetLimitMaterial(ApparelPolicy policy, LimitMaterial material)
+        {
+            if (policy == null || material == null)
+            {
+                return;
+            }
+            GetOrCreate(policy).LimitMaterial = material;
+            ForbidsChanged();
+        }
+
         /// <summary>Gives a duplicated policy the same order and base as the policy it was copied from.</summary>
         public void CopyOrder(ApparelPolicy from, ApparelPolicy to)
         {
@@ -452,6 +469,7 @@ namespace OptimalLoadouts.ApparelOrders
             copy.forbids = source.forbids.Select(forbid => forbid.Copy()).ToList();
             // The game copies the checklist, so the copy's forbids unticked the same items.
             copy.unticked = new List<ThingDef>(source.unticked);
+            copy.LimitMaterial = source.LimitMaterial;
             copy.basePolicy = source.basePolicy != to ? source.basePolicy : null;
             ForbidsChanged();
         }

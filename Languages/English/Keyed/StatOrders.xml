@@ -43,7 +43,12 @@
   <!-- Limits (forbids by stat), the Limits tab -->
   <OL_Forbid_Note>Apparel that misses a limit is unticked in Allowed items. Order doesn't matter.</OL_Forbid_Note>
   <OL_Forbid_Empty>No limits yet. Everything ticked in Allowed items can be worn.</OL_Forbid_Empty>
-  <OL_Forbid_HeadingTip>Each limit is a minimum or maximum on one stat. Apparel that misses one is unticked in this policy's Allowed items, judged in its usual material at normal quality. Pawns take off what's unticked, and items tick back once they meet every limit. Items unticked by hand stay unticked, and locked items are never unticked.</OL_Forbid_HeadingTip>
+  <OL_Forbid_HeadingTip>Each limit is a minimum or maximum on one stat. Apparel that misses one is unticked in this policy's Allowed items, judged at normal quality in the material picked above. Pawns take off what's unticked, and items tick back once they meet every limit. Items unticked by hand stay unticked, and locked items are never unticked.</OL_Forbid_HeadingTip>
+  <OL_Forbid_Material>Judged in: {0}</OL_Forbid_Material>
+  <OL_Forbid_MaterialTip>The material this policy's limits judge apparel in. The usual material is the game's default for each item. With the best material, an item passes a limit if any material it can be made of passes. A specific material judges items that can be made of it in that material and the rest in their usual one. Items not made of a material are judged as they are.</OL_Forbid_MaterialTip>
+  <OL_Forbid_MaterialTitle>Judge limits in</OL_Forbid_MaterialTitle>
+  <OL_Forbid_MaterialUsual>Usual material</OL_Forbid_MaterialUsual>
+  <OL_Forbid_MaterialBest>Best material for each limit</OL_Forbid_MaterialBest>
   <OL_Forbid_Add>Add limit</OL_Forbid_Add>
   <OL_Forbid_AddTitle>Limit a stat</OL_Forbid_AddTitle>
   <OL_Forbid_AtLeast>At least</OL_Forbid_AtLeast>

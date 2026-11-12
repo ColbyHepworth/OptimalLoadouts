@@ -116,7 +116,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Rect button = new Rect(area.x, y, area.width, UiStyle.RowHeight);
                 if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(session.Material.Label).ToString().Truncate(button.width)))
                 {
-                    Find.WindowStack.Add(new Dialog_PickMaterial(choice => session.Material = choice));
+                    var general = new List<(string, Action)>
+                    {
+                        (MaterialChoice.BestForOrder.Label, () => session.Material = MaterialChoice.BestForOrder),
+                        (MaterialChoice.Typical.Label, () => session.Material = MaterialChoice.Typical),
+                    };
+                    Find.WindowStack.Add(new Dialog_PickMaterial("OL_MaterialPicker_Title".Translate(), general,
+                        stuff => session.Material = MaterialChoice.Specific(stuff)));
                 }
                 TooltipHandler.TipRegion(button, "OL_Preview_MaterialTip".Translate());
                 y += UiStyle.RowHeight;

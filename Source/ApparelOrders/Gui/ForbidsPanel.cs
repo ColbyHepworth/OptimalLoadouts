@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Gui;
@@ -39,7 +40,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             BasePicker.Draw(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight), orders, policy);
-            float noteY = rect.y + UiStyle.RowHeight + UiStyle.Gap / 2f;
+            DrawMaterial(new Rect(rect.x, rect.y + UiStyle.RowHeight + UiStyle.Gap / 2f, rect.width, UiStyle.RowHeight), orders, policy);
+            float noteY = rect.y + 2f * UiStyle.RowHeight + UiStyle.Gap;
             string noteText = "OL_Forbid_Note".Translate();
             float noteHeight = Text.CalcHeight(noteText, rect.width);
             Rect note = new Rect(rect.x, noteY, rect.width, noteHeight);
@@ -47,6 +49,23 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             TooltipHandler.TipRegion(note, "OL_Forbid_HeadingTip".Translate());
             float top = note.yMax + UiStyle.Gap;
             DrawList(new Rect(rect.x, top, rect.width, rect.yMax - top), orders, policy);
+        }
+
+        /// <summary>Which material the policy's limits judge apparel in, as a button opening the material list.</summary>
+        private static void DrawMaterial(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy)
+        {
+            string label = "OL_Forbid_Material".Translate(OrderLineText.MaterialLabel(orders.LimitMaterialOf(policy)));
+            if (Widgets.ButtonText(row, label.Truncate(row.width)))
+            {
+                var general = new List<(string, Action)>
+                {
+                    ("OL_Forbid_MaterialUsual".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Usual)),
+                    ("OL_Forbid_MaterialBest".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Best)),
+                };
+                Find.WindowStack.Add(new Dialog_PickMaterial("OL_Forbid_MaterialTitle".Translate(), general,
+                    stuff => orders.SetLimitMaterial(policy, LimitMaterial.Of(stuff))));
+            }
+            TooltipHandler.TipRegion(row, "OL_Forbid_MaterialTip".Translate());
         }
 
         /// <summary>The policy's own forbids, the add button, then each base's heading and forbids, scrolling together.</summary>
@@ -119,12 +138,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 TooltipHandler.TipRegion(label, forbid.stat.description);
             }
-            FloatRange range = ApparelForbids.RangeOf(forbid.stat);
+            LimitMaterial material = orders.LimitMaterialOf(policy);
+            FloatRange range = ApparelForbids.RangeOf(forbid.stat, material);
             List<ThingDef> caught = ApparelForbids.Caught(policy, forbid);
             if (Widgets.ButtonText(direction, forbid.forbidAbove ? "OL_Forbid_AtMost".Translate() : "OL_Forbid_AtLeast".Translate()))
             {
                 // A forbid that catches nothing keeps catching nothing when flipped, instead of catching everything at once.
-                bool catchesAny = caught.Count > 0 || orders.LockedItems(policy).Any(forbid.Forbids);
+                bool catchesAny = caught.Count > 0 || orders.LockedItems(policy).Any(def => forbid.Forbids(def, material));
                 float threshold = catchesAny ? forbid.threshold : forbid.forbidAbove ? range.min : range.max;
                 orders.SetForbid(policy, index, !forbid.forbidAbove, threshold);
             }

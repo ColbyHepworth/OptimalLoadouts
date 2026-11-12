@@ -10,24 +10,26 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// A searchable list of the materials imagined pieces can be made of, grouped by kind (fabric, leather, metal), with
-    /// "best for this order" and "typical" first.
+    /// A searchable list of the materials apparel can be made of, grouped by kind (fabric, leather, metal), under the
+    /// general choices whoever opens it gives ("best for its priorities" and "typical" for the preview).
     /// </summary>
     public class Dialog_PickMaterial : Window
     {
         private static List<IGrouping<StuffCategoryDef, ThingDef>> groups;
 
-        private readonly Action<MaterialChoice> onPick;
+        private readonly IReadOnlyList<(string label, Action pick)> general;
+        private readonly Action<ThingDef> pickStuff;
         private readonly QuickSearchWidget search = new QuickSearchWidget();
         private Vector2 scroll;
 
-        public Dialog_PickMaterial(Action<MaterialChoice> onPick)
+        public Dialog_PickMaterial(string title, IReadOnlyList<(string label, Action pick)> general, Action<ThingDef> pickStuff)
         {
-            this.onPick = onPick;
+            this.general = general;
+            this.pickStuff = pickStuff;
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
-            optionalTitle = "OL_MaterialPicker_Title".Translate();
+            optionalTitle = title;
         }
 
         public override Vector2 InitialSize => new Vector2(420f, 560f);
@@ -44,21 +46,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             float top = QuickSearchWidget.WidgetHeight + UiStyle.Gap;
             Rect listRect = new Rect(inRect.x, inRect.y + top, inRect.width, inRect.height - top);
 
-            List<MaterialChoice> general = new List<MaterialChoice> { MaterialChoice.BestForOrder, MaterialChoice.Typical }
-                .Where(choice => search.filter.Matches(choice.Label))
-                .ToList();
+            List<(string label, Action pick)> matchingGeneral = general.Where(choice => search.filter.Matches(choice.label)).ToList();
             var matching = Groups()
                 .Select(group => (category: group.Key, stuffs: group.Where(stuff => search.filter.Matches(stuff.LabelCap)).ToList()))
                 .Where(group => group.stuffs.Count > 0)
                 .ToList();
-            search.noResultsMatched = general.Count == 0 && matching.Count == 0;
+            search.noResultsMatched = matchingGeneral.Count == 0 && matching.Count == 0;
 
-            int rows = general.Count + matching.Sum(group => group.stuffs.Count + 1) + (search.noResultsMatched ? 1 : 0);
+            int rows = matchingGeneral.Count + matching.Sum(group => group.stuffs.Count + 1) + (search.noResultsMatched ? 1 : 0);
             Rect view = new Rect(0f, 0f, listRect.width - GenUI.ScrollBarWidth, rows * UiStyle.RowHeight);
             Widgets.BeginScrollView(listRect, ref scroll, view);
             try
             {
-                DrawRows(view.width, general, matching);
+                DrawRows(view.width, matchingGeneral, matching);
             }
             finally
             {
@@ -66,7 +66,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private void DrawRows(float width, List<MaterialChoice> general, List<(StuffCategoryDef category, List<ThingDef> stuffs)> matching)
+        private void DrawRows(float width, List<(string label, Action pick)> matchingGeneral, List<(StuffCategoryDef category, List<ThingDef> stuffs)> matching)
         {
             float y = 0f;
             if (search.noResultsMatched)
@@ -74,9 +74,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 UiStyle.Note(new Rect(0f, y, width, UiStyle.RowHeight), "OL_MaterialPicker_NoMatches".Translate());
                 return;
             }
-            foreach (MaterialChoice choice in general)
+            foreach ((string label, Action pick) in matchingGeneral)
             {
-                DrawRow(new Rect(0f, y, width, UiStyle.RowHeight), choice, null);
+                DrawRow(new Rect(0f, y, width, UiStyle.RowHeight), label, null, pick);
                 y += UiStyle.RowHeight;
             }
             foreach ((StuffCategoryDef category, List<ThingDef> stuffs) in matching)
@@ -88,17 +88,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 y += UiStyle.RowHeight;
                 foreach (ThingDef stuff in stuffs)
                 {
-                    DrawRow(new Rect(0f, y, width, UiStyle.RowHeight), MaterialChoice.Specific(stuff), stuff);
+                    DrawRow(new Rect(0f, y, width, UiStyle.RowHeight), stuff.LabelCap, stuff, () => pickStuff(stuff));
                     y += UiStyle.RowHeight;
                 }
             }
         }
 
-        private void DrawRow(Rect row, MaterialChoice choice, ThingDef stuff)
+        private void DrawRow(Rect row, string label, ThingDef stuff, Action pick)
         {
             if (UiStyle.ClickableRow(row))
             {
-                onPick(choice);
+                pick();
                 Close();
             }
             float labelX = row.x + UiStyle.Gap;
@@ -114,7 +114,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
-                Widgets.Label(new Rect(labelX, row.y, row.xMax - labelX, row.height), choice.Label);
+                Widgets.Label(new Rect(labelX, row.y, row.xMax - labelX, row.height), label);
             }
         }
 

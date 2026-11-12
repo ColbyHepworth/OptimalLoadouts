@@ -20,6 +20,22 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>The items this policy's forbids unticked, so they tick back when no forbid catches them.</summary>
         public List<ThingDef> unticked = new List<ThingDef>();
 
+        /// <summary>The material picked for the policy's limits, or null for the usual one (or the best, with <see cref="limitBest"/>).</summary>
+        public ThingDef limitStuff;
+
+        public bool limitBest;
+
+        /// <summary>Which material the policy's limits judge apparel in.</summary>
+        public LimitMaterial LimitMaterial
+        {
+            get => limitBest ? LimitMaterial.Best : LimitMaterial.Of(limitStuff);
+            set
+            {
+                limitBest = value.IsBest;
+                limitStuff = value.Stuff;
+            }
+        }
+
         public void ExposeData()
         {
             Scribe_References.Look(ref policy, "policy");
@@ -27,6 +43,8 @@ namespace OptimalLoadouts.ApparelOrders
             Scribe_Collections.Look(ref lines, "lines", LookMode.Deep);
             Scribe_Collections.Look(ref forbids, "forbids", LookMode.Deep);
             Scribe_Collections.Look(ref unticked, "unticked", LookMode.Def);
+            Scribe_Defs.Look(ref limitStuff, "limitStuff");
+            Scribe_Values.Look(ref limitBest, "limitBest", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (lines == null)

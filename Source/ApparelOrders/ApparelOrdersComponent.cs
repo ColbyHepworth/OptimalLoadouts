@@ -81,6 +81,24 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
             // Items from a mod added since the last save are caught too.
             ApparelForbids.ApplyAll();
+            RememberPolicies(game.outfitDatabase.AllOutfits);
+        }
+
+        /// <summary>
+        /// Notices a policy added or deleted since the last frame: resolves the orders again and reapplies every limit,
+        /// since a deleted base takes its lines and limits with it. The game's policy window pauses, so its changes are
+        /// noticed before the next tick. Another mod's change during ticks is noticed a frame later.
+        /// </summary>
+        public override void GameComponentUpdate()
+        {
+            List<ApparelPolicy> policies = game.outfitDatabase.AllOutfits;
+            if (SamePolicies(policies))
+            {
+                return;
+            }
+            RememberPolicies(policies);
+            NotifyChanged();
+            ApparelForbids.ApplyAll();
         }
 
         /// <summary>The policy's own order, or null when it has none.</summary>
@@ -113,23 +131,14 @@ namespace OptimalLoadouts.ApparelOrders
 
         /// <summary>
         /// The locked items of the policy, then of its base and that base's, then the stat lines in the same order,
-        /// skipping a stat or item already listed. A base that was deleted or would loop back is ignored.
+        /// skipping a stat or item already listed. A base that was deleted or would loop back is ignored. Only reads: the
+        /// game's apparel check calls it for every piece it scores.
         /// </summary>
         public IReadOnlyList<OrderLine> EffectiveLines(ApparelPolicy policy)
         {
             if (policy == null)
             {
                 return NoLines;
-            }
-            // Policies are added and deleted in the game's own window, so a changed list is the sign to resolve again.
-            List<ApparelPolicy> policies = Verse.Current.Game.outfitDatabase.AllOutfits;
-            if (!SamePolicies(policies))
-            {
-                NotifyChanged();
-                resolvedForPolicies.Clear();
-                resolvedForPolicies.AddRange(policies);
-                // A deleted base takes its forbids with it, so what they unticked in policies built on it ticks back.
-                ApparelForbids.ApplyAll();
             }
             if (resolved.TryGetValue(policy, out List<OrderLine> lines))
             {
@@ -463,6 +472,12 @@ namespace OptimalLoadouts.ApparelOrders
         {
             resolved.Clear();
             Version++;
+        }
+
+        private void RememberPolicies(List<ApparelPolicy> policies)
+        {
+            resolvedForPolicies.Clear();
+            resolvedForPolicies.AddRange(policies);
         }
 
         private bool SamePolicies(List<ApparelPolicy> policies)

@@ -41,21 +41,6 @@ namespace OptimalLoadouts.ApparelOrders
             return OrderVerdict.Tie;
         }
 
-        /// <summary>The first line a worn piece helps with, or null when it helps with none.</summary>
-        public static OrderLine FirstLineServed(Apparel worn, IReadOnlyList<OrderLine> lines)
-        {
-            for (int i = 0; i < lines.Count; i++)
-            {
-                float value = PieceStats.Value(worn, lines[i].stat);
-                bool helps = lines[i].lowerIsBetter ? value < -Epsilon : value > Epsilon;
-                if (helps)
-                {
-                    return lines[i];
-                }
-            }
-            return null;
-        }
-
         /// <summary>The worn pieces the candidate would replace, found the way the game's apparel check finds them.</summary>
         private static void FindReplaced(Pawn pawn, Apparel candidate)
         {

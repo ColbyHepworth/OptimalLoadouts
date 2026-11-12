@@ -201,7 +201,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return worn.OrderByDescending(piece => piece.def.apparel.LastLayer.drawOrder).ToList();
         }
 
-        /// <summary>The colonist, where pieces come from, the material, the order, the drawing and a status line. Returns the y below them.</summary>
+        /// <summary>The colonist, where pieces come from, the material, the drawing and a status line. Returns the y below them.</summary>
         private static float DrawControls(Rect area, Pawn pawn, List<Pawn> pawns, ApparelPolicy policy, PredictedOutfit outfit)
         {
             float y = area.y;
@@ -218,7 +218,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 TooltipHandler.TipRegion(button, "OL_Preview_MaterialTip".Translate());
                 y += UiStyle.RowHeight;
             }
-            y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), OrderText(policy));
             y += UiStyle.Gap;
             DrawPortrait(new Rect(area.x, y, area.width, PortraitSize), pawn, Drawn(outfit));
             y += PortraitSize + UiStyle.Gap;
@@ -239,20 +238,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 UiStyle.Note(new Rect(at.x, at.y, at.width, height), text);
             }
             return height;
-        }
-
-        /// <summary>The policy's stat order in one line, so it's clear what ranks the allowed pieces.</summary>
-        private static string OrderText(ApparelPolicy policy)
-        {
-            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy);
-            if (lines == null || lines.Count == 0)
-            {
-                return "OL_Preview_NoOrderLine".Translate();
-            }
-            string order = lines
-                .Select(line => line.stat.LabelCap.ToString())
-                .Aggregate((earlier, later) => "OL_Column_Then".Translate(earlier, later).ToString());
-            return "OL_Preview_OrderLine".Translate(order);
         }
 
         /// <summary>The outfit to draw: as predicted, or with the piece being tried on in place of its slot's.</summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using OptimalLoadouts.ApparelOrders.Gui;
 using OptimalLoadouts.Gui;
@@ -9,11 +10,11 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Patches
 {
     /// <summary>
-    /// Widens Manage apparel policies (and makes it taller where the screen has room) and draws the outfit preview beside
-    /// the policy's filter, with a panel for a slot's pieces beside that where the screen is wide enough. The filter
-    /// keeps its vanilla width, so other mods that draw on it (Apparel Policy Builder's button) still find it where they
-    /// expect. Windows that replace this one with their own subclass (Choose Your Outfit) are left alone, since they lay
-    /// out the space themselves.
+    /// Widens Manage apparel policies (and makes it taller where the screen has room), gives the policy's column two
+    /// tabs (vanilla's filter, and its stat order), and draws the outfit preview beside them, with a panel for a slot's
+    /// pieces beside that where the screen is wide enough. The filter keeps its vanilla width, so other mods that draw on
+    /// it (Apparel Policy Builder's button) still find it where they expect. Windows that replace this one with their own
+    /// subclass (Choose Your Outfit) are left alone, since they lay out the space themselves.
     /// </summary>
     [HarmonyPatch(typeof(Dialog_ManageApparelPolicies))]
     public static class ManageApparelPoliciesPatch
@@ -38,6 +39,11 @@ namespace OptimalLoadouts.ApparelOrders.Patches
         /// <summary>The window's own width before it's widened, so the filter keeps exactly that much.</summary>
         private static float vanillaWidth = 700f;
 
+        /// <summary>The policy column's open tab, and the window it's for, so each new window starts on the first tab.</summary>
+        private static PolicyTab tab;
+
+        private static Dialog_ManageApparelPolicies tabWindow;
+
         private static readonly Func<Dialog_ManagePolicies<ApparelPolicy>, ApparelPolicy> SelectedPolicy =
             AccessTools.MethodDelegate<Func<Dialog_ManagePolicies<ApparelPolicy>, ApparelPolicy>>(
                 AccessTools.PropertyGetter(typeof(Dialog_ManagePolicies<ApparelPolicy>), "SelectedPolicy"));
@@ -55,43 +61,96 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             }
         }
 
+        /// <summary>
+        /// Lays out the window's columns and puts the tab row on the policy's. On the Stat order tab it skips vanilla's
+        /// filter for this frame, since drawing over the filter would still let clicks through to it. Postfixes (ours,
+        /// Apparel Policy Builder's button, [KV] Save Storage's buttons) still run.
+        /// </summary>
         [HarmonyPatch("DoContentsRect")]
         [HarmonyPrefix]
-        private static void MakeRoom(Dialog_ManageApparelPolicies __instance, ref Rect rect, out (Rect preview, Rect slot) __state)
+        private static bool MakeRoom(Dialog_ManageApparelPolicies __instance, ref Rect rect, out PanelRects __state)
         {
-            __state = (Rect.zero, Rect.zero);
+            __state = default;
             if (!IsVanillaWindow(__instance))
             {
-                return;
+                return true;
+            }
+            if (__instance != tabWindow)
+            {
+                tabWindow = __instance;
+                tab = PolicyTab.AllowedItems;
             }
             float room = __instance.windowRect.width - vanillaWidth - UiStyle.Gap;
             if (room >= PreviewWidth + UiStyle.Gap + MinSlotWidth)
             {
                 float slotWidth = room - PreviewWidth - UiStyle.Gap;
-                Rect slot = new Rect(rect.xMax - slotWidth, rect.y, slotWidth, rect.height);
-                Rect preview = new Rect(slot.x - UiStyle.Gap - PreviewWidth, rect.y, PreviewWidth, rect.height);
-                __state = (preview, slot);
+                __state.slot = new Rect(rect.xMax - slotWidth, rect.y, slotWidth, rect.height);
+                __state.preview = new Rect(__state.slot.x - UiStyle.Gap - PreviewWidth, rect.y, PreviewWidth, rect.height);
                 rect.width -= room + UiStyle.Gap;
-                return;
             }
-            float previewWidth = Mathf.Min(Mathf.Max(room, MinPreviewWidth), rect.width / 2f);
-            __state = (new Rect(rect.xMax - previewWidth, rect.y, previewWidth, rect.height), Rect.zero);
-            rect.width -= previewWidth + UiStyle.Gap;
+            else
+            {
+                float previewWidth = Mathf.Min(Mathf.Max(room, MinPreviewWidth), rect.width / 2f);
+                __state.preview = new Rect(rect.xMax - previewWidth, rect.y, previewWidth, rect.height);
+                rect.width -= previewWidth + UiStyle.Gap;
+            }
+
+            // The tab row sits where the preview's does, so the two columns' tabs line up.
+            rect.yMin += TabDrawer.TabHeight;
+            __state.policyColumn = rect;
+            return tab == PolicyTab.AllowedItems;
         }
 
         [HarmonyPatch("DoContentsRect")]
         [HarmonyPostfix]
-        private static void DrawPreview(Dialog_ManageApparelPolicies __instance, (Rect preview, Rect slot) __state)
+        private static void DrawPanels(Dialog_ManageApparelPolicies __instance, PanelRects __state)
         {
-            if (__state.preview.width > 0f)
+            if (__state.preview.width <= 0f)
             {
-                OutfitPreviewPanel.Draw(__state.preview, __state.slot, SelectedPolicy(__instance));
+                return;
+            }
+            ApparelPolicy policy = SelectedPolicy(__instance);
+            if (tab == PolicyTab.StatOrder)
+            {
+                Widgets.DrawMenuSection(__state.policyColumn);
+                StatOrderPanel.Draw(__state.policyColumn.ContractedBy(UiStyle.Gap), policy);
+            }
+            // After the section's frame, so the open tab covers the frame's top edge, as on vanilla's filter.
+            DrawPolicyTabs(__state.policyColumn);
+            OutfitPreviewPanel.Draw(__state.preview, __state.slot, policy);
+        }
+
+        private static void DrawPolicyTabs(Rect column)
+        {
+            var tabs = new List<TabRecord>
+            {
+                new TabRecord("OL_Policy_AllowedItemsTab".Translate(), () => tab = PolicyTab.AllowedItems, tab == PolicyTab.AllowedItems),
+                new TabRecord("OL_Policy_StatOrderTab".Translate(), () => tab = PolicyTab.StatOrder, tab == PolicyTab.StatOrder),
+            };
+            using (new TextBlock(GameFont.Small, TextAnchor.UpperLeft))
+            {
+                TabDrawer.DrawTabs(column, tabs);
             }
         }
 
         private static bool IsVanillaWindow(Dialog_ManageApparelPolicies window)
         {
             return window.GetType() == typeof(Dialog_ManageApparelPolicies);
+        }
+
+        /// <summary>Where each of our panels goes this frame, worked out before vanilla draws the filter.</summary>
+        private struct PanelRects
+        {
+            /// <summary>The policy's column under its tab row: the filter's rect, or the stat order's.</summary>
+            public Rect policyColumn;
+            public Rect preview;
+            public Rect slot;
+        }
+
+        private enum PolicyTab
+        {
+            AllowedItems,
+            StatOrder,
         }
     }
 }

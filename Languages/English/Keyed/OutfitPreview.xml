@@ -19,8 +19,6 @@
   <OL_Preview_AsIfOnPolicy>{0}, as if on this policy</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
   <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's order instead.</OL_Preview_MaterialTip>
-  <OL_Preview_OrderLine>Order: {0}</OL_Preview_OrderLine>
-  <OL_Preview_NoOrderLine>No stat order, so the game's usual pick</OL_Preview_NoOrderLine>
   <OL_Preview_MaterialBest>Best for this order</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 

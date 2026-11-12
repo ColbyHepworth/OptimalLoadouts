@@ -13,6 +13,12 @@ namespace OptimalLoadouts.Gui
         public const float RowHeight = 28f;
         public const float IconSize = 24f;
 
+        /// <summary>The space between icon buttons in a row.</summary>
+        public const float IconGap = 4f;
+
+        /// <summary>The width a vertical scrollbar takes from a scroll view.</summary>
+        public const float ScrollbarWidth = 16f;
+
         /// <summary>The icons vanilla's pawn tables show on the column they're sorted by.</summary>
         public static readonly Texture2D SortAscendingIcon = ContentFinder<Texture2D>.Get("UI/Icons/Sorting");
 

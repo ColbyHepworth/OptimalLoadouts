@@ -63,6 +63,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 .Where(choice => open.Search.filter.Matches(PieceLabel.Of(choice.Piece)))
                 .ToList();
             open.Search.noResultsMatched = choices.Count == 0;
+            open.Hovered = null;
 
             float y = rect.y;
             // Named by what fills the slot now, which changes when the piece it opened on is forbidden or a layer fills.
@@ -98,6 +99,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             var picked = new HashSet<object>(outfit.Select(SlotView.RowKey));
             Rect list = new Rect(rect.x, y, rect.width, rect.yMax - y);
             Rect view = new Rect(0f, 0f, list.width - GenUI.ScrollBarWidth, choices.Count * UiStyle.RowHeight);
+            // A row half out of view mustn't count as hovered while the mouse is on the headers above it.
+            bool mouseInList = Mouse.IsOver(list);
             Widgets.BeginScrollView(list, ref open.Scroll, view);
             try
             {
@@ -108,6 +111,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     if (rowY + UiStyle.RowHeight >= open.Scroll.y && rowY <= open.Scroll.y + list.height)
                     {
                         Rect row = new Rect(0f, rowY, view.width, UiStyle.RowHeight);
+                        if (mouseInList && Mouse.IsOver(row))
+                        {
+                            open.Hovered = choice;
+                        }
                         DrawRow(row, choice, session, picked.Contains(SlotView.RowKey(choice.Piece)), columns, lines);
                     }
                     rowY += UiStyle.RowHeight;
@@ -327,9 +334,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             Pawn pawn = session.Pawn;
             ApparelPolicy policy = session.Policy;
             SlotView open = session.Slot;
+            if (choice.TakesOffMore)
+            {
+                Widgets.DrawBoxSolid(row, UiStyle.TakesOffMoreColor);
+            }
             if (piece == open.TriedOn)
             {
-                Widgets.DrawHighlightSelected(row);
+                // An outline, so the row's amber still shows while it's tried on.
+                Widgets.DrawBox(row, UiStyle.TriedOnOutline);
             }
             else if (isPick)
             {

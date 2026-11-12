@@ -50,6 +50,12 @@ namespace OptimalLoadouts.Gui
 
         public static readonly Color RemovedColor = Faint(ColorLibrary.Red);
 
+        /// <summary>A faint amber for a slot browser row that would take off more than the slot's own piece.</summary>
+        public static readonly Color TakesOffMoreColor = Faint(ColorLibrary.Gold);
+
+        /// <summary>The outline's thickness on the slot browser row being tried on.</summary>
+        public const int TriedOnOutline = 2;
+
         private static Color Faint(Color color)
         {
             return new Color(color.r, color.g, color.b, 0.15f);

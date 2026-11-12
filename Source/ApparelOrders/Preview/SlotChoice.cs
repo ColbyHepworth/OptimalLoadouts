@@ -39,6 +39,12 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>Worn pieces outside this slot that it would replace too.</summary>
         public IReadOnlyList<Apparel> AlsoReplaces { get; }
 
+        /// <summary>
+        /// Whether the pawn would consider it and it also takes off worn pieces outside the slot (tribalwear in the shirt's
+        /// slot takes the pants too).
+        /// </summary>
+        public bool TakesOffMore => Pickable && AlsoReplaces.Count > 0;
+
         public SlotChoice(Apparel piece, int copies, bool typeAllowed, bool allowed, bool reachable, float score,
             string cantWearReason, IReadOnlyList<Apparel> alsoReplaces)
         {

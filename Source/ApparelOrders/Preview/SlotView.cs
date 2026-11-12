@@ -47,6 +47,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The piece drawn on the pawn in place of the slot's, or null to draw the outfit as predicted.</summary>
         public Apparel TriedOn { get; private set; }
 
+        /// <summary>The row under the mouse in the slot browser, or null. Set as the browser draws, read by the outfit list.</summary>
+        public SlotChoice Hovered { get; set; }
+
         /// <summary>Tries the piece on, or takes it off again when it's the one tried on.</summary>
         public void TryOn(Apparel piece)
         {

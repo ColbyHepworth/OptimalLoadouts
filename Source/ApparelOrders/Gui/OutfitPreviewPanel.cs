@@ -429,7 +429,30 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 parts.Add(why);
             }
             parts.Add("OL_Slot_ClickToOpen".Translate());
-            DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, session, isNewInChange ? UiStyle.AddedColor : (Color?)null);
+            Color? tint = null;
+            if (TakenOffByHoveredRow(piece, session) || TakenOffByTriedOn(piece, session))
+            {
+                tint = UiStyle.RemovedColor;
+            }
+            else if (isNewInChange)
+            {
+                tint = UiStyle.AddedColor;
+            }
+            DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, session, tint);
+        }
+
+        /// <summary>Whether the slot browser row under the mouse would take this piece off too, besides the slot's own.</summary>
+        private static bool TakenOffByHoveredRow(Apparel piece, PreviewSession session)
+        {
+            SlotChoice hovered = session.Slot?.Hovered;
+            return hovered != null && hovered.AlsoReplaces.Contains(piece);
+        }
+
+        /// <summary>Whether the piece being tried on takes this one off, the slot's own piece included.</summary>
+        private static bool TakenOffByTriedOn(Apparel piece, PreviewSession session)
+        {
+            Apparel tried = session.Slot?.TriedOn;
+            return tried != null && tried != piece && !ApparelUtility.CanWearTogether(piece.def, tried.def, session.Pawn.RaceProps.body);
         }
 
         /// <summary>

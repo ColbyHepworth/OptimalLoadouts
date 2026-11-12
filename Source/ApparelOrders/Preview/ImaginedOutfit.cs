@@ -21,6 +21,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             real = new List<Apparel>(worn);
             worn.Clear();
             worn.AddRange(outfit);
+            // In the order the game keeps worn apparel in, so the drawing stacks it the same way (its own sort is private).
+            worn.Sort((a, b) => a.def.apparel.LastLayer.drawOrder.CompareTo(b.def.apparel.LastLayer.drawOrder));
         }
 
         public void Dispose()

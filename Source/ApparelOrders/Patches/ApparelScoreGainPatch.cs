@@ -20,7 +20,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
         /// from it, which can lift it a little, and a real preference stays far above this. Under CE, a worn required
         /// piece can push a real gain lower, but required apparel is left to the game anyway.
         /// </summary>
-        private const float NeverWear = -500f;
+        internal const float NeverWear = -500f;
 
         [HarmonyPriority(Priority.First)]
         private static void Postfix(Pawn pawn, Apparel ap, ref float __result)

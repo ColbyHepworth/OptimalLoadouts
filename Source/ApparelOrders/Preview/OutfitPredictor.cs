@@ -76,7 +76,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         private static PredictedSwap BestSwap(Pawn pawn, List<Apparel> outfit, List<Apparel> candidates, IReadOnlyList<OrderLine> lines,
             bool fromStorage)
         {
-            List<float> wornScores = outfit.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
+            // The check reads the scores by the pawn's worn list, which the imagined outfit keeps in draw order.
+            List<float> wornScores = pawn.apparel.WornApparel.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
             Apparel best = null;
             float bestScore = 0f;
             Apparel runnerUp = null;

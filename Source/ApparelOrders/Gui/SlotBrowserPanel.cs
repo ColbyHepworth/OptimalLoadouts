@@ -12,7 +12,8 @@ using Verse.Sound;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// Every piece that could go in place of one piece of the previewed outfit, as a table like vanilla's pawn tables:
+    /// Every piece that could go in one slot of the previewed outfit (a worn piece's place, or a layer), as a table like
+    /// vanilla's pawn tables:
     /// the pawn's rank, then the order's stats and one added by hand, sorted by clicking a header. A row can be tried on
     /// the pawn, and its checkbox allows or forbids the item in the policy. Rows keep their place while boxes are ticked,
     /// so the rank numbers and the highlight on the pawn's pick move instead.
@@ -39,7 +40,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private static readonly List<OrderLine> NoLines = new List<OrderLine>();
 
-        private static Apparel replacing;
+        private static OutfitSlot slot;
         private static Vector2 scroll;
         private static readonly QuickSearchWidget search = new QuickSearchWidget();
 
@@ -52,24 +53,24 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static StatDef addedStat;
 
         private static List<SlotChoice> ranked = new List<SlotChoice>();
-        private static (Pawn pawn, ApparelPolicy policy, IReadOnlyList<Apparel> outfit, List<Apparel> pieces, Apparel replacing,
+        private static (Pawn pawn, ApparelPolicy policy, IReadOnlyList<Apparel> outfit, List<Apparel> pieces, OutfitSlot slot,
             StatDef sortStat, bool lowestFirst, int version) rankedFor;
 
         /// <summary>The rows' order, set when the slot opens or the sort changes, and kept while boxes are ticked.</summary>
         private static List<object> rowOrder = new List<object>();
-        private static (Apparel replacing, StatDef sortStat, bool lowestFirst) rowOrderFor;
+        private static (OutfitSlot slot, StatDef sortStat, bool lowestFirst) rowOrderFor;
 
-        public static bool IsOpen => replacing != null;
+        public static bool IsOpen => slot != null;
 
-        /// <summary>The item whose slot is open, or null.</summary>
-        public static ThingDef SlotOf => replacing?.def;
+        /// <summary>The open slot, or null.</summary>
+        public static OutfitSlot Slot => slot;
 
         /// <summary>The piece drawn on the pawn in place of the slot's, or null to draw the outfit as predicted.</summary>
         public static Apparel TriedOn { get; private set; }
 
-        public static void Open(Apparel piece)
+        public static void Open(OutfitSlot opened)
         {
-            replacing = piece;
+            slot = opened;
             TriedOn = null;
             scroll = Vector2.zero;
             search.Reset();
@@ -80,7 +81,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         public static void Close()
         {
-            replacing = null;
+            slot = null;
             TriedOn = null;
             ranked = new List<SlotChoice>();
             rankedFor = default;
@@ -107,10 +108,24 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             search.noResultsMatched = choices.Count == 0;
 
             float y = rect.y;
-            // Named by what fills the slot now, which changes when the piece it opened on is forbidden.
+            // Named by what fills the slot now, which changes when the piece it opened on is forbidden or a layer fills.
             BodyDef body = pawn.RaceProps.body;
-            Apparel filling = outfit.FirstOrDefault(worn => !ApparelUtility.CanWearTogether(worn.def, replacing.def, body)) ?? replacing;
-            DrawTitle(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), filling, choices.Count, showBack);
+            List<Apparel> filling = outfit.Where(worn => slot.Holds(worn.def, body)).ToList();
+            string header;
+            if (slot.Layer == null)
+            {
+                header = "OL_Slot_Header".Translate(PieceLabel.Of(filling.FirstOrDefault() ?? slot.Piece), choices.Count).Resolve();
+            }
+            else if (filling.Count > 0)
+            {
+                string worn = filling.Select(piece => PieceLabel.Of(piece)).ToCommaList(useAnd: true);
+                header = "OL_Slot_HeaderLayerWorn".Translate(slot.Layer.LabelCap, worn, choices.Count).Resolve();
+            }
+            else
+            {
+                header = "OL_Slot_HeaderLayer".Translate(slot.Layer.LabelCap, choices.Count).Resolve();
+            }
+            DrawTitle(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), header, showBack);
             if (!IsOpen)
             {
                 return false;
@@ -136,7 +151,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     if (rowY + UiStyle.RowHeight >= scroll.y && rowY <= scroll.y + list.height)
                     {
                         Rect row = new Rect(0f, rowY, view.width, UiStyle.RowHeight);
-                        filterChanged |= DrawRow(row, choice, policy, picked.Contains(RowKey(choice.Piece)), columns, lines);
+                        filterChanged |= DrawRow(row, choice, pawn, policy, picked.Contains(RowKey(choice.Piece)), columns, lines);
                     }
                     rowY += UiStyle.RowHeight;
                 }
@@ -172,7 +187,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static List<SlotChoice> RankedFor(Pawn pawn, ApparelPolicy policy, IReadOnlyList<Apparel> outfit, List<Apparel> pieces)
         {
             int version = ApparelOrdersComponent.Current?.Version ?? 0;
-            var key = (pawn, policy, outfit, pieces, replacing, sortStat, lowestFirst, version);
+            var key = (pawn, policy, outfit, pieces, slot, sortStat, lowestFirst, version);
             if (key == rankedFor)
             {
                 return ranked;
@@ -181,16 +196,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             List<SlotChoice> fresh;
             try
             {
-                fresh = SlotRanking.Rank(pawn, policy, outfit, replacing, pieces, sortStat, lowestFirst);
+                fresh = SlotRanking.Rank(pawn, policy, outfit, slot, pieces, sortStat, lowestFirst);
             }
             catch (Exception e)
             {
                 Log.ErrorOnce("[Optimal Loadouts] Couldn't rank a slot's pieces for the preview: " + e, "OptimalLoadouts.RankSlot".GetHashCode());
                 fresh = new List<SlotChoice>();
             }
-            if (rowOrderFor != (replacing, sortStat, lowestFirst))
+            if (rowOrderFor != (slot, sortStat, lowestFirst))
             {
-                rowOrderFor = (replacing, sortStat, lowestFirst);
+                rowOrderFor = (slot, sortStat, lowestFirst);
                 rowOrder = new List<object>();
             }
             var place = new Dictionary<object, int>();
@@ -222,7 +237,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return (piece.def, piece.Stuff, quality, piece.WornByCorpse);
         }
 
-        private static void DrawTitle(Rect row, Apparel filling, int count, bool showBack)
+        private static void DrawTitle(Rect row, string header, bool showBack)
         {
             float titleX = row.x;
             if (showBack)
@@ -236,7 +251,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
             }
             Rect title = new Rect(titleX, row.y, row.xMax - titleX, row.height);
-            string header = "OL_Slot_Header".Translate(PieceLabel.Of(filling), count);
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
                 Widgets.Label(title, header.Truncate(title.width));
@@ -394,7 +408,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>Draws one piece. Returns true when its checkbox changed the policy's filter.</summary>
-        private static bool DrawRow(Rect row, SlotChoice choice, ApparelPolicy policy, bool isPick, List<StatDef> columns,
+        private static bool DrawRow(Rect row, SlotChoice choice, Pawn pawn, ApparelPolicy policy, bool isPick, List<StatDef> columns,
             IReadOnlyList<OrderLine> lines)
         {
             Apparel piece = choice.Piece;
@@ -417,7 +431,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 policy.filter.SetAllow(piece.def, allowed);
             }
-            DrawPin(layout.Pin, piece.def, policy);
+            DrawPin(layout.Pin, choice, pawn, policy);
 
             Rect body = layout.Body;
             if (UiStyle.ClickableRow(body))
@@ -425,7 +439,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 TriedOn = piece == TriedOn ? null : piece;
             }
             // Imagined pieces may share an ID, so each row's place in the list keeps its tooltip apart.
-            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines, policy), Gen.HashCombineInt(replacing.def.shortHash, (int)row.y));
+            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines, policy), Gen.HashCombineInt(slot.GetHashCode(), (int)row.y));
 
             bool dimmed = !choice.Pickable;
             using (new TextBlock(TextAnchor.MiddleCenter, dimmed ? ColoredText.SubtleGrayColor : Color.white))
@@ -486,7 +500,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (choice.GameWontWear)
             {
-                parts.Add("OL_Slot_GameWontWear".Translate());
+                parts.Add(choice.CantWearReason ?? "OL_Slot_WontWearLowScore".Translate().Resolve());
             }
             parts.Add("OL_Slot_ClickToTry".Translate());
             return string.Join("\n", parts);
@@ -494,15 +508,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// The pin that makes the item a preferred item in the policy's priorities. Filled when pinned. A pin from the base
-        /// is greyed, since it sits under this policy's own lines; a click pins the item here too, above them.
+        /// is greyed, since it sits under this policy's own lines; a click pins the item here too, above them. Pinning a piece
+        /// the game never puts on this pawn says why, since the pin can't change that.
         /// </summary>
-        private static void DrawPin(Rect rect, ThingDef item, ApparelPolicy policy)
+        private static void DrawPin(Rect rect, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             if (orders == null)
             {
                 return;
             }
+            ThingDef item = choice.Piece.def;
             bool pinned = orders.Prefers(policy, item);
             bool own = orders.OrderFor(policy)?.lines.Any(line => line.item == item) ?? false;
             if (pinned && !own)
@@ -512,7 +528,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 {
                     if (Widgets.ButtonImage(rect, UiStyle.PinIcon, GUI.color))
                     {
-                        orders.PreferItem(policy, item);
+                        Pin(orders, choice, pawn, policy);
                     }
                 }
                 return;
@@ -526,8 +542,18 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 else
                 {
-                    orders.PreferItem(policy, item);
+                    Pin(orders, choice, pawn, policy);
                 }
+            }
+        }
+
+        private static void Pin(ApparelOrdersComponent orders, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
+        {
+            orders.PreferItem(policy, choice.Piece.def);
+            if (choice.CantWearReason != null)
+            {
+                Messages.Message("OL_Slot_PinWontWear".Translate(choice.CantWearReason, pawn.LabelShort), MessageTypeDefOf.RejectInput,
+                    historical: false);
             }
         }
 

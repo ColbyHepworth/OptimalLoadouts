@@ -12,7 +12,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
     /// The outfit preview beside a policy's filter: any colonist drawn in the outfit the policy would give them, from
-    /// every piece it allows, what the colony can make now, or what's in storage, and a list saying why each piece won.
+    /// every piece it allows, what the colony can make now, or what's in storage, and a list by layer saying why each
+    /// piece won and what the last edit changed.
     /// </summary>
     public static class OutfitPreviewPanel
     {
@@ -36,17 +37,24 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// <summary>The open tab's pieces for the open slot, allowed or not, for the slot browser.</summary>
         private static List<Apparel> slotPieces;
 
-        private static (PieceSource source, ThingDef slotOf) slotPiecesFor;
+        private static (PieceSource source, OutfitSlot slot) slotPiecesFor;
 
         /// <summary>What the open slot was opened for. It closes when any of these changes, since its pieces no longer apply.</summary>
         private static (Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material) slotOpenedFor;
 
-        /// <summary>The item whose slot was opened last, so a new outfit opens the same slot when it has one.</summary>
-        private static ThingDef lastSlotOf;
+        /// <summary>The slot opened last, so a new outfit opens the same slot when it has one.</summary>
+        private static OutfitSlot lastSlot;
+
+        /// <summary>Whether the open slot is a layer opened while empty, so it turns into the slot of the piece that fills it.</summary>
+        private static bool openedEmptyLayer;
+
         private static (Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material, int version) predictedFor;
         private static List<Apparel> predictedFrom;
         private static PredictedOutfit prediction;
         private static ApparelPolicy shownPolicy;
+
+        /// <summary>What the last change to the outfit put on and took off, or null since the colonist, policy, tab or material changed.</summary>
+        private static OutfitChanges changes;
 
         /// <summary>Forgets the last game's pawns, policy, pieces and prediction, so a loaded game doesn't keep them alive.</summary>
         private static void Forget()
@@ -55,7 +63,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             ImaginedPieces.Forget();
             PieceSources.Forget();
             SlotBrowserPanel.Close();
-            lastSlotOf = null;
+            lastSlot = null;
+            changes = null;
             chosenPawn = null;
             shownPolicy = null;
             pieces.Clear();
@@ -122,6 +131,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             DrawSourceTabs(section);
             PredictedOutfit outfit = PredictionFor(pawn, policy);
 
+            FollowFilledLayer(pawn, outfit);
             Rect inner = section.ContractedBy(UiStyle.Gap);
             float y = DrawControls(inner, pawn, pawns, policy, outfit);
             Rect list = new Rect(inner.x, y, inner.width, inner.yMax - y);
@@ -129,7 +139,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             if (slotHasOwnPanel)
             {
                 // The slot panel always shows a slot: the one picked last if the outfit still has it, else the outermost.
-                KeepSlotOpen(outfit);
+                KeepSlotOpen(pawn, outfit);
                 DrawOutfitList(list, outfit);
                 Widgets.DrawMenuSection(slotSection);
                 Rect slotArea = slotSection.ContractedBy(UiStyle.Gap);
@@ -164,41 +174,70 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void KeepSlotOpen(PredictedOutfit outfit)
+        /// <summary>
+        /// Opens the slot picked last: a layer again, or a piece's place when a piece of the new outfit fills it. Otherwise
+        /// the outermost worn piece's, or with nothing worn, the outermost layer's.
+        /// </summary>
+        private static void KeepSlotOpen(Pawn pawn, PredictedOutfit outfit)
         {
             if (SlotBrowserPanel.IsOpen)
             {
                 return;
             }
-            List<Apparel> worn = InListOrder(outfit.Worn);
-            if (worn.Count == 0)
+            BodyDef body = pawn.RaceProps.body;
+            if (lastSlot != null && lastSlot.Layer != null)
+            {
+                OpenSlot(lastSlot, followWhenFilled: lastSlot.FilledBy(outfit.Worn, body) == null);
+                return;
+            }
+            List<OutfitLayer> layers = OutfitLayers.For(pawn, outfit.Worn);
+            List<Apparel> worn = layers.SelectMany(layer => layer.Pieces).ToList();
+            Apparel sameSlot = lastSlot == null ? null : lastSlot.FilledBy(worn, body);
+            if (sameSlot != null || worn.Count > 0)
+            {
+                OpenSlot(OutfitSlot.Of(sameSlot ?? worn[0]));
+            }
+            else if (layers.Count > 0)
+            {
+                OpenSlot(OutfitSlot.OnLayer(layers[0].Layer), followWhenFilled: true);
+            }
+        }
+
+        /// <summary>
+        /// A layer opened while empty turns into the slot of the piece that fills it, since pieces on one layer that cover
+        /// different body parts (a shirt and trousers) don't compete.
+        /// </summary>
+        private static void FollowFilledLayer(Pawn pawn, PredictedOutfit outfit)
+        {
+            OutfitSlot open = SlotBrowserPanel.Slot;
+            if (open == null || open.Layer == null || !openedEmptyLayer)
             {
                 return;
             }
-            BodyDef body = chosenPawn.RaceProps.body;
-            Apparel sameSlot = lastSlotOf == null ? null : worn.FirstOrDefault(piece => !ApparelUtility.CanWearTogether(piece.def, lastSlotOf, body));
-            OpenSlot(sameSlot ?? worn[0]);
+            Apparel filling = open.FilledBy(outfit.Worn, pawn.RaceProps.body);
+            if (filling != null)
+            {
+                OpenSlot(OutfitSlot.Of(filling));
+            }
         }
 
-        private static void OpenSlot(Apparel piece)
+        private static void OpenSlot(OutfitSlot slot, bool followWhenFilled = false)
         {
-            SlotBrowserPanel.Open(piece);
+            SlotBrowserPanel.Open(slot);
             slotOpenedFor = (chosenPawn, shownPolicy, source, material);
             slotPieces = null;
-            lastSlotOf = piece.def;
+            lastSlot = slot;
+            openedEmptyLayer = followWhenFilled;
         }
 
-        /// <summary>Whether the piece fills the slot that's open, so its outfit row shows which slot the list is for.</summary>
+        /// <summary>
+        /// Whether the open slot is this piece's own, so its outfit row shows which slot the list is for. A layer's slot
+        /// lights its band instead.
+        /// </summary>
         private static bool InOpenSlot(Apparel piece)
         {
-            ThingDef slotOf = SlotBrowserPanel.SlotOf;
-            return slotOf != null && !ApparelUtility.CanWearTogether(piece.def, slotOf, chosenPawn.RaceProps.body);
-        }
-
-        /// <summary>The outfit outermost layer first, as the list shows it.</summary>
-        private static List<Apparel> InListOrder(IReadOnlyList<Apparel> worn)
-        {
-            return worn.OrderByDescending(piece => piece.def.apparel.LastLayer.drawOrder).ToList();
+            OutfitSlot slot = SlotBrowserPanel.Slot;
+            return slot != null && slot.Piece != null && slot.Holds(piece.def, chosenPawn.RaceProps.body);
         }
 
         /// <summary>The colonist, where pieces come from, the material, the drawing and a status line. Returns the y below them.</summary>
@@ -271,7 +310,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// <summary>Gathers each source's pieces at most once a second, for the tab counts and the prediction.</summary>
         private static void GatherPieces(Pawn pawn, ApparelPolicy policy)
         {
-            bool slotPiecesMissing = SlotBrowserPanel.IsOpen && (slotPieces == null || slotPiecesFor != (source, SlotBrowserPanel.SlotOf));
+            bool slotPiecesMissing = SlotBrowserPanel.IsOpen && (slotPieces == null || slotPiecesFor != (source, SlotBrowserPanel.Slot));
             if (pawn == predictedFor.pawn && policy == predictedFor.policy && material == predictedFor.material
                 && Time.realtimeSinceStartup - gatheredAt < RefreshSeconds && !slotPiecesMissing)
             {
@@ -282,14 +321,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 try
                 {
-                    slotPieces = PieceSources.For(pawn, policy, source, material, SlotBrowserPanel.SlotOf);
+                    slotPieces = PieceSources.For(pawn, policy, source, material, SlotBrowserPanel.Slot);
                 }
                 catch (Exception e)
                 {
                     Log.ErrorOnce("[Optimal Loadouts] Couldn't gather a slot's pieces for the preview: " + e, "OptimalLoadouts.GatherSlot".GetHashCode());
                     slotPieces = new List<Apparel>();
                 }
-                slotPiecesFor = (source, SlotBrowserPanel.SlotOf);
+                slotPiecesFor = (source, SlotBrowserPanel.Slot);
             }
             foreach (PieceSource each in Sources)
             {
@@ -307,7 +346,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// The prediction, worked out again when the pawn, policy, source, material or any order changes, when the
-        /// pieces on offer change, and every refresh for storage, where reach and what's worn change too.
+        /// pieces on offer change, and every refresh for storage, where reach and what's worn change too. A new outfit
+        /// for the same pawn, policy, source and material is compared with the last, for the change marks.
         /// </summary>
         private static PredictedOutfit PredictionFor(Pawn pawn, ApparelPolicy policy)
         {
@@ -319,6 +359,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return prediction;
             }
+            PredictedOutfit before = prediction;
+            bool sameOutfit = before != null && (pawn, policy, source, material) == (predictedFor.pawn, predictedFor.policy, predictedFor.source, predictedFor.material);
             predictedFor = key;
             predictedFrom = offered;
             try
@@ -330,6 +372,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Log.ErrorOnce("[Optimal Loadouts] Couldn't predict an outfit for the preview: " + e, "OptimalLoadouts.Predict".GetHashCode());
                 prediction = new PredictedOutfit(new List<Apparel>(), new List<Apparel>(), new List<Apparel>(),
                     new List<Apparel>(), new List<PredictedSwap>(), true, false);
+            }
+            if (!sameOutfit)
+            {
+                changes = null;
+            }
+            else
+            {
+                // An outfit that came out the same keeps the marks of the last change that made a difference.
+                OutfitChanges fresh = OutfitChanges.Between(before, prediction, pawn.RaceProps.body);
+                if (fresh.Any)
+                {
+                    changes = fresh;
+                }
             }
             return prediction;
         }
@@ -470,15 +525,36 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return null;
         }
 
+        /// <summary>
+        /// The outfit under a band for each layer, head layers first, each outermost first. A bracket on the left joins the
+        /// bands of a piece on several layers. From storage, what comes off follows. Then what the last change took off.
+        /// </summary>
         private static void DrawOutfitList(Rect rect, PredictedOutfit outfit)
         {
-            List<Apparel> worn = InListOrder(outfit.Worn);
-            int rows = worn.Count + (outfit.TakenOff.Count > 0 ? outfit.TakenOff.Count + 1 : 0);
-            Rect view = new Rect(0f, 0f, rect.width - GenUI.ScrollBarWidth, rows * UiStyle.RowHeight);
+            DrawOutfitBand(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight));
+            rect.yMin += UiStyle.RowHeight;
+            List<OutfitLayer> layers = OutfitLayers.For(chosenPawn, outfit.Worn);
+            OutfitChanges marks = changes;
+            // A worn piece taken off is listed under "Takes off" already.
+            List<Apparel> gone = marks == null ? new List<Apparel>() : marks.Removed.Except(outfit.TakenOff).ToList();
+            List<Bracket> brackets = Brackets(layers);
+            float gutter = brackets.Count == 0 ? 0f : (brackets.Max(bracket => bracket.Lane) + 1) * UiStyle.BracketWidth;
+            float height = layers.Sum(layer => UiStyle.BandHeight + layer.Pieces.Count * UiStyle.RowHeight);
+            if (outfit.TakenOff.Count > 0)
+            {
+                height += (outfit.TakenOff.Count + 1) * UiStyle.RowHeight;
+            }
+            if (gone.Count > 0)
+            {
+                height += (gone.Count + 1) * UiStyle.RowHeight;
+            }
+            Rect view = new Rect(0f, 0f, rect.width - GenUI.ScrollBarWidth, height);
             Widgets.BeginScrollView(rect, ref scroll, view);
             try
             {
-                DrawOutfitRows(view, worn, outfit);
+                DrawBrackets(brackets, gutter);
+                Rect rows = new Rect(gutter, 0f, view.width - gutter, view.height);
+                DrawOutfitRows(rows, layers, outfit, marks, gone);
             }
             finally
             {
@@ -486,44 +562,148 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void DrawOutfitRows(Rect view, List<Apparel> worn, PredictedOutfit outfit)
+        /// <summary>The list's title, on a band like the layers' that sets it apart from the drawing above.</summary>
+        private static void DrawOutfitBand(Rect band)
         {
-            float y = 0f;
-            foreach (Apparel piece in worn)
+            Widgets.DrawBoxSolid(band, UiStyle.BandColor);
+            using (new TextBlock(GameFont.Small, TextAnchor.MiddleLeft))
             {
-                // Pieces kept from what the pawn wears now are dimmed, so what's put on stands out.
-                bool isNew = outfit.PutOn.Contains(piece);
-                string tooltip = isNew ? WhyPutOn(piece, outfit) : "OL_Preview_Kept".Translate().ToString();
-                string why = tooltip == null ? "OL_Slot_ClickToOpen".Translate().ToString() : tooltip + "\n\n" + "OL_Slot_ClickToOpen".Translate();
-                DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, !isNew, why, opensSlot: true);
-                y += UiStyle.RowHeight;
+                Widgets.Label(band.ContractedBy(UiStyle.Gap / 2f, 0f), "OL_Preview_OutfitHeader".Translate());
+            }
+        }
+
+        private static void DrawOutfitRows(Rect rows, List<OutfitLayer> layers, PredictedOutfit outfit, OutfitChanges marks, List<Apparel> gone)
+        {
+            float y = rows.y;
+            // Pieces sit a little in from their layer's band.
+            Rect pieces = new Rect(rows.x + UiStyle.Indent, rows.y, rows.width - UiStyle.Indent, rows.height);
+            foreach (OutfitLayer layer in layers)
+            {
+                // A layer covered from the band above sits in from it, like a piece.
+                float indent = layer.Nested ? UiStyle.Indent : 0f;
+                DrawLayerBand(new Rect(rows.x + indent, y, rows.width - indent, UiStyle.BandHeight), layer);
+                y += UiStyle.BandHeight;
+                foreach (Apparel piece in layer.Pieces)
+                {
+                    DrawWornRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, outfit, marks);
+                    y += UiStyle.RowHeight;
+                }
             }
             if (outfit.TakenOff.Count > 0)
             {
-                UiStyle.Note(new Rect(0f, y, view.width, UiStyle.RowHeight), "OL_Preview_TakesOff".Translate());
+                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_TakesOff".Translate());
                 y += UiStyle.RowHeight;
                 foreach (Apparel piece in outfit.TakenOff)
                 {
-                    DrawPieceRow(new Rect(0f, y, view.width, UiStyle.RowHeight), piece, true, WhyTakenOff(piece, outfit), opensSlot: false);
+                    DrawPieceRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, true, WhyTakenOff(piece, outfit), opensSlot: false);
+                    y += UiStyle.RowHeight;
+                }
+            }
+            if (gone.Count > 0)
+            {
+                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_LastChangeTookOff".Translate());
+                y += UiStyle.RowHeight;
+                foreach (Apparel piece in gone)
+                {
+                    DrawPieceRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, true, WhyGone(piece, marks), opensSlot: false,
+                        UiStyle.RemovedColor);
                     y += UiStyle.RowHeight;
                 }
             }
         }
 
-        /// <summary>One piece of the outfit. A worn piece's row opens its slot. The ⓘ button opens its info card.</summary>
-        private static void DrawPieceRow(Rect row, Apparel piece, bool dimmed, string tooltip, bool opensSlot)
+        /// <summary>
+        /// A layer's name on a dark band that opens the layer's slot. On the right, "nothing" when nothing is on it, or the
+        /// pieces listed under an outer layer that cover it.
+        /// </summary>
+        private static void DrawLayerBand(Rect band, OutfitLayer layer)
         {
-            Rect info = new Rect(row.xMax - Widgets.InfoCardButtonSize, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f,
-                Widgets.InfoCardButtonSize, Widgets.InfoCardButtonSize);
-            Widgets.InfoCardButton(info.x, info.y, piece);
-            row.xMax = info.x - UiStyle.Gap;
+            Widgets.DrawBoxSolid(band, UiStyle.BandColor);
+            OutfitSlot open = SlotBrowserPanel.Slot;
+            if (open != null && open.Layer == layer.Layer)
+            {
+                Widgets.DrawHighlightSelected(band);
+            }
+            bool empty = layer.Pieces.Count == 0 && layer.CoveredBy.Count == 0;
+            if (UiStyle.ClickableRow(band))
+            {
+                OpenSlot(OutfitSlot.OnLayer(layer.Layer), followWhenFilled: empty);
+            }
+            string onRight = null;
+            string tip;
+            if (empty)
+            {
+                onRight = "OL_Preview_LayerNothing".Translate();
+                tip = "OL_Preview_LayerEmptyTip".Translate();
+            }
+            else if (layer.Pieces.Count == 0)
+            {
+                onRight = layer.CoveredBy.Select(piece => PieceLabel.Of(piece)).ToCommaList();
+                tip = "OL_Preview_LayerCoveredTip".Translate(onRight);
+            }
+            else
+            {
+                tip = "OL_Preview_LayerTip".Translate();
+            }
+            TooltipHandler.TipRegion(band, tip);
+            Rect text = band.ContractedBy(UiStyle.Gap / 2f, 0f);
+            using (new TextBlock(GameFont.Tiny, TextAnchor.MiddleLeft))
+            {
+                Widgets.Label(text, layer.Layer.LabelCap.ToString().Truncate(text.width / 2f));
+            }
+            if (onRight != null)
+            {
+                using (new TextBlock(GameFont.Tiny, TextAnchor.MiddleRight, ColoredText.SubtleGrayColor))
+                {
+                    Widgets.Label(text, onRight.Truncate(text.width / 2f));
+                }
+            }
+        }
+
+        /// <summary>A piece of the outfit, with why it won and what the last change did.</summary>
+        private static void DrawWornRow(Rect row, Apparel piece, PredictedOutfit outfit, OutfitChanges marks)
+        {
+            var parts = new List<string>();
+            bool isNewInChange = marks != null && marks.Added.Contains(piece);
+            if (isNewInChange)
+            {
+                List<string> replaced = marks.Replaced(piece).Select(gone => PieceLabel.Of(gone).UncapitalizeFirst()).ToList();
+                parts.Add(replaced.Count > 0
+                    ? "OL_Preview_NewReplacing".Translate(replaced.ToCommaList(useAnd: true)).Resolve()
+                    : "OL_Preview_New".Translate().Resolve());
+            }
+            // Pieces kept from what the pawn wears now are dimmed, so what's put on stands out.
+            bool putOn = outfit.PutOn.Contains(piece);
+            string why = putOn ? WhyPutOn(piece, outfit) : "OL_Preview_Kept".Translate().ToString();
+            if (why != null)
+            {
+                parts.Add(why);
+            }
+            parts.Add("OL_Slot_ClickToOpen".Translate());
+            DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, isNewInChange ? UiStyle.AddedColor : (Color?)null);
+        }
+
+        /// <summary>
+        /// One piece of the outfit, on a faint <paramref name="tint"/> when given. A worn piece's row opens its slot. The ⓘ
+        /// button opens its info card.
+        /// </summary>
+        private static void DrawPieceRow(Rect row, Apparel piece, bool dimmed, string tooltip, bool opensSlot, Color? tint = null)
+        {
+            if (tint != null)
+            {
+                Widgets.DrawBoxSolid(row, tint.Value);
+            }
             if (opensSlot && InOpenSlot(piece))
             {
                 Widgets.DrawHighlightSelected(row);
             }
+            Rect info = new Rect(row.xMax - Widgets.InfoCardButtonSize, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f,
+                Widgets.InfoCardButtonSize, Widgets.InfoCardButtonSize);
+            Widgets.InfoCardButton(info.x, info.y, piece);
+            row.xMax = info.x - UiStyle.Gap;
             if (opensSlot && UiStyle.ClickableRow(row))
             {
-                OpenSlot(piece);
+                OpenSlot(OutfitSlot.Of(piece));
             }
             TooltipHandler.TipRegion(row, tooltip);
             Rect icon = new Rect(row.x, row.y + (row.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
@@ -532,6 +712,92 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             using (new TextBlock(TextAnchor.MiddleLeft, dimmed ? ColoredText.SubtleGrayColor : Color.white))
             {
                 Widgets.Label(label, PieceLabel.Of(piece).Truncate(label.width));
+            }
+        }
+
+        /// <summary>A line beside the outfit list joining the bands of the layers one piece is on.</summary>
+        private sealed class Bracket
+        {
+            /// <summary>The middle of each band the piece is on, top to bottom, with how far in the band starts.</summary>
+            public readonly List<(float y, float indent)> Marks;
+
+            public int Lane;
+
+            public Bracket(List<(float y, float indent)> marks)
+            {
+                Marks = marks;
+            }
+
+            public float Top => Marks[0].y;
+
+            public float Bottom => Marks[Marks.Count - 1].y;
+        }
+
+        /// <summary>
+        /// A bracket for each listed piece on several layers, laid out as <see cref="DrawOutfitRows"/> lays out the rows.
+        /// Brackets that overlap take separate lanes, the first nearest the list.
+        /// </summary>
+        private static List<Bracket> Brackets(List<OutfitLayer> layers)
+        {
+            var ownBand = new Dictionary<Apparel, (float y, float indent)>();
+            var coveredBands = new Dictionary<Apparel, List<(float y, float indent)>>();
+            float y = 0f;
+            foreach (OutfitLayer layer in layers)
+            {
+                (float y, float indent) band = (y + UiStyle.BandHeight / 2f, layer.Nested ? UiStyle.Indent : 0f);
+                foreach (Apparel piece in layer.CoveredBy)
+                {
+                    if (!coveredBands.TryGetValue(piece, out List<(float y, float indent)> bands))
+                    {
+                        bands = new List<(float y, float indent)>();
+                        coveredBands[piece] = bands;
+                    }
+                    bands.Add(band);
+                }
+                foreach (Apparel piece in layer.Pieces)
+                {
+                    ownBand[piece] = band;
+                }
+                y += UiStyle.BandHeight + layer.Pieces.Count * UiStyle.RowHeight;
+            }
+            var brackets = new List<Bracket>();
+            foreach (KeyValuePair<Apparel, List<(float y, float indent)>> covered in coveredBands)
+            {
+                if (ownBand.TryGetValue(covered.Key, out (float y, float indent) own))
+                {
+                    var marks = new List<(float y, float indent)>(covered.Value) { own };
+                    marks.SortBy(mark => mark.y);
+                    brackets.Add(new Bracket(marks));
+                }
+            }
+            brackets.SortBy(bracket => bracket.Top);
+            var laneBottoms = new List<float>();
+            foreach (Bracket bracket in brackets)
+            {
+                int lane = laneBottoms.FindIndex(bottom => bottom < bracket.Top);
+                if (lane < 0)
+                {
+                    lane = laneBottoms.Count;
+                    laneBottoms.Add(0f);
+                }
+                laneBottoms[lane] = bracket.Bottom;
+                bracket.Lane = lane;
+            }
+            return brackets;
+        }
+
+        /// <summary>Each bracket as a line in its lane, with a tick out to each band it joins.</summary>
+        private static void DrawBrackets(List<Bracket> brackets, float gutter)
+        {
+            Color color = ColoredText.SubtleGrayColor;
+            foreach (Bracket bracket in brackets)
+            {
+                float x = gutter - (bracket.Lane + 0.5f) * UiStyle.BracketWidth;
+                Widgets.DrawBoxSolid(new Rect(x, bracket.Top, 1f, bracket.Bottom - bracket.Top + 1f), color);
+                foreach ((float y, float indent) mark in bracket.Marks)
+                {
+                    Widgets.DrawLineHorizontal(x, mark.y, gutter + mark.indent - x, color);
+                }
             }
         }
 
@@ -600,6 +866,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return "OL_Preview_RunnerUpSmallerGain".Translate(name, onLine);
             }
             return "OL_Preview_RunnerUpLaterStat".Translate(name, onLine);
+        }
+
+        /// <summary>Why a piece the last change took off is gone: what replaced it, or that it's no longer picked.</summary>
+        private static string WhyGone(Apparel piece, OutfitChanges marks)
+        {
+            Apparel replacement = marks.Added.FirstOrDefault(added => marks.Replaced(added).Contains(piece));
+            return replacement != null
+                ? "OL_Preview_ReplacedBy".Translate(replacement.LabelCap).Resolve()
+                : "OL_Preview_NoLongerPicked".Translate().Resolve();
         }
 
         private static string WhyTakenOff(Apparel piece, PredictedOutfit outfit)

@@ -28,24 +28,24 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>
         /// The pieces the pawn could pick under this policy. Imagined pieces get the first material in the choice's
         /// order that the policy allows (and, for craftable, that's in stock), at normal quality or the policy's
-        /// nearest allowed quality. With <paramref name="slotOf"/>, only the pieces that can't be worn together with that
-        /// item come, and those the policy rules out come too, imagined in the first material in the choice's order.
+        /// nearest allowed quality. With <paramref name="slot"/>, only the pieces that compete for it come, and those the
+        /// policy rules out come too, imagined in the first material in the choice's order.
         /// </summary>
         public static List<Apparel> For(Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material,
-            ThingDef slotOf = null)
+            OutfitSlot slot = null)
         {
             if (source == PieceSource.InStorage)
             {
-                return InStorage(pawn, policy, slotOf);
+                return InStorage(pawn, policy, slot);
             }
-            return Imagined(pawn, policy, source == PieceSource.CraftableNow, material, slotOf);
+            return Imagined(pawn, policy, source == PieceSource.CraftableNow, material, slot);
         }
 
         /// <summary>
         /// The real pieces the game's apparel check scores, gathered as it gathers them (outfit stands included):
         /// allowed, stored, not forbidden, not burning and the right gender.
         /// </summary>
-        private static List<Apparel> InStorage(Pawn pawn, ApparelPolicy policy, ThingDef slotOf)
+        private static List<Apparel> InStorage(Pawn pawn, ApparelPolicy policy, OutfitSlot slot)
         {
             var things = new List<Thing>();
             pawn.Map.listerThings.GetAllThings(in things, ThingRequestGroup.Apparel, null, true);
@@ -64,7 +64,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 if (thing is Apparel piece
                     && !pieces.Contains(piece)
-                    && (slotOf == null ? policy.filter.Allows(piece) : InSlot(pawn, piece.def, slotOf))
+                    && (slot == null ? policy.filter.Allows(piece) : slot.Holds(piece.def, pawn.RaceProps.body))
                     && piece.IsInAnyStorage()
                     && !piece.IsForbidden(pawn)
                     && !piece.IsBurning()
@@ -77,7 +77,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         }
 
         private static List<Apparel> Imagined(Pawn pawn, ApparelPolicy policy, bool craftableOnly, MaterialChoice material,
-            ThingDef slotOf)
+            OutfitSlot slot)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             IReadOnlyList<OrderLine> lines = orders?.EffectiveLines(policy) ?? NoLines;
@@ -90,15 +90,15 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             QualityCategory quality = QualityFor(policy);
             Map map = pawn.Map;
             var pieces = new List<Apparel>();
-            IEnumerable<ThingDef> defs = slotOf == null ? policy.filter.AllowedThingDefs : PolicyApparel();
+            IEnumerable<ThingDef> defs = slot == null ? policy.filter.AllowedThingDefs : PolicyApparel();
             foreach (ThingDef def in defs)
             {
-                if (def.apparel == null || !RightGender(pawn, def) || (slotOf != null && !InSlot(pawn, def, slotOf))
+                if (def.apparel == null || !RightGender(pawn, def) || (slot != null && !slot.Holds(def, pawn.RaceProps.body))
                     || (craftableOnly && !CraftableApparel.HasRecipeNow(def, map)))
                 {
                     continue;
                 }
-                Apparel piece = FirstAllowed(def, policy, material, lines, quality, craftableOnly ? map : null, slotOf != null);
+                Apparel piece = FirstAllowed(def, policy, material, lines, quality, craftableOnly ? map : null, slot != null);
                 if (piece != null)
                 {
                     pieces.Add(piece);
@@ -154,12 +154,6 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 first = first ?? piece;
             }
             return orFirst ? first : null;
-        }
-
-        /// <summary>Whether the item can't be worn together with <paramref name="slotOf"/>, so it competes for its slot.</summary>
-        private static bool InSlot(Pawn pawn, ThingDef def, ThingDef slotOf)
-        {
-            return !ApparelUtility.CanWearTogether(def, slotOf, pawn.RaceProps.body);
         }
 
         /// <summary>Every item an apparel policy's filter lists, allowed or not.</summary>

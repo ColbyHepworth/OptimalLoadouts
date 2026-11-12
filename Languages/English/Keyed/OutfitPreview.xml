@@ -29,10 +29,21 @@
   <OL_Preview_NothingToPick>Nothing in storage this policy allows.</OL_Preview_NothingToPick>
   <OL_Preview_NoChanges>Keeps what they wear now.</OL_Preview_NoChanges>
   <OL_Preview_NothingWorn>Nothing here is worth wearing.</OL_Preview_NothingWorn>
+  <OL_Preview_OutfitHeader>Outfit by layer</OL_Preview_OutfitHeader>
   <OL_Preview_TakesOff>Takes off:</OL_Preview_TakesOff>
   <OL_Preview_Kept>Already wearing it.</OL_Preview_Kept>
   <OL_Preview_NotAllowed>Not allowed by this policy.</OL_Preview_NotAllowed>
   <OL_Preview_ReplacedBy>Replaced by {0}.</OL_Preview_ReplacedBy>
+  <OL_Preview_LayerNothing>nothing</OL_Preview_LayerNothing>
+  <OL_Preview_LayerEmptyTip>Nothing is worn on this layer. Click to see what could go here.</OL_Preview_LayerEmptyTip>
+  <OL_Preview_LayerTip>Click to see everything that could go on this layer.</OL_Preview_LayerTip>
+  <OL_Preview_LayerCoveredTip>{0} is worn on this layer too. Click to see everything that could go on it.</OL_Preview_LayerCoveredTip>
+
+  <!-- What the last change to the outfit did -->
+  <OL_Preview_New>New with your last change.</OL_Preview_New>
+  <OL_Preview_NewReplacing>New with your last change, replacing {0}.</OL_Preview_NewReplacing>
+  <OL_Preview_LastChangeTookOff>Your last change took off:</OL_Preview_LastChangeTookOff>
+  <OL_Preview_NoLongerPicked>No longer picked.</OL_Preview_NoLongerPicked>
 
   <!-- Why a piece won -->
   <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
@@ -52,8 +63,10 @@
 
   <!-- Slot browser: every piece that could go in place of one -->
   <OL_Slot_ClickToOpen>Click to see what else could go here.</OL_Slot_ClickToOpen>
-  <OL_Slot_Hint>Click a piece in the outfit to see what else could go there.</OL_Slot_Hint>
+  <OL_Slot_Hint>Click a piece or a layer in the outfit to see what could go there.</OL_Slot_Hint>
   <OL_Slot_Header>In place of {0} ({1})</OL_Slot_Header>
+  <OL_Slot_HeaderLayer>{0}: nothing worn ({1})</OL_Slot_HeaderLayer>
+  <OL_Slot_HeaderLayerWorn>{0}: {1} ({2})</OL_Slot_HeaderLayerWorn>
   <OL_Slot_Back>Back to the outfit</OL_Slot_Back>
   <OL_Slot_RankHeader>#</OL_Slot_RankHeader>
   <OL_Slot_RankTip>The order the colonist would choose these in, 1 being their pick. Click to sort by it.</OL_Slot_RankTip>
@@ -70,8 +83,15 @@
   <OL_Slot_AlsoReplaces>Also replaces {0}.</OL_Slot_AlsoReplaces>
   <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
   <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
-  <OL_Slot_GameWontWear>The game won't put this on.</OL_Slot_GameWontWear>
-  <OL_Slot_Pin>Pin as a preferred item: pawns on this policy wear it over anything not pinned, whenever it's allowed.</OL_Slot_Pin>
+  <OL_Slot_WontWearLowScore>It scores too low for the game to put it on.</OL_Slot_WontWearLowScore>
+  <OL_Slot_WontWearPawn>This colonist can't wear it.</OL_Slot_WontWearPawn>
+  <OL_Slot_WontWearBlocksVision>The game never puts on apparel that blocks vision by itself.</OL_Slot_WontWearBlocksVision>
+  <OL_Slot_WontWearSlaves>The game only puts slave apparel on slaves.</OL_Slot_WontWearSlaves>
+  <OL_Slot_WontWearMechanitors>The game only puts mechanitor apparel on mechanitors.</OL_Slot_WontWearMechanitors>
+  <OL_Slot_WontWearModRule>The game or another mod rules it out for this colonist.</OL_Slot_WontWearModRule>
+  <OL_Slot_WontWearCEShield>Combat Extended only lets a colonist use a shield with a one-handed weapon or none.</OL_Slot_WontWearCEShield>
+  <OL_Slot_PinWontWear>{0} Pinning it won't change what {1} wears.</OL_Slot_PinWontWear>
+  <OL_Slot_Pin>Pin as a preferred item: pawns on this policy wear it over anything not pinned, whenever it's allowed. A pinned piece is never swapped for a better one that isn't pinned.</OL_Slot_Pin>
   <OL_Slot_Unpin>Pinned as a preferred item. Click to unpin.</OL_Slot_Unpin>
   <OL_Slot_PinnedInBase>Pinned in the policy this one builds on, so it sits under this policy's own priorities. Click to pin it here too, above them. Unpin it in the base.</OL_Slot_PinnedInBase>
   <OL_Slot_IsPinned>A preferred item.</OL_Slot_IsPinned>

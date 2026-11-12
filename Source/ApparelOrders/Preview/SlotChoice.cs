@@ -27,6 +27,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>True when the score is under the apparel check's threshold, so the game wouldn't put it on.</summary>
         public bool GameWontWear => Score < OutfitPredictor.MinimumGain;
 
+        /// <summary>Why the game never puts it on this pawn by itself (it blocks vision, it's for slaves), or null.</summary>
+        public string CantWearReason { get; }
+
         /// <summary>Whether the pawn would consider it at all: allowed, reachable and scored high enough.</summary>
         public bool Pickable => Allowed && Reachable && !GameWontWear;
 
@@ -37,7 +40,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public IReadOnlyList<Apparel> AlsoReplaces { get; }
 
         public SlotChoice(Apparel piece, int copies, bool typeAllowed, bool allowed, bool reachable, float score,
-            IReadOnlyList<Apparel> alsoReplaces)
+            string cantWearReason, IReadOnlyList<Apparel> alsoReplaces)
         {
             Piece = piece;
             Copies = copies;
@@ -45,6 +48,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             Allowed = allowed;
             Reachable = reachable;
             Score = score;
+            CantWearReason = cantWearReason;
             AlsoReplaces = alsoReplaces;
         }
     }

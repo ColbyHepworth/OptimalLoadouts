@@ -19,6 +19,15 @@ namespace OptimalLoadouts.Gui
         /// <summary>The space above a heading inside a list, such as the lines a policy gets from its base.</summary>
         public const float HeadingGap = 4f;
 
+        /// <summary>A band across a list in the tiny font, such as a layer's name above its pieces.</summary>
+        public const float BandHeight = 22f;
+
+        /// <summary>How far a list's items sit in from the band they're under.</summary>
+        public const float Indent = 12f;
+
+        /// <summary>The width of one bracket beside a list, such as the layers a piece covers.</summary>
+        public const float BracketWidth = 8f;
+
         /// <summary>The width a vertical scrollbar takes from a scroll view.</summary>
         public const float ScrollbarWidth = 16f;
 
@@ -31,6 +40,19 @@ namespace OptimalLoadouts.Gui
         public static readonly Texture2D PinIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin");
 
         public static readonly Texture2D PinOutlineIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
+
+        /// <summary>A band's fill: the window's darker background, against the lighter section the list sits on.</summary>
+        public static readonly Color BandColor = Widgets.WindowBGFillColor;
+
+        /// <summary>Faint backgrounds for a row that was just added or just taken away.</summary>
+        public static readonly Color AddedColor = Faint(ColorLibrary.Green);
+
+        public static readonly Color RemovedColor = Faint(ColorLibrary.Red);
+
+        private static Color Faint(Color color)
+        {
+            return new Color(color.r, color.g, color.b, 0.15f);
+        }
 
         /// <summary>A line of grey explanatory text, the way vanilla writes hints.</summary>
         public static void Note(Rect rect, string text)

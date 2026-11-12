@@ -87,7 +87,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             if (Widgets.ButtonText(new Rect(0f, y, AddButtonWidth, UiStyle.RowHeight), "OL_Editor_AddStat".Translate()))
             {
                 // Only the policy's own stats are hidden, so a base's stat can be added here to move it up or flip it.
-                IEnumerable<StatDef> listed = ownLines.Select(line => line.stat);
+                IEnumerable<StatDef> listed = ownLines.Where(line => !line.IsItem).Select(line => line.stat);
                 Find.WindowStack.Add(new Dialog_PickStat(stat => orders.AddLine(policy, stat), listed));
             }
             Widgets.EndScrollView();
@@ -105,14 +105,28 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 float labelWidth = row.width - NumberWidth - LayerWidth - UiStyle.IconGap - DirectionWidth
                     - 3 * (UiStyle.IconSize + UiStyle.IconGap) - UiStyle.Gap;
                 Rect labelRect = new Rect(x, row.y, labelWidth, row.height);
-                Widgets.Label(labelRect, line.stat.LabelCap.Resolve().Truncate(labelWidth));
-                if (!line.stat.description.NullOrEmpty())
+                if (line.IsItem)
                 {
-                    TooltipHandler.TipRegion(labelRect, line.stat.description);
+                    DrawItemLabel(labelRect, line.item);
+                }
+                else
+                {
+                    Widgets.Label(labelRect, line.stat.LabelCap.Resolve().Truncate(labelWidth));
+                    if (!line.stat.description.NullOrEmpty())
+                    {
+                        TooltipHandler.TipRegion(labelRect, line.stat.description);
+                    }
                 }
                 x += labelWidth + UiStyle.Gap;
             }
 
+            if (line.IsItem)
+            {
+                // An item line has no layer or direction, so its row keeps their space empty and its buttons line up.
+                x += LayerWidth + UiStyle.IconGap + DirectionWidth + UiStyle.IconGap;
+                DrawMoveAndRemove(x, row, orders, policy, index);
+                return;
+            }
             Rect layerButton = new Rect(x, row.y + UiStyle.IconGap / 2f, LayerWidth, row.height - UiStyle.IconGap);
             TooltipHandler.TipRegion(layerButton, "OL_Layer_Tip".Translate());
             if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(line).Truncate(LayerWidth - 12f)))
@@ -128,7 +142,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 orders.ToggleDirection(policy, index);
             }
             x += DirectionWidth + UiStyle.IconGap;
+            DrawMoveAndRemove(x, row, orders, policy, index);
+        }
 
+        private static void DrawMoveAndRemove(float x, Rect row, ApparelOrdersComponent orders, ApparelPolicy policy, int index)
+        {
             float iconY = row.y + (row.height - UiStyle.IconSize) / 2f;
             if (Widgets.ButtonImage(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.ReorderUp, true, "OL_Editor_MoveUp".Translate()))
             {
@@ -146,8 +164,36 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
+        /// <summary>A preferred item: its icon, its name and "Preferred item" in grey. Its info card opens on a click.</summary>
+        private static void DrawItemLabel(Rect rect, ThingDef item)
+        {
+            Rect icon = new Rect(rect.x, rect.y + (rect.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
+            Widgets.DefIcon(icon, item);
+            Rect text = new Rect(icon.xMax + UiStyle.IconGap, rect.y, rect.xMax - icon.xMax - UiStyle.IconGap, rect.height);
+            string name = item.LabelCap.Resolve();
+            string tag = "OL_Editor_PreferredItem".Translate();
+            float nameWidth = Mathf.Min(Text.CalcSize(name).x, text.width);
+            Widgets.Label(new Rect(text.x, text.y, nameWidth, text.height), name.Truncate(nameWidth));
+            UiStyle.Note(new Rect(text.x + nameWidth + UiStyle.IconGap, text.y, text.width - nameWidth - UiStyle.IconGap, text.height),
+                tag.Truncate(text.width - nameWidth - UiStyle.IconGap));
+            TooltipHandler.TipRegion(rect, "OL_Editor_PreferredItemTip".Translate(item.label));
+            if (Widgets.ButtonInvisible(rect))
+            {
+                Find.WindowStack.Add(new Dialog_InfoCard(item, GenStuff.DefaultStuffFor(item)));
+            }
+        }
+
         private static void DrawBaseLine(Rect row, OrderLine line)
         {
+            if (line.IsItem)
+            {
+                using (new TextBlock(TextAnchor.MiddleLeft))
+                {
+                    UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
+                        "OL_Editor_BaseItemLine".Translate(line.item.LabelCap));
+                }
+                return;
+            }
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
                 UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
@@ -169,7 +215,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static List<(ApparelPolicy from, OrderLine line)> BaseLines(ApparelOrdersComponent orders, ApparelPolicy policy, List<OrderLine> ownLines)
         {
             var result = new List<(ApparelPolicy, OrderLine)>();
-            var listed = new HashSet<StatDef>(ownLines.Select(line => line.stat));
+            var listed = new HashSet<Def>(ownLines.Select(line => line.Subject));
             var visited = new HashSet<ApparelPolicy> { policy };
             for (ApparelPolicy basePolicy = orders.BaseOf(policy); basePolicy != null && visited.Add(basePolicy); basePolicy = orders.BaseOf(basePolicy))
             {
@@ -180,7 +226,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 foreach (OrderLine line in baseLines)
                 {
-                    if (line.stat != null && listed.Add(line.stat))
+                    if (line.Subject != null && listed.Add(line.Subject))
                     {
                         result.Add((basePolicy, line));
                     }

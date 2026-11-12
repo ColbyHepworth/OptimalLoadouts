@@ -27,6 +27,11 @@ namespace OptimalLoadouts.Gui
 
         public static readonly Texture2D SortDescendingIcon = ContentFinder<Texture2D>.Get("UI/Icons/SortingDescending");
 
+        /// <summary>Vanilla's pin, as the History tab pins messages: filled when pinned, an outline when not.</summary>
+        public static readonly Texture2D PinIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin");
+
+        public static readonly Texture2D PinOutlineIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
+
         /// <summary>A line of grey explanatory text, the way vanilla writes hints.</summary>
         public static void Note(Rect rect, string text)
         {

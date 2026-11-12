@@ -13,7 +13,7 @@
 
   <!-- Stat order editor, the Priorities tab -->
   <OL_Editor_Note>Pawns wear the best allowed piece, judged stat by stat from the top.</OL_Editor_Note>
-  <OL_Editor_Help>Pawns compare clothes on the first stat, then the next. What's allowed is set on the Allowed items tab.</OL_Editor_Help>
+  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. Pin items in the slot browser to prefer them over the stats. What's allowed is set on the Allowed items tab.</OL_Editor_Help>
   <OL_Editor_Base>Builds on:</OL_Editor_Base>
   <OL_Editor_NoBase>None</OL_Editor_NoBase>
   <OL_Editor_BaseTip>Another policy this one builds on. Its priorities go under this policy's own, and its limits apply here too. Allowed items aren't shared.</OL_Editor_BaseTip>
@@ -30,6 +30,9 @@
   <OL_Layer_StatOn>{0} on {1}</OL_Layer_StatOn>
   <OL_Layer_StatAllBut>{0} on all but {1}</OL_Layer_StatAllBut>
   <OL_Layer_Tip>Which layers this stat counts on. A piece only counts on this line when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
+  <OL_Editor_PreferredItem>preferred item</OL_Editor_PreferredItem>
+  <OL_Editor_PreferredItemTip>Pawns wear {0} over anything below this line, in any material and quality, whenever it's allowed. Pin or unpin items in the slot browser. Click for its info card.</OL_Editor_PreferredItemTip>
+  <OL_Editor_BaseItemLine>{0} (preferred item)</OL_Editor_BaseItemLine>
   <OL_Editor_Empty>No stats yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
 
   <!-- Limits (forbids by stat), the Limits tab -->

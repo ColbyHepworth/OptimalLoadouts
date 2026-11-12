@@ -149,12 +149,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// The order's first stats, then the stat added by hand when it isn't one of them, as many as fit beside a readable
-        /// name. A stat added by hand that has since joined the order is dropped, so "+" comes back.
+        /// The order's first stats (item lines aren't columns), then the stat added by hand when it isn't one of them, as
+        /// many as fit beside a readable name. A stat added by hand that has since joined the order is dropped, so "+"
+        /// comes back.
         /// </summary>
         private static List<StatDef> Columns(IReadOnlyList<OrderLine> lines, float width)
         {
-            List<StatDef> columns = lines.Take(OrderColumns).Select(line => line.stat).ToList();
+            List<StatDef> columns = lines.Where(line => !line.IsItem).Take(OrderColumns).Select(line => line.stat).ToList();
             if (columns.Contains(addedStat))
             {
                 addedStat = null;
@@ -416,6 +417,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 policy.filter.SetAllow(piece.def, allowed);
             }
+            DrawPin(layout.Pin, piece.def, policy);
 
             Rect body = layout.Body;
             if (UiStyle.ClickableRow(body))
@@ -452,7 +454,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 parts.Add("OL_Slot_IsPick".Translate());
             }
-            foreach (OrderLine line in lines)
+            foreach (OrderLine line in lines.Where(line => !line.IsItem))
             {
                 // A line limited to a layer the piece isn't on doesn't count it, so it shows no value there.
                 string value = line.CountsOn(choice.Piece.def) ? ValueText(choice.Piece, line.stat) : "OL_Slot_NoValue".Translate().Resolve();
@@ -461,6 +463,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             if (choice.AlsoReplaces.Count > 0)
             {
                 parts.Add("OL_Slot_AlsoReplaces".Translate(string.Join(", ", choice.AlsoReplaces.Select(worn => worn.LabelCap.ToString()))));
+            }
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            if (orders != null && orders.Prefers(policy, choice.Piece.def))
+            {
+                parts.Add(choice.TypeAllowed ? "OL_Slot_IsPinned".Translate().Resolve() : "OL_Slot_PinnedNotAllowed".Translate().Resolve());
             }
             if (!choice.TypeAllowed)
             {
@@ -485,7 +492,45 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return string.Join("\n", parts);
         }
 
-        /// <summary>The piece's value on the stat, or a dash when it has none, so real bonuses stand out.</summary>
+        /// <summary>
+        /// The pin that makes the item a preferred item in the policy's priorities. Filled when pinned. A pin from the base
+        /// is greyed, since it sits under this policy's own lines; a click pins the item here too, above them.
+        /// </summary>
+        private static void DrawPin(Rect rect, ThingDef item, ApparelPolicy policy)
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            if (orders == null)
+            {
+                return;
+            }
+            bool pinned = orders.Prefers(policy, item);
+            bool own = orders.OrderFor(policy)?.lines.Any(line => line.item == item) ?? false;
+            if (pinned && !own)
+            {
+                TooltipHandler.TipRegion(rect, "OL_Slot_PinnedInBase".Translate());
+                using (new TextBlock(ColoredText.SubtleGrayColor))
+                {
+                    if (Widgets.ButtonImage(rect, UiStyle.PinIcon, GUI.color))
+                    {
+                        orders.PreferItem(policy, item);
+                    }
+                }
+                return;
+            }
+            TooltipHandler.TipRegion(rect, pinned ? "OL_Slot_Unpin".Translate() : "OL_Slot_Pin".Translate());
+            if (Widgets.ButtonImage(rect, pinned ? UiStyle.PinIcon : UiStyle.PinOutlineIcon))
+            {
+                if (pinned)
+                {
+                    orders.StopPreferring(policy, item);
+                }
+                else
+                {
+                    orders.PreferItem(policy, item);
+                }
+            }
+        }
+
         /// <summary>The order's line for a column's stat, or null for a column added by hand.</summary>
         private static OrderLine LineFor(IReadOnlyList<OrderLine> lines, StatDef stat)
         {
@@ -499,6 +544,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return null;
         }
 
+        /// <summary>The piece's value on the stat, or a dash when it has none, so real bonuses stand out.</summary>
         private static string ValueText(Apparel piece, StatDef stat)
         {
             float value = PieceStats.Value(piece, stat);
@@ -518,8 +564,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             public Rect Icon { get; }
             public Rect Name { get; }
             public Rect Checkbox { get; }
+            public Rect Pin { get; }
 
-            /// <summary>Everything between the info button and the checkbox, which a click tries on.</summary>
+            /// <summary>Everything between the info button and the pin, which a click tries on.</summary>
             public Rect Body { get; }
 
             private readonly float valuesX;
@@ -534,15 +581,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Info = new Rect(row.x, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f, Widgets.InfoCardButtonSize,
                     Widgets.InfoCardButtonSize);
                 Checkbox = new Rect(row.xMax - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
+                Pin = new Rect(Checkbox.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 Rank = new Rect(Info.xMax + UiStyle.Gap / 2f, row.y, RankWidth, row.height);
                 Icon = new Rect(Rank.xMax + UiStyle.Gap / 2f, iconY, UiStyle.IconSize, UiStyle.IconSize);
-                valuesX = Checkbox.x - UiStyle.Gap - columnCount * ValueWidth;
+                valuesX = Pin.x - UiStyle.Gap - columnCount * ValueWidth;
                 Name = new Rect(Icon.xMax + UiStyle.Gap, row.y, valuesX - Icon.xMax - 2f * UiStyle.Gap, row.height);
-                Body = new Rect(Rank.x, row.y, Checkbox.x - UiStyle.Gap - Rank.x, row.height);
+                Body = new Rect(Rank.x, row.y, Pin.x - UiStyle.Gap - Rank.x, row.height);
             }
 
             /// <summary>Everything in a row but its name and value columns.</summary>
-            public static float FixedWidth => Widgets.InfoCardButtonSize + RankWidth + 2f * UiStyle.IconSize + 4f * UiStyle.Gap;
+            public static float FixedWidth => Widgets.InfoCardButtonSize + RankWidth + 3f * UiStyle.IconSize + UiStyle.IconGap + 4f * UiStyle.Gap;
 
             public static RowLayout For(Rect row, int columnCount)
             {

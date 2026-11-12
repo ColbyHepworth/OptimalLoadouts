@@ -89,8 +89,8 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// The policy's lines, then its base's, then that base's, skipping a stat already listed. A base that was
-        /// deleted or would loop back is ignored.
+        /// The policy's lines, then its base's, then that base's, skipping a stat or item already listed. A base that
+        /// was deleted or would loop back is ignored.
         /// </summary>
         public IReadOnlyList<OrderLine> EffectiveLines(ApparelPolicy policy)
         {
@@ -114,7 +114,7 @@ namespace OptimalLoadouts.ApparelOrders
             }
             lines = new List<OrderLine>();
             var visited = new HashSet<ApparelPolicy>();
-            var listedStats = new HashSet<StatDef>();
+            var listed = new HashSet<Def>();
             ApparelPolicy current = policy;
             while (current != null && visited.Add(current))
             {
@@ -125,7 +125,7 @@ namespace OptimalLoadouts.ApparelOrders
                 }
                 foreach (OrderLine line in order.lines)
                 {
-                    if (line.stat != null && listedStats.Add(line.stat))
+                    if (line.Subject != null && listed.Add(line.Subject))
                     {
                         lines.Add(line);
                     }
@@ -182,6 +182,43 @@ namespace OptimalLoadouts.ApparelOrders
             OrderLine fromBase = EffectiveLines(policy).FirstOrDefault(line => line.stat == stat);
             order.lines.Add(fromBase?.Copy() ?? new OrderLine(stat));
             NotifyChanged();
+        }
+
+        /// <summary>Pins the item: an item line placed above the policy's first stat line, after the items pinned before it.</summary>
+        public void PreferItem(ApparelPolicy policy, ThingDef item)
+        {
+            ApparelOrder order = GetOrCreate(policy);
+            if (order.lines.Any(line => line.item == item))
+            {
+                return;
+            }
+            int firstStat = order.lines.FindIndex(line => !line.IsItem);
+            order.lines.Insert(firstStat < 0 ? order.lines.Count : firstStat, OrderLine.ForItem(item));
+            NotifyChanged();
+        }
+
+        /// <summary>Unpins the item: removes the policy's own line for it. A base's line for it stays in the base.</summary>
+        public void StopPreferring(ApparelPolicy policy, ThingDef item)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order != null && order.lines.RemoveAll(line => line.item == item) > 0)
+            {
+                NotifyChanged();
+            }
+        }
+
+        /// <summary>Whether the item is pinned in the policy or its base.</summary>
+        public bool Prefers(ApparelPolicy policy, ThingDef item)
+        {
+            IReadOnlyList<OrderLine> lines = EffectiveLines(policy);
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].item == item)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void RemoveLine(ApparelPolicy policy, int index)

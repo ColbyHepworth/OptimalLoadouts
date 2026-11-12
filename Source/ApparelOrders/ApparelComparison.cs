@@ -35,15 +35,53 @@ namespace OptimalLoadouts.ApparelOrders
                 }
                 if (Math.Abs(delta) > Epsilon)
                 {
+                    if (line.IsItem)
+                    {
+                        // Every copy of a pinned item wins its line by the same 1, so the lines under it rank the copies.
+                        delta += ItemTieBreak(candidate, lines, i + 1);
+                    }
                     return new OrderVerdict(i, delta);
                 }
             }
             return OrderVerdict.Tie;
         }
 
-        /// <summary>A piece's value on a line: its value on the line's stat when the line counts its layer, otherwise 0.</summary>
+        /// <summary>
+        /// The first difference on the lines from <paramref name="from"/> on, squashed to under half a point either way, so
+        /// a win or loss on an item line keeps its sign while better copies of the item score a little higher.
+        /// </summary>
+        private static float ItemTieBreak(Apparel candidate, IReadOnlyList<OrderLine> lines, int from)
+        {
+            for (int i = from; i < lines.Count; i++)
+            {
+                OrderLine line = lines[i];
+                float delta = ValueOnLine(candidate, line);
+                for (int j = 0; j < replaced.Count; j++)
+                {
+                    delta -= ValueOnLine(replaced[j], line);
+                }
+                if (line.lowerIsBetter)
+                {
+                    delta = -delta;
+                }
+                if (Math.Abs(delta) > Epsilon)
+                {
+                    return 0.49f * delta / (Math.Abs(delta) + 1f);
+                }
+            }
+            return 0f;
+        }
+
+        /// <summary>
+        /// A piece's value on a line: on an item line, 1 for a piece of the item and 0 for anything else; on a stat line,
+        /// its value on the stat when the line counts its layer, otherwise 0.
+        /// </summary>
         public static float ValueOnLine(Apparel piece, OrderLine line)
         {
+            if (line.IsItem)
+            {
+                return piece.def == line.item ? 1f : 0f;
+            }
             return line.CountsOn(piece.def) ? PieceStats.Value(piece, line.stat) : 0f;
         }
 

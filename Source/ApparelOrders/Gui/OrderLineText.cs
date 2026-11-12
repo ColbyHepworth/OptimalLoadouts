@@ -65,9 +65,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return stat.ValueToString(value, sense);
         }
 
-        /// <summary>The line's stat with its layer, lower case for use inside a sentence: "sharp armor on outer".</summary>
+        /// <summary>
+        /// The line's stat with its layer, lower case for use inside a sentence: "sharp armor on outer". An item line is
+        /// its item: "cowboy hat".
+        /// </summary>
         public static string StatOnLayer(OrderLine line)
         {
+            if (line.IsItem)
+            {
+                return line.item.label;
+            }
             if (line.layer == null)
             {
                 return line.stat.label;

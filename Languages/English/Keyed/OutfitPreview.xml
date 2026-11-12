@@ -36,6 +36,7 @@
 
   <!-- Why a piece won -->
   <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
+  <OL_Preview_WhyPreferred>{0} is a preferred item.</OL_Preview_WhyPreferred>
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
   <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
@@ -44,6 +45,9 @@
   <OL_Preview_RunnerUpWorse>Runner-up: {0}, worse on {1} by {2}.</OL_Preview_RunnerUpWorse>
   <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
   <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
+  <OL_Preview_RunnerUpNotPreferred>Runner-up: {0}, not the preferred {1}.</OL_Preview_RunnerUpNotPreferred>
+  <OL_Preview_RunnerUpSamePreferred>Runner-up: {0}, the same preferred item, worse on the priorities below it.</OL_Preview_RunnerUpSamePreferred>
+  <OL_Preview_RunnerUpLaterItem>Runner-up: {0}, a preferred item lower in the priorities.</OL_Preview_RunnerUpLaterItem>
   <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
 
   <!-- Slot browser: every piece that could go in place of one -->
@@ -67,6 +71,11 @@
   <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
   <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
   <OL_Slot_GameWontWear>The game won't put this on.</OL_Slot_GameWontWear>
+  <OL_Slot_Pin>Pin as a preferred item: pawns on this policy wear it over anything not pinned, whenever it's allowed.</OL_Slot_Pin>
+  <OL_Slot_Unpin>Pinned as a preferred item. Click to unpin.</OL_Slot_Unpin>
+  <OL_Slot_PinnedInBase>Pinned in the policy this one builds on, so it sits under this policy's own priorities. Click to pin it here too, above them. Unpin it in the base.</OL_Slot_PinnedInBase>
+  <OL_Slot_IsPinned>A preferred item.</OL_Slot_IsPinned>
+  <OL_Slot_PinnedNotAllowed>A preferred item, but not allowed, so it isn't worn.</OL_Slot_PinnedNotAllowed>
   <OL_Slot_ClickToTry>Click to try it on. The checkbox allows or forbids it in this policy.</OL_Slot_ClickToTry>
   <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 

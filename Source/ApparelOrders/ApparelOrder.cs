@@ -32,7 +32,7 @@ namespace OptimalLoadouts.ApparelOrders
                 {
                     lines = new List<OrderLine>();
                 }
-                lines.RemoveAll(line => line == null || line.stat == null);
+                lines.RemoveAll(line => line == null || line.Subject == null);
                 if (forbids == null)
                 {
                     forbids = new List<ApparelForbid>();

@@ -24,10 +24,10 @@ namespace OptimalLoadouts.ApparelOrders
             for (int i = 0; i < lines.Count; i++)
             {
                 OrderLine line = lines[i];
-                float delta = PieceStats.Value(candidate, line.stat);
+                float delta = ValueOnLine(candidate, line);
                 for (int j = 0; j < replaced.Count; j++)
                 {
-                    delta -= PieceStats.Value(replaced[j], line.stat);
+                    delta -= ValueOnLine(replaced[j], line);
                 }
                 if (line.lowerIsBetter)
                 {
@@ -39,6 +39,12 @@ namespace OptimalLoadouts.ApparelOrders
                 }
             }
             return OrderVerdict.Tie;
+        }
+
+        /// <summary>A piece's value on a line: its value on the line's stat when the line counts its layer, otherwise 0.</summary>
+        public static float ValueOnLine(Apparel piece, OrderLine line)
+        {
+            return line.CountsOn(piece.def) ? PieceStats.Value(piece, line.stat) : 0f;
         }
 
         /// <summary>The worn pieces the candidate would replace, found the way the game's apparel check finds them.</summary>

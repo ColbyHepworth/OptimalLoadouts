@@ -120,7 +120,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             y += AllButtonHeight + SearchGap;
             search.OnGUI(new Rect(rect.x, y, rect.width - GenUI.ScrollBarWidth, QuickSearchWidget.WidgetHeight));
             y += QuickSearchWidget.WidgetHeight + SearchGap;
-            DrawColumnHeaders(new Rect(rect.x, y, rect.width - GenUI.ScrollBarWidth, HeaderHeight), columns);
+            DrawColumnHeaders(new Rect(rect.x, y, rect.width - GenUI.ScrollBarWidth, HeaderHeight), columns, lines);
             y += HeaderHeight;
 
             var picked = new HashSet<object>(outfit.Select(RowKey));
@@ -283,13 +283,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// The headers, laid out like the rows: "#" after the info button, a stat over each value column, and "+" over the
         /// checkboxes to add a column. Clicking a header sorts by it the way vanilla's pawn tables do.
         /// </summary>
-        private static void DrawColumnHeaders(Rect row, List<StatDef> columns)
+        private static void DrawColumnHeaders(Rect row, List<StatDef> columns, IReadOnlyList<OrderLine> lines)
         {
             RowLayout layout = RowLayout.For(row, columns.Count);
             DrawRankHeader(layout.Rank);
             for (int i = 0; i < columns.Count; i++)
             {
-                DrawStatHeader(layout.Value(i), columns[i], removable: columns[i] == addedStat);
+                DrawStatHeader(layout.Value(i), columns[i], LineFor(lines, columns[i]), removable: columns[i] == addedStat);
             }
             if (addedStat == null && Widgets.ButtonImage(layout.Checkbox, TexButton.Plus, true, "OL_Slot_AddColumn".Translate()))
             {
@@ -324,7 +324,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void DrawStatHeader(Rect cell, StatDef stat, bool removable)
+        private static void DrawStatHeader(Rect cell, StatDef stat, OrderLine line, bool removable)
         {
             using (new TextBlock(GameFont.Tiny, TextAnchor.LowerCenter, sortStat == stat ? Color.white : ColoredText.SubtleGrayColor))
             {
@@ -351,7 +351,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.DrawHighlight(cell);
                 string description = stat.description.NullOrEmpty() ? "" : "\n\n" + stat.description;
-                TooltipHandler.TipRegion(cell, stat.LabelCap + description + "\n\n" + "OL_Slot_SortHint".Translate());
+                // A column from a line limited to a layer says so, since pieces off that layer show "–" in it.
+                string title = line != null ? OrderLineText.StatOnLayerCap(line) : stat.LabelCap.Resolve();
+                TooltipHandler.TipRegion(cell, title + description + "\n\n" + "OL_Slot_SortHint".Translate());
             }
             if (Widgets.ButtonInvisible(cell))
             {
@@ -429,7 +431,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Widgets.Label(layout.Rank, choice.PickRank > 0 ? choice.PickRank.ToString() : "OL_Slot_NoValue".Translate().ToString());
                 for (int i = 0; i < columns.Count; i++)
                 {
-                    Widgets.Label(layout.Value(i), ValueText(piece, columns[i]));
+                    OrderLine line = LineFor(lines, columns[i]);
+                    bool counts = line == null || line.CountsOn(piece.def);
+                    Widgets.Label(layout.Value(i), counts ? ValueText(piece, columns[i]) : "OL_Slot_NoValue".Translate().Resolve());
                 }
             }
             Widgets.ThingIcon(layout.Icon, piece, dimmed ? 0.5f : 1f);
@@ -450,7 +454,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             foreach (OrderLine line in lines)
             {
-                parts.Add("OL_Slot_TipValue".Translate(line.stat.LabelCap, ValueText(choice.Piece, line.stat)));
+                // A line limited to a layer the piece isn't on doesn't count it, so it shows no value there.
+                string value = line.CountsOn(choice.Piece.def) ? ValueText(choice.Piece, line.stat) : "OL_Slot_NoValue".Translate().Resolve();
+                parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), value));
             }
             if (choice.AlsoReplaces.Count > 0)
             {
@@ -477,6 +483,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>The piece's value on the stat, or a dash when it has none, so real bonuses stand out.</summary>
+        /// <summary>The order's line for a column's stat, or null for a column added by hand.</summary>
+        private static OrderLine LineFor(IReadOnlyList<OrderLine> lines, StatDef stat)
+        {
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].stat == stat)
+                {
+                    return lines[i];
+                }
+            }
+            return null;
+        }
+
         private static string ValueText(Apparel piece, StatDef stat)
         {
             float value = PieceStats.Value(piece, stat);

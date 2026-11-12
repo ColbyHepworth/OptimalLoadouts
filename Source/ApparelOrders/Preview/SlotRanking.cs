@@ -111,7 +111,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             }
             foreach (OrderLine line in lines)
             {
-                float delta = PieceStats.Value(a.Piece, line.stat) - PieceStats.Value(b.Piece, line.stat);
+                float delta = ApparelComparison.ValueOnLine(a.Piece, line) - ApparelComparison.ValueOnLine(b.Piece, line);
                 if (line.lowerIsBetter)
                 {
                     delta = -delta;

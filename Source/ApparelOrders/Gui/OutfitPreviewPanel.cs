@@ -563,8 +563,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return "OL_Preview_WhyTie".Translate();
             }
-            StatDef stat = lines[verdict.DecidingLine].stat;
-            return "OL_Preview_WhyBetter".Translate(stat.label, Amount(stat, verdict.Delta));
+            OrderLine line = lines[verdict.DecidingLine];
+            return "OL_Preview_WhyBetter".Translate(OrderLineText.StatOnLayer(line), Amount(line.stat, verdict.Delta));
         }
 
         private static string ReasonRunnerUpLost(PredictedSwap swap, IReadOnlyList<OrderLine> lines, bool hasOrder)
@@ -575,16 +575,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return "OL_Preview_RunnerUpScoredLower".Translate(name);
             }
-            StatDef stat = lines[runnerUp.DecidingLine].stat;
+            OrderLine line = lines[runnerUp.DecidingLine];
+            string onLine = OrderLineText.StatOnLayer(line);
             if (runnerUp.Delta < 0f)
             {
-                return "OL_Preview_RunnerUpWorse".Translate(name, stat.label, Amount(stat, runnerUp.Delta));
+                return "OL_Preview_RunnerUpWorse".Translate(name, onLine, Amount(line.stat, runnerUp.Delta));
             }
             if (runnerUp.DecidingLine == swap.Verdict.DecidingLine)
             {
-                return "OL_Preview_RunnerUpSmallerGain".Translate(name, stat.label);
+                return "OL_Preview_RunnerUpSmallerGain".Translate(name, onLine);
             }
-            return "OL_Preview_RunnerUpLaterStat".Translate(name, stat.label);
+            return "OL_Preview_RunnerUpLaterStat".Translate(name, onLine);
         }
 
         private static string WhyTakenOff(Apparel piece, PredictedOutfit outfit)

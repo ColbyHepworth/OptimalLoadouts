@@ -23,6 +23,11 @@
   <OL_Editor_MoveUp>Move up</OL_Editor_MoveUp>
   <OL_Editor_MoveDown>Move down</OL_Editor_MoveDown>
   <OL_Editor_Remove>Remove</OL_Editor_Remove>
+  <OL_Layer_All>All layers</OL_Layer_All>
+  <OL_Layer_AllBut>All but {0}</OL_Layer_AllBut>
+  <OL_Layer_StatOn>{0} on {1}</OL_Layer_StatOn>
+  <OL_Layer_StatAllBut>{0} on all but {1}</OL_Layer_StatAllBut>
+  <OL_Layer_Tip>Which layers this stat counts on. A piece only counts on this line when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
   <OL_Editor_Empty>No stats yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
 
   <!-- Stat picker -->

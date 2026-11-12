@@ -63,7 +63,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         {
             foreach (OrderLine line in lines)
             {
-                if (line.stat == null || !StatChoices.IsWornPieceStat(line.stat))
+                if (line.stat == null || !StatChoices.IsWornPieceStat(line.stat) || !line.CountsOn(def))
                 {
                     continue;
                 }

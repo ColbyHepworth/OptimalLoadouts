@@ -16,6 +16,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
     {
         private const float NumberWidth = 28f;
         private const float DirectionWidth = 110f;
+        private const float LayerWidth = 120f;
         private const float BaseButtonWidth = 200f;
         private const float AddButtonWidth = 160f;
         private const float BaseHeadingGap = 4f;
@@ -132,7 +133,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.Label(new Rect(x, row.y, NumberWidth, row.height), "OL_Editor_LineNumber".Translate(index + 1));
                 x += NumberWidth;
-                float labelWidth = row.width - NumberWidth - DirectionWidth - 3 * (UiStyle.IconSize + UiStyle.IconGap) - UiStyle.Gap;
+                float labelWidth = row.width - NumberWidth - LayerWidth - UiStyle.IconGap - DirectionWidth
+                    - 3 * (UiStyle.IconSize + UiStyle.IconGap) - UiStyle.Gap;
                 Rect labelRect = new Rect(x, row.y, labelWidth, row.height);
                 Widgets.Label(labelRect, line.stat.LabelCap.Resolve().Truncate(labelWidth));
                 if (!line.stat.description.NullOrEmpty())
@@ -141,6 +143,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 x += labelWidth + UiStyle.Gap;
             }
+
+            Rect layerButton = new Rect(x, row.y + UiStyle.IconGap / 2f, LayerWidth, row.height - UiStyle.IconGap);
+            TooltipHandler.TipRegion(layerButton, "OL_Layer_Tip".Translate());
+            if (Widgets.ButtonText(layerButton, OrderLineText.LayerLabel(line).Truncate(LayerWidth - 12f)))
+            {
+                Find.WindowStack.Add(new FloatMenu(LayerOptions(orders, policy, index)));
+            }
+            x += LayerWidth + UiStyle.IconGap;
 
             Rect direction = new Rect(x, row.y + UiStyle.IconGap / 2f, DirectionWidth, row.height - UiStyle.IconGap);
             TooltipHandler.TipRegion(direction, "OL_Editor_DirectionTip".Translate());
@@ -172,8 +182,24 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
                 UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
-                    "OL_Editor_BaseLine".Translate(line.stat.LabelCap, DirectionLabel(line)));
+                    "OL_Editor_BaseLine".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line)));
             }
+        }
+
+        /// <summary>Every layer, every layer but utility, then each layer some apparel is worn on.</summary>
+        private static List<FloatMenuOption> LayerOptions(ApparelOrdersComponent orders, ApparelPolicy policy, int index)
+        {
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption("OL_Layer_All".Translate(), () => orders.SetLayer(policy, index, null, false)),
+                new FloatMenuOption("OL_Layer_AllBut".Translate(ApparelLayerDefOf.Belt.label),
+                    () => orders.SetLayer(policy, index, ApparelLayerDefOf.Belt, true)),
+            };
+            foreach (ApparelLayerDef layer in OrderLineText.WornLayers)
+            {
+                options.Add(new FloatMenuOption(layer.LabelCap, () => orders.SetLayer(policy, index, layer, false)));
+            }
+            return options;
         }
 
         private static string DirectionLabel(OrderLine line)

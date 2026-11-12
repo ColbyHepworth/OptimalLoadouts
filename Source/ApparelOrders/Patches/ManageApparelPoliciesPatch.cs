@@ -12,14 +12,17 @@ namespace OptimalLoadouts.ApparelOrders.Patches
     /// <summary>
     /// Widens Manage apparel policies (and makes it taller where the screen has room), gives the policy's column two
     /// tabs (vanilla's filter, and its stat order), and draws the outfit preview beside them, with a panel for a slot's
-    /// pieces beside that where the screen is wide enough. The filter keeps its vanilla width, so other mods that draw on
-    /// it (Apparel Policy Builder's button) still find it where they expect. Windows that replace this one with their own
-    /// subclass (Choose Your Outfit) are left alone, since they lay out the space themselves.
+    /// pieces beside that where the screen is wide enough. The filter is a little wider than vanilla's, which other
+    /// mods that draw on it (Apparel Policy Builder's button, at its right edge) follow. Windows that replace this one
+    /// with their own subclass (Choose Your Outfit) are left alone, since they lay out the space themselves.
     /// </summary>
     [HarmonyPatch(typeof(Dialog_ManageApparelPolicies))]
     public static class ManageApparelPoliciesPatch
     {
         private const float PreviewWidth = 400f;
+
+        /// <summary>Room added to the policy's column for each stat line's layer button.</summary>
+        private const float PolicyColumnExtra = 100f;
 
         /// <summary>Wide enough for a slot's pieces with their names and two stat columns.</summary>
         private const float PreferredSlotWidth = 620f;
@@ -36,7 +39,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
         /// <summary>Tall enough for the preview's drawing and a list of pieces under it.</summary>
         private const float PreferredHeight = 900f;
 
-        /// <summary>The window's own width before it's widened, so the filter keeps exactly that much.</summary>
+        /// <summary>The window's own width before it's widened, which the policy's column keeps plus its extra room.</summary>
         private static float vanillaWidth = 700f;
 
         /// <summary>The policy column's open tab, and the window it's for, so each new window starts on the first tab.</summary>
@@ -55,7 +58,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             if (IsVanillaWindow(__instance))
             {
                 vanillaWidth = __result.x;
-                float wanted = __result.x + PreviewWidth + PreferredSlotWidth + 2f * UiStyle.Gap;
+                float wanted = __result.x + PolicyColumnExtra + PreviewWidth + PreferredSlotWidth + 2f * UiStyle.Gap;
                 __result.x = Mathf.Min(wanted, UI.screenWidth - ScreenMargin);
                 __result.y = Mathf.Max(__result.y, Mathf.Min(PreferredHeight, UI.screenHeight - ScreenMargin));
             }
@@ -80,7 +83,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 tabWindow = __instance;
                 tab = PolicyTab.AllowedItems;
             }
-            float room = __instance.windowRect.width - vanillaWidth - UiStyle.Gap;
+            float room = __instance.windowRect.width - vanillaWidth - PolicyColumnExtra - UiStyle.Gap;
             if (room >= PreviewWidth + UiStyle.Gap + MinSlotWidth)
             {
                 float slotWidth = room - PreviewWidth - UiStyle.Gap;

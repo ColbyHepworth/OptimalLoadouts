@@ -172,7 +172,9 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return;
             }
-            order.lines.Add(new OrderLine(stat));
+            // A stat the policy gets from its base keeps the base's layer and direction when it becomes the policy's own.
+            OrderLine fromBase = EffectiveLines(policy).FirstOrDefault(line => line.stat == stat);
+            order.lines.Add(fromBase?.Copy() ?? new OrderLine(stat));
             NotifyChanged();
         }
 
@@ -210,6 +212,19 @@ namespace OptimalLoadouts.ApparelOrders
                 return;
             }
             order.lines[index].lowerIsBetter = !order.lines[index].lowerIsBetter;
+            NotifyChanged();
+        }
+
+        /// <summary>Limits a line to a layer, or to every layer but it, or (with no layer) lets it count on every layer.</summary>
+        public void SetLayer(ApparelPolicy policy, int index, ApparelLayerDef layer, bool allBut)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.lines.Count)
+            {
+                return;
+            }
+            order.lines[index].layer = layer;
+            order.lines[index].allButLayer = layer != null && allBut;
             NotifyChanged();
         }
 

@@ -47,7 +47,7 @@
 
   <!-- Why a piece won -->
   <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
-  <OL_Preview_WhyPreferred>{0} is a preferred item.</OL_Preview_WhyPreferred>
+  <OL_Preview_WhyLocked>{0} is locked.</OL_Preview_WhyLocked>
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
   <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
@@ -56,9 +56,9 @@
   <OL_Preview_RunnerUpWorse>Runner-up: {0}, worse on {1} by {2}.</OL_Preview_RunnerUpWorse>
   <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
   <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
-  <OL_Preview_RunnerUpNotPreferred>Runner-up: {0}, not the preferred {1}.</OL_Preview_RunnerUpNotPreferred>
-  <OL_Preview_RunnerUpSamePreferred>Runner-up: {0}, the same preferred item, worse on the priorities below it.</OL_Preview_RunnerUpSamePreferred>
-  <OL_Preview_RunnerUpLaterItem>Runner-up: {0}, a preferred item lower in the priorities.</OL_Preview_RunnerUpLaterItem>
+  <OL_Preview_RunnerUpNotLocked>Runner-up: {0}, not the locked {1}.</OL_Preview_RunnerUpNotLocked>
+  <OL_Preview_RunnerUpSameLocked>Runner-up: {0}, the same locked item, worse on the priorities below it.</OL_Preview_RunnerUpSameLocked>
+  <OL_Preview_RunnerUpLaterItem>Runner-up: {0}, a locked item lower in the priorities.</OL_Preview_RunnerUpLaterItem>
   <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
 
   <!-- Slot browser: every piece that could go in place of one -->
@@ -75,7 +75,7 @@
   <OL_Slot_AddColumnTitle>Add a column</OL_Slot_AddColumnTitle>
   <OL_Slot_RemoveColumn>Remove this column.</OL_Slot_RemoveColumn>
   <OL_Slot_AllowAllTip>Allow every item listed in this policy.</OL_Slot_AllowAllTip>
-  <OL_Slot_ClearAllTip>Forbid every item listed in this policy.</OL_Slot_ClearAllTip>
+  <OL_Slot_ClearAllTip>Forbid every item listed in this policy. Locked items stay allowed.</OL_Slot_ClearAllTip>
   <OL_Slot_IsPick>The colonist's pick for this slot.</OL_Slot_IsPick>
   <OL_Slot_NoValue>–</OL_Slot_NoValue>
   <OL_Slot_Copies>{0} ×{1}</OL_Slot_Copies>
@@ -90,12 +90,12 @@
   <OL_Slot_WontWearMechanitors>The game only puts mechanitor apparel on mechanitors.</OL_Slot_WontWearMechanitors>
   <OL_Slot_WontWearModRule>The game or another mod rules it out for this colonist.</OL_Slot_WontWearModRule>
   <OL_Slot_WontWearCEShield>Combat Extended only lets a colonist use a shield with a one-handed weapon or none.</OL_Slot_WontWearCEShield>
-  <OL_Slot_PinWontWear>{0} Pinning it won't change what {1} wears.</OL_Slot_PinWontWear>
-  <OL_Slot_Pin>Pin as a preferred item: pawns on this policy wear it over anything not pinned, whenever it's allowed. A pinned piece is never swapped for a better one that isn't pinned.</OL_Slot_Pin>
-  <OL_Slot_Unpin>Pinned as a preferred item. Click to unpin.</OL_Slot_Unpin>
-  <OL_Slot_PinnedInBase>Pinned in the policy this one builds on, so it sits under this policy's own priorities. Click to pin it here too, above them. Unpin it in the base.</OL_Slot_PinnedInBase>
-  <OL_Slot_IsPinned>A preferred item.</OL_Slot_IsPinned>
-  <OL_Slot_PinnedNotAllowed>A preferred item, but not allowed, so it isn't worn.</OL_Slot_PinnedNotAllowed>
+  <OL_Slot_LockWontWear>{0} Locking it won't change what {1} wears.</OL_Slot_LockWontWear>
+  <OL_Slot_Lock>Lock: pawns on this policy wear it over anything not locked, and it stays allowed. It's never swapped for a better piece that isn't locked, and nothing else you change in this window takes it off until it's unlocked. The game's own rules still apply.</OL_Slot_Lock>
+  <OL_Slot_Unlock>Locked. Click to unlock.</OL_Slot_Unlock>
+  <OL_Slot_LockedInBase>Locked in {0}, the policy this one builds on. Unlock it there.</OL_Slot_LockedInBase>
+  <OL_Slot_IsLocked>Locked.</OL_Slot_IsLocked>
+  <OL_Slot_LockedCheckbox>Locked, so it stays allowed. Unlock it to forbid it.</OL_Slot_LockedCheckbox>
   <OL_Slot_ClickToTry>Click to try it on. The checkbox allows or forbids it in this policy.</OL_Slot_ClickToTry>
   <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 

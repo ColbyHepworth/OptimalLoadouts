@@ -13,10 +13,10 @@
 
   <!-- Stat order editor, the Priorities tab -->
   <OL_Editor_Note>Pawns wear the best allowed piece, judged stat by stat from the top.</OL_Editor_Note>
-  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. Pin items in the slot browser to prefer them over the stats. What's allowed is set on the Allowed items tab.</OL_Editor_Help>
+  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. Lock items in the slot browser to keep them over the stats. What's allowed is set on the Allowed items tab.</OL_Editor_Help>
   <OL_Editor_Base>Builds on:</OL_Editor_Base>
   <OL_Editor_NoBase>None</OL_Editor_NoBase>
-  <OL_Editor_BaseTip>Another policy this one builds on. Its priorities go under this policy's own, and its limits apply here too. Allowed items aren't shared.</OL_Editor_BaseTip>
+  <OL_Editor_BaseTip>Another policy this one builds on. Its locked items and limits apply here too, and its stats go under this policy's own. Other allowed items aren't shared.</OL_Editor_BaseTip>
   <OL_Editor_AddStat>Add stat</OL_Editor_AddStat>
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
@@ -30,15 +30,17 @@
   <OL_Layer_StatOn>{0} on {1}</OL_Layer_StatOn>
   <OL_Layer_StatAllBut>{0} on all but {1}</OL_Layer_StatAllBut>
   <OL_Layer_Tip>Which layers this stat counts on. A piece only counts on this line when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
-  <OL_Editor_PreferredItem>preferred item</OL_Editor_PreferredItem>
-  <OL_Editor_PreferredItemTip>Pawns wear {0} over anything below this line, in any material and quality, whenever it's allowed. Pin or unpin items in the slot browser. Click for its info card.</OL_Editor_PreferredItemTip>
-  <OL_Editor_BaseItemLine>{0} (preferred item)</OL_Editor_BaseItemLine>
+  <OL_Editor_LockedItem>locked</OL_Editor_LockedItem>
+  <OL_Editor_LockedItemTip>Pawns wear {0} over anything not locked, in any material and quality, and it stays allowed. Lock or unlock items in the slot browser, or remove this line to unlock it. Click for its info card.</OL_Editor_LockedItemTip>
+  <OL_Editor_BaseItemLine>{0} (locked in {1})</OL_Editor_BaseItemLine>
+  <OL_Editor_LocksFirst>Locked items stay above the stats.</OL_Editor_LocksFirst>
+  <OL_Lock_KeptAllowed>{0} is locked, so it stays allowed. Unlock it first.</OL_Lock_KeptAllowed>
   <OL_Editor_Empty>No stats yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
 
   <!-- Limits (forbids by stat), the Limits tab -->
   <OL_Forbid_Note>Apparel that misses a limit is unticked in Allowed items. Order doesn't matter.</OL_Forbid_Note>
   <OL_Forbid_Empty>No limits yet. Everything ticked in Allowed items can be worn.</OL_Forbid_Empty>
-  <OL_Forbid_HeadingTip>Each limit is a minimum or maximum on one stat. Apparel that misses one is unticked in this policy's Allowed items, judged in its usual material at normal quality. Pawns take off what's unticked, and items tick back once they meet every limit. Items unticked by hand stay unticked.</OL_Forbid_HeadingTip>
+  <OL_Forbid_HeadingTip>Each limit is a minimum or maximum on one stat. Apparel that misses one is unticked in this policy's Allowed items, judged in its usual material at normal quality. Pawns take off what's unticked, and items tick back once they meet every limit. Items unticked by hand stay unticked, and locked items are never unticked.</OL_Forbid_HeadingTip>
   <OL_Forbid_Add>Add limit</OL_Forbid_Add>
   <OL_Forbid_AddTitle>Limit a stat</OL_Forbid_AddTitle>
   <OL_Forbid_AtLeast>At least</OL_Forbid_AtLeast>

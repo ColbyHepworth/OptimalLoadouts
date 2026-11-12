@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using OptimalLoadouts.Orders;
 using RimWorld;
 using Verse;
@@ -33,6 +34,8 @@ namespace OptimalLoadouts.ApparelOrders
                     lines = new List<OrderLine>();
                 }
                 lines.RemoveAll(line => line == null || line.Subject == null);
+                // Locked items rank above every stat, so they're kept first, as moving lines keeps them.
+                lines = lines.Where(line => line.IsItem).Concat(lines.Where(line => !line.IsItem)).ToList();
                 if (forbids == null)
                 {
                     forbids = new List<ApparelForbid>();

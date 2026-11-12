@@ -120,11 +120,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 TooltipHandler.TipRegion(label, forbid.stat.description);
             }
             FloatRange range = ApparelForbids.RangeOf(forbid.stat);
-            List<ThingDef> caught = ApparelForbids.Caught(forbid);
+            List<ThingDef> caught = ApparelForbids.Caught(policy, forbid);
             if (Widgets.ButtonText(direction, forbid.forbidAbove ? "OL_Forbid_AtMost".Translate() : "OL_Forbid_AtLeast".Translate()))
             {
                 // A forbid that catches nothing keeps catching nothing when flipped, instead of catching everything at once.
-                float threshold = caught.Count > 0 ? forbid.threshold : forbid.forbidAbove ? range.min : range.max;
+                bool catchesAny = caught.Count > 0 || orders.LockedItems(policy).Any(forbid.Forbids);
+                float threshold = catchesAny ? forbid.threshold : forbid.forbidAbove ? range.min : range.max;
                 orders.SetForbid(policy, index, !forbid.forbidAbove, threshold);
             }
             TooltipHandler.TipRegion(direction, "OL_Forbid_DirectionTip".Translate());

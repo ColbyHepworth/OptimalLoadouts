@@ -36,10 +36,11 @@ namespace OptimalLoadouts.Gui
 
         public static readonly Texture2D SortDescendingIcon = ContentFinder<Texture2D>.Get("UI/Icons/SortingDescending");
 
-        /// <summary>Vanilla's pin, as the History tab pins messages: filled when pinned, an outline when not.</summary>
-        public static readonly Texture2D PinIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin");
+        /// <summary>Vanilla's lock, as the ideoligion and gene screens mark what's locked. Drawn faint when unlocked.</summary>
+        public static readonly Texture2D LockIcon = ContentFinder<Texture2D>.Get("UI/Overlays/Locked");
 
-        public static readonly Texture2D PinOutlineIcon = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
+        /// <summary>How faint a lock is drawn on a row that isn't locked.</summary>
+        public const float UnlockedAlpha = 0.25f;
 
         /// <summary>A band's fill: the window's darker background, against the lighter section the list sits on.</summary>
         public static readonly Color BandColor = Widgets.WindowBGFillColor;

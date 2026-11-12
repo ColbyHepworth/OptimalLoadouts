@@ -37,7 +37,7 @@ namespace OptimalLoadouts.ApparelOrders
                 {
                     if (line.IsItem)
                     {
-                        // Every copy of a pinned item wins its line by the same 1, so the lines under it rank the copies.
+                        // Every copy of a locked item wins its line by the same 1, so the lines under it rank the copies.
                         delta += ItemTieBreak(candidate, lines, i + 1);
                     }
                     return new OrderVerdict(i, delta);

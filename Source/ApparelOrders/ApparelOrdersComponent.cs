@@ -89,8 +89,8 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// The policy's lines, then its base's, then that base's, skipping a stat or item already listed. A base that
-        /// was deleted or would loop back is ignored.
+        /// The locked items of the policy, then of its base and that base's, then the stat lines in the same order,
+        /// skipping a stat or item already listed. A base that was deleted or would loop back is ignored.
         /// </summary>
         public IReadOnlyList<OrderLine> EffectiveLines(ApparelPolicy policy)
         {
@@ -113,6 +113,7 @@ namespace OptimalLoadouts.ApparelOrders
                 return lines;
             }
             lines = new List<OrderLine>();
+            var stats = new List<OrderLine>();
             var visited = new HashSet<ApparelPolicy>();
             var listed = new HashSet<Def>();
             ApparelPolicy current = policy;
@@ -127,11 +128,12 @@ namespace OptimalLoadouts.ApparelOrders
                 {
                     if (line.Subject != null && listed.Add(line.Subject))
                     {
-                        lines.Add(line);
+                        (line.IsItem ? lines : stats).Add(line);
                     }
                 }
                 current = BaseOf(current);
             }
+            lines.AddRange(stats);
             resolved[policy] = lines;
             return lines;
         }
@@ -184,8 +186,11 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
-        /// <summary>Pins the item: an item line placed above the policy's first stat line, after the items pinned before it.</summary>
-        public void PreferItem(ApparelPolicy policy, ThingDef item)
+        /// <summary>
+        /// Locks the item: an item line placed above the policy's first stat line, after the items locked before it. Ticks
+        /// it in the checklist, where it stays ticked until it's unlocked.
+        /// </summary>
+        public void Lock(ApparelPolicy policy, ThingDef item)
         {
             ApparelOrder order = GetOrCreate(policy);
             if (order.lines.Any(line => line.item == item))
@@ -194,24 +199,28 @@ namespace OptimalLoadouts.ApparelOrders
             }
             int firstStat = order.lines.FindIndex(line => !line.IsItem);
             order.lines.Insert(firstStat < 0 ? order.lines.Count : firstStat, OrderLine.ForItem(item));
-            NotifyChanged();
+            policy.filter.SetAllow(item, true);
+            ForbidsChanged();
         }
 
-        /// <summary>Unpins the item: removes the policy's own line for it. A base's line for it stays in the base.</summary>
-        public void StopPreferring(ApparelPolicy policy, ThingDef item)
+        /// <summary>
+        /// Removes the policy's own lock on the item. It stays ticked, unless a limit catches it. A base's lock on it stays
+        /// in the base.
+        /// </summary>
+        public void Unlock(ApparelPolicy policy, ThingDef item)
         {
             ApparelOrder order = OrderFor(policy);
             if (order != null && order.lines.RemoveAll(line => line.item == item) > 0)
             {
-                NotifyChanged();
+                ForbidsChanged();
             }
         }
 
-        /// <summary>Whether the item is pinned in the policy or its base.</summary>
-        public bool Prefers(ApparelPolicy policy, ThingDef item)
+        /// <summary>Whether the item is locked in the policy or a base.</summary>
+        public bool IsLocked(ApparelPolicy policy, ThingDef item)
         {
             IReadOnlyList<OrderLine> lines = EffectiveLines(policy);
-            for (int i = 0; i < lines.Count; i++)
+            for (int i = 0; i < lines.Count && lines[i].IsItem; i++)
             {
                 if (lines[i].item == item)
                 {
@@ -221,6 +230,42 @@ namespace OptimalLoadouts.ApparelOrders
             return false;
         }
 
+        /// <summary>Whether the policy's own lines lock the item, rather than only a base's.</summary>
+        public bool LocksOwn(ApparelPolicy policy, ThingDef item)
+        {
+            return OrderFor(policy)?.lines.Any(line => line.item == item) ?? false;
+        }
+
+        /// <summary>The items locked in the policy or a base.</summary>
+        public IEnumerable<ThingDef> LockedItems(ApparelPolicy policy)
+        {
+            return EffectiveLines(policy).TakeWhile(line => line.IsItem).Select(line => line.item);
+        }
+
+        /// <summary>Ticks back every item locked in the policy or a base that's unticked. Returns the items it ticked.</summary>
+        public List<ThingDef> KeepLockedAllowed(ApparelPolicy policy)
+        {
+            var ticked = new List<ThingDef>();
+            if (policy == null)
+            {
+                return ticked;
+            }
+            foreach (ThingDef item in LockedItems(policy))
+            {
+                if (!policy.filter.Allows(item))
+                {
+                    policy.filter.SetAllow(item, true);
+                    ticked.Add(item);
+                }
+            }
+            if (ticked.Count > 0)
+            {
+                NotifyChanged();
+            }
+            return ticked;
+        }
+
+        /// <summary>Removes a line. Removing a locked item unlocks it, so a limit that catches it then unticks it.</summary>
         public void RemoveLine(ApparelPolicy policy, int index)
         {
             ApparelOrder order = OrderFor(policy);
@@ -228,19 +273,36 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return;
             }
+            bool wasItem = order.lines[index].IsItem;
             order.lines.RemoveAt(index);
-            NotifyChanged();
+            if (wasItem)
+            {
+                ForbidsChanged();
+            }
+            else
+            {
+                NotifyChanged();
+            }
         }
 
-        /// <summary>Moves a line up (negative) or down (positive) by one place.</summary>
-        public void MoveLine(ApparelPolicy policy, int index, int direction)
+        /// <summary>Whether a line can move up (negative) or down (positive) by one place: not past the end, and never a stat past a locked item.</summary>
+        public bool CanMoveLine(ApparelPolicy policy, int index, int direction)
         {
             ApparelOrder order = OrderFor(policy);
             int target = index + direction;
-            if (order == null || index < 0 || index >= order.lines.Count || target < 0 || target >= order.lines.Count)
+            return order != null && index >= 0 && index < order.lines.Count && target >= 0 && target < order.lines.Count
+                && order.lines[index].IsItem == order.lines[target].IsItem;
+        }
+
+        /// <summary>Moves a line up (negative) or down (positive) by one place, when <see cref="CanMoveLine"/> allows it.</summary>
+        public void MoveLine(ApparelPolicy policy, int index, int direction)
+        {
+            if (!CanMoveLine(policy, index, direction))
             {
                 return;
             }
+            ApparelOrder order = OrderFor(policy);
+            int target = index + direction;
             OrderLine line = order.lines[index];
             order.lines[index] = order.lines[target];
             order.lines[target] = line;

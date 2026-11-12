@@ -42,12 +42,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             DrawLines(new Rect(rect.x, y, rect.width, rect.yMax - y), orders, policy);
         }
 
-        /// <summary>The policy's own lines, then each base's heading and lines, then the add button, scrolling together.</summary>
+        /// <summary>
+        /// The lines in the order they rank: the policy's own locked items, then its bases' locked items, then its own
+        /// stats, then each base's heading and stats. Then the add button, scrolling with them.
+        /// </summary>
         private static void DrawLines(Rect listRect, ApparelOrdersComponent orders, ApparelPolicy policy)
         {
             List<OrderLine> ownLines = OwnLines(orders, policy);
             List<(ApparelPolicy from, OrderLine line)> fromBase = BaseLines(orders, policy, ownLines);
-            int baseHeadings = fromBase.Select(entry => entry.from).Distinct().Count();
+            List<(ApparelPolicy from, OrderLine line)> baseLocks = fromBase.Where(entry => entry.line.IsItem).ToList();
+            List<(ApparelPolicy from, OrderLine line)> baseStats = fromBase.Where(entry => !entry.line.IsItem).ToList();
+            int baseHeadings = baseStats.Select(entry => entry.from).Distinct().Count();
             int rows = ownLines.Count == 0 && fromBase.Count == 0 ? 1 : ownLines.Count + fromBase.Count + baseHeadings;
             float viewHeight = rows * UiStyle.RowHeight + UiStyle.Gap + UiStyle.RowHeight;
             bool scrolls = viewHeight > listRect.height;
@@ -62,13 +67,36 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 y += UiStyle.RowHeight;
             }
+            int number = 0;
             for (int i = 0; i < ownLines.Count; i++)
             {
-                DrawOwnLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), orders, policy, ownLines, i);
+                if (ownLines[i].IsItem)
+                {
+                    DrawOwnLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), orders, policy, ownLines, i, ++number);
+                    y += UiStyle.RowHeight;
+                }
+            }
+            foreach ((ApparelPolicy from, OrderLine line) in baseLocks)
+            {
+                Rect row = new Rect(0f, y, viewRect.width, UiStyle.RowHeight);
+                // Numbered, since a base's locked items rank above this policy's own stats.
+                using (new TextBlock(TextAnchor.MiddleLeft, ColoredText.SubtleGrayColor))
+                {
+                    Widgets.Label(new Rect(row.x, row.y, NumberWidth, row.height), "OL_Editor_LineNumber".Translate(++number));
+                }
+                DrawBaseLine(row, line, from);
                 y += UiStyle.RowHeight;
             }
+            for (int i = 0; i < ownLines.Count; i++)
+            {
+                if (!ownLines[i].IsItem)
+                {
+                    DrawOwnLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), orders, policy, ownLines, i, ++number);
+                    y += UiStyle.RowHeight;
+                }
+            }
             ApparelPolicy currentSource = null;
-            foreach ((ApparelPolicy from, OrderLine line) in fromBase)
+            foreach ((ApparelPolicy from, OrderLine line) in baseStats)
             {
                 if (from != currentSource)
                 {
@@ -80,7 +108,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     }
                     y += UiStyle.RowHeight - UiStyle.HeadingGap;
                 }
-                DrawBaseLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), line);
+                DrawBaseLine(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), line, from);
                 y += UiStyle.RowHeight;
             }
             y += UiStyle.Gap;
@@ -93,14 +121,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             Widgets.EndScrollView();
         }
 
-        private static void DrawOwnLine(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy, List<OrderLine> lines, int index)
+        /// <summary>One of the policy's own lines: <paramref name="index"/> is its place in the order, <paramref name="number"/> its place on screen.</summary>
+        private static void DrawOwnLine(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy, List<OrderLine> lines, int index, int number)
         {
             OrderLine line = lines[index];
             Widgets.DrawHighlightIfMouseover(row);
             float x = row.x;
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
-                Widgets.Label(new Rect(x, row.y, NumberWidth, row.height), "OL_Editor_LineNumber".Translate(index + 1));
+                Widgets.Label(new Rect(x, row.y, NumberWidth, row.height), "OL_Editor_LineNumber".Translate(number));
                 x += NumberWidth;
                 float labelWidth = row.width - NumberWidth - LayerWidth - UiStyle.IconGap - DirectionWidth
                     - 3 * (UiStyle.IconSize + UiStyle.IconGap) - UiStyle.Gap;
@@ -148,15 +177,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static void DrawMoveAndRemove(float x, Rect row, ApparelOrdersComponent orders, ApparelPolicy policy, int index)
         {
             float iconY = row.y + (row.height - UiStyle.IconSize) / 2f;
-            if (Widgets.ButtonImage(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.ReorderUp, true, "OL_Editor_MoveUp".Translate()))
-            {
-                orders.MoveLine(policy, index, -1);
-            }
+            DrawMoveButton(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.ReorderUp, "OL_Editor_MoveUp".Translate(), orders,
+                policy, index, -1);
             x += UiStyle.IconSize + UiStyle.IconGap;
-            if (Widgets.ButtonImage(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.ReorderDown, true, "OL_Editor_MoveDown".Translate()))
-            {
-                orders.MoveLine(policy, index, 1);
-            }
+            DrawMoveButton(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.ReorderDown, "OL_Editor_MoveDown".Translate(), orders,
+                policy, index, 1);
             x += UiStyle.IconSize + UiStyle.IconGap;
             if (Widgets.ButtonImage(new Rect(x, iconY, UiStyle.IconSize, UiStyle.IconSize), TexButton.Delete, true, "OL_Editor_Remove".Translate()))
             {
@@ -164,33 +189,59 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        /// <summary>A preferred item: its icon, its name and "Preferred item" in grey. Its info card opens on a click.</summary>
+        /// <summary>
+        /// A move button, greyed where the line can't move: at the end of the list, or where a stat would pass a locked item.
+        /// </summary>
+        private static void DrawMoveButton(Rect rect, Texture2D icon, string tooltip, ApparelOrdersComponent orders, ApparelPolicy policy,
+            int index, int direction)
+        {
+            if (orders.CanMoveLine(policy, index, direction))
+            {
+                if (Widgets.ButtonImage(rect, icon, true, tooltip))
+                {
+                    orders.MoveLine(policy, index, direction);
+                }
+                return;
+            }
+            List<OrderLine> lines = orders.OrderFor(policy).lines;
+            int target = index + direction;
+            if (target >= 0 && target < lines.Count)
+            {
+                TooltipHandler.TipRegion(rect, "OL_Editor_LocksFirst".Translate());
+            }
+            using (new TextBlock(ColoredText.SubtleGrayColor))
+            {
+                GUI.DrawTexture(rect, icon);
+            }
+        }
+
+        /// <summary>A locked item: its icon, its name and "locked" in grey. Its info card opens on a click.</summary>
         private static void DrawItemLabel(Rect rect, ThingDef item)
         {
             Rect icon = new Rect(rect.x, rect.y + (rect.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
             Widgets.DefIcon(icon, item);
             Rect text = new Rect(icon.xMax + UiStyle.IconGap, rect.y, rect.xMax - icon.xMax - UiStyle.IconGap, rect.height);
             string name = item.LabelCap.Resolve();
-            string tag = "OL_Editor_PreferredItem".Translate();
+            string tag = "OL_Editor_LockedItem".Translate();
             float nameWidth = Mathf.Min(Text.CalcSize(name).x, text.width);
             Widgets.Label(new Rect(text.x, text.y, nameWidth, text.height), name.Truncate(nameWidth));
             UiStyle.Note(new Rect(text.x + nameWidth + UiStyle.IconGap, text.y, text.width - nameWidth - UiStyle.IconGap, text.height),
                 tag.Truncate(text.width - nameWidth - UiStyle.IconGap));
-            TooltipHandler.TipRegion(rect, "OL_Editor_PreferredItemTip".Translate(item.label));
+            TooltipHandler.TipRegion(rect, "OL_Editor_LockedItemTip".Translate(item.label));
             if (Widgets.ButtonInvisible(rect))
             {
                 Find.WindowStack.Add(new Dialog_InfoCard(item, GenStuff.DefaultStuffFor(item)));
             }
         }
 
-        private static void DrawBaseLine(Rect row, OrderLine line)
+        private static void DrawBaseLine(Rect row, OrderLine line, ApparelPolicy from)
         {
             if (line.IsItem)
             {
                 using (new TextBlock(TextAnchor.MiddleLeft))
                 {
                     UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
-                        "OL_Editor_BaseItemLine".Translate(line.item.LabelCap));
+                        "OL_Editor_BaseItemLine".Translate(line.item.LabelCap, from.label));
                 }
                 return;
             }

@@ -6,7 +6,7 @@ namespace OptimalLoadouts.Orders
 {
     /// <summary>
     /// One line of a stat order: either a stat, with whether higher or lower values are better and, for apparel, the layer
-    /// it counts on; or a preferred item, worth 1 on a piece of that item and 0 on anything else.
+    /// it counts on; or a locked item, worth 1 on a piece of that item and 0 on anything else.
     /// </summary>
     public class OrderLine : IExposable
     {
@@ -21,7 +21,7 @@ namespace OptimalLoadouts.Orders
         /// <summary>With a layer: count every layer except it ("all but utility").</summary>
         public bool allButLayer;
 
-        /// <summary>The preferred item on an item line, or null on a stat line.</summary>
+        /// <summary>The locked item on an item line, or null on a stat line.</summary>
         public ThingDef item;
 
         public OrderLine()
@@ -34,7 +34,7 @@ namespace OptimalLoadouts.Orders
             this.lowerIsBetter = lowerIsBetter;
         }
 
-        /// <summary>A line that prefers one item over everything else.</summary>
+        /// <summary>A line that locks one item: it beats everything not locked.</summary>
         public static OrderLine ForItem(ThingDef item)
         {
             return new OrderLine { item = item };

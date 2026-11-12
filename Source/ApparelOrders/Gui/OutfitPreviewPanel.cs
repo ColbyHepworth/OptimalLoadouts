@@ -832,7 +832,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             OrderLine line = lines[verdict.DecidingLine];
             if (line.IsItem)
             {
-                return "OL_Preview_WhyPreferred".Translate(line.item.LabelCap);
+                return "OL_Preview_WhyLocked".Translate(line.item.LabelCap);
             }
             return "OL_Preview_WhyBetter".Translate(OrderLineText.StatOnLayer(line), Amount(line.stat, verdict.Delta));
         }
@@ -850,10 +850,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 if (runnerUp.Delta < 0f)
                 {
-                    return "OL_Preview_RunnerUpNotPreferred".Translate(name, line.item.label);
+                    return "OL_Preview_RunnerUpNotLocked".Translate(name, line.item.label);
                 }
                 return runnerUp.DecidingLine == swap.Verdict.DecidingLine
-                    ? "OL_Preview_RunnerUpSamePreferred".Translate(name)
+                    ? "OL_Preview_RunnerUpSameLocked".Translate(name)
                     : "OL_Preview_RunnerUpLaterItem".Translate(name);
             }
             string onLine = OrderLineText.StatOnLayer(line);

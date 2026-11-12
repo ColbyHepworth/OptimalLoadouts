@@ -280,11 +280,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return changed;
         }
 
+        /// <summary>Allows or forbids every listed item. Locked items stay allowed.</summary>
         private static bool SetAllowed(List<SlotChoice> listed, ApparelPolicy policy, bool allowed)
         {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             bool changed = false;
             foreach (ThingDef def in listed.Select(choice => choice.Piece.def).Distinct())
             {
+                if (!allowed && orders != null && orders.IsLocked(policy, def))
+                {
+                    continue;
+                }
                 if (policy.filter.Allows(def) != allowed)
                 {
                     policy.filter.SetAllow(def, allowed);
@@ -424,14 +430,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             // Laid out like vanilla's filter: the info card button first, the checkbox at the far end.
             RowLayout layout = RowLayout.For(row, columns.Count);
             Widgets.InfoCardButton(layout.Info.x, layout.Info.y, piece);
+            bool locked = ApparelOrdersComponent.Current?.IsLocked(policy, piece.def) ?? false;
             bool allowed = choice.TypeAllowed;
-            Widgets.Checkbox(layout.Checkbox.x, layout.Checkbox.y, ref allowed, UiStyle.IconSize);
+            Widgets.Checkbox(layout.Checkbox.x, layout.Checkbox.y, ref allowed, UiStyle.IconSize, disabled: locked);
+            if (locked)
+            {
+                TooltipHandler.TipRegion(layout.Checkbox, "OL_Slot_LockedCheckbox".Translate());
+            }
             bool filterChanged = allowed != choice.TypeAllowed;
             if (filterChanged)
             {
                 policy.filter.SetAllow(piece.def, allowed);
             }
-            DrawPin(layout.Pin, choice, pawn, policy);
+            DrawLock(layout.Lock, choice, pawn, policy);
 
             Rect body = layout.Body;
             if (UiStyle.ClickableRow(body))
@@ -479,9 +490,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 parts.Add("OL_Slot_AlsoReplaces".Translate(string.Join(", ", choice.AlsoReplaces.Select(worn => worn.LabelCap.ToString()))));
             }
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
-            if (orders != null && orders.Prefers(policy, choice.Piece.def))
+            if (orders != null && orders.IsLocked(policy, choice.Piece.def))
             {
-                parts.Add(choice.TypeAllowed ? "OL_Slot_IsPinned".Translate().Resolve() : "OL_Slot_PinnedNotAllowed".Translate().Resolve());
+                parts.Add("OL_Slot_IsLocked".Translate());
             }
             if (!choice.TypeAllowed)
             {
@@ -507,11 +518,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// The pin that makes the item a preferred item in the policy's priorities. Filled when pinned. A pin from the base
-        /// is greyed, since it sits under this policy's own lines; a click pins the item here too, above them. Pinning a piece
-        /// the game never puts on this pawn says why, since the pin can't change that.
+        /// The lock that keeps the item worn and allowed in the policy. Faint when unlocked. A base's lock is greyed and
+        /// does nothing here, since it's unlocked in the base. Locking a piece the game never puts on this pawn says why,
+        /// since the lock can't change that.
         /// </summary>
-        private static void DrawPin(Rect rect, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
+        private static void DrawLock(Rect rect, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             if (orders == null)
@@ -519,42 +530,48 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             ThingDef item = choice.Piece.def;
-            bool pinned = orders.Prefers(policy, item);
-            bool own = orders.OrderFor(policy)?.lines.Any(line => line.item == item) ?? false;
-            if (pinned && !own)
+            bool locked = orders.IsLocked(policy, item);
+            if (locked && !orders.LocksOwn(policy, item))
             {
-                TooltipHandler.TipRegion(rect, "OL_Slot_PinnedInBase".Translate());
+                TooltipHandler.TipRegion(rect, "OL_Slot_LockedInBase".Translate(LockingBase(orders, policy, item)?.label ?? ""));
                 using (new TextBlock(ColoredText.SubtleGrayColor))
                 {
-                    if (Widgets.ButtonImage(rect, UiStyle.PinIcon, GUI.color))
-                    {
-                        Pin(orders, choice, pawn, policy);
-                    }
+                    GUI.DrawTexture(rect, UiStyle.LockIcon);
                 }
                 return;
             }
-            TooltipHandler.TipRegion(rect, pinned ? "OL_Slot_Unpin".Translate() : "OL_Slot_Pin".Translate());
-            if (Widgets.ButtonImage(rect, pinned ? UiStyle.PinIcon : UiStyle.PinOutlineIcon))
+            TooltipHandler.TipRegion(rect, locked ? "OL_Slot_Unlock".Translate() : "OL_Slot_Lock".Translate());
+            Color color = locked ? Color.white : new Color(1f, 1f, 1f, UiStyle.UnlockedAlpha);
+            if (Widgets.ButtonImage(rect, UiStyle.LockIcon, color))
             {
-                if (pinned)
+                if (locked)
                 {
-                    orders.StopPreferring(policy, item);
+                    orders.Unlock(policy, item);
                 }
                 else
                 {
-                    Pin(orders, choice, pawn, policy);
+                    orders.Lock(policy, item);
+                    if (choice.CantWearReason != null)
+                    {
+                        Messages.Message("OL_Slot_LockWontWear".Translate(choice.CantWearReason, pawn.LabelShort), MessageTypeDefOf.RejectInput,
+                            historical: false);
+                    }
                 }
             }
         }
 
-        private static void Pin(ApparelOrdersComponent orders, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
+        /// <summary>The nearest base whose own lines lock the item, or null.</summary>
+        private static ApparelPolicy LockingBase(ApparelOrdersComponent orders, ApparelPolicy policy, ThingDef item)
         {
-            orders.PreferItem(policy, choice.Piece.def);
-            if (choice.CantWearReason != null)
+            var visited = new HashSet<ApparelPolicy> { policy };
+            for (ApparelPolicy basePolicy = orders.BaseOf(policy); basePolicy != null && visited.Add(basePolicy); basePolicy = orders.BaseOf(basePolicy))
             {
-                Messages.Message("OL_Slot_PinWontWear".Translate(choice.CantWearReason, pawn.LabelShort), MessageTypeDefOf.RejectInput,
-                    historical: false);
+                if (orders.LocksOwn(basePolicy, item))
+                {
+                    return basePolicy;
+                }
             }
+            return null;
         }
 
         /// <summary>The order's line for a column's stat, or null for a column added by hand.</summary>
@@ -590,9 +607,9 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             public Rect Icon { get; }
             public Rect Name { get; }
             public Rect Checkbox { get; }
-            public Rect Pin { get; }
+            public Rect Lock { get; }
 
-            /// <summary>Everything between the info button and the pin, which a click tries on.</summary>
+            /// <summary>Everything between the info button and the lock, which a click tries on.</summary>
             public Rect Body { get; }
 
             private readonly float valuesX;
@@ -607,12 +624,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Info = new Rect(row.x, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f, Widgets.InfoCardButtonSize,
                     Widgets.InfoCardButtonSize);
                 Checkbox = new Rect(row.xMax - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
-                Pin = new Rect(Checkbox.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
+                Lock = new Rect(Checkbox.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 Rank = new Rect(Info.xMax + UiStyle.Gap / 2f, row.y, RankWidth, row.height);
                 Icon = new Rect(Rank.xMax + UiStyle.Gap / 2f, iconY, UiStyle.IconSize, UiStyle.IconSize);
-                valuesX = Pin.x - UiStyle.Gap - columnCount * ValueWidth;
+                valuesX = Lock.x - UiStyle.Gap - columnCount * ValueWidth;
                 Name = new Rect(Icon.xMax + UiStyle.Gap, row.y, valuesX - Icon.xMax - 2f * UiStyle.Gap, row.height);
-                Body = new Rect(Rank.x, row.y, Pin.x - UiStyle.Gap - Rank.x, row.height);
+                Body = new Rect(Rank.x, row.y, Lock.x - UiStyle.Gap - Rank.x, row.height);
             }
 
             /// <summary>Everything in a row but its name and value columns.</summary>

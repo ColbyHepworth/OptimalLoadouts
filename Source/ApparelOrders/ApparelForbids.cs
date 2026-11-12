@@ -31,8 +31,8 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// Unticks what the policy's forbids catch and ticks back what they no longer catch. Returns whether the checklist
-        /// changed.
+        /// Unticks what the policy's forbids catch and ticks back what they no longer catch. A locked item is never caught,
+        /// and is ticked back if anything unticked it. Returns whether the checklist changed.
         /// </summary>
         private static bool Apply(ApparelPolicy policy)
         {
@@ -42,14 +42,15 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return false;
             }
-            bool changed = false;
+            bool changed = orders.KeepLockedAllowed(policy).Count > 0;
             List<ApparelForbid> forbids = orders.EffectiveForbids(policy);
+            var locked = new HashSet<ThingDef>(orders.LockedItems(policy));
             var caught = new HashSet<ThingDef>();
             if (forbids.Count > 0)
             {
                 foreach (ThingDef def in Apparel)
                 {
-                    if (forbids.Any(forbid => forbid.Forbids(def)))
+                    if (!locked.Contains(def) && forbids.Any(forbid => forbid.Forbids(def)))
                     {
                         caught.Add(def);
                     }
@@ -92,17 +93,23 @@ namespace OptimalLoadouts.ApparelOrders
             return changed;
         }
 
-        /// <summary>The items a forbid catches, for its count and tooltip.</summary>
-        public static List<ThingDef> Caught(ApparelForbid forbid)
+        /// <summary>The items a forbid catches in the policy, for its count and tooltip: all but its locked items. With no policy, nothing is locked.</summary>
+        public static List<ThingDef> Caught(ApparelPolicy policy, ApparelForbid forbid)
         {
-            return Apparel.Where(forbid.Forbids).ToList();
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            var locked = new HashSet<ThingDef>(orders?.LockedItems(policy) ?? Enumerable.Empty<ThingDef>());
+            return Apparel.Where(def => !locked.Contains(def) && forbid.Forbids(def)).ToList();
         }
 
-        /// <summary>The first of the policy's forbids that catches the item, or null.</summary>
+        /// <summary>The first of the policy's forbids that catches the item, or null. A locked item is never caught.</summary>
         public static ApparelForbid ForbiddenBy(ApparelPolicy policy, ThingDef def)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
-            return orders?.EffectiveForbids(policy).FirstOrDefault(forbid => forbid.Forbids(def));
+            if (orders == null || orders.IsLocked(policy, def))
+            {
+                return null;
+            }
+            return orders.EffectiveForbids(policy).FirstOrDefault(forbid => forbid.Forbids(def));
         }
 
         /// <summary>The lowest and highest value any apparel has on the stat, for a forbid's slider.</summary>

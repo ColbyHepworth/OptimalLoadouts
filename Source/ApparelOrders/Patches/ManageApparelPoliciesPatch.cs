@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using OptimalLoadouts.ApparelOrders.Gui;
 using OptimalLoadouts.Gui;
@@ -113,6 +114,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 return;
             }
             ApparelPolicy policy = SelectedPolicy(__instance);
+            KeepLockedAllowed(policy);
             if (tab == PolicyTab.StatOrder)
             {
                 Widgets.DrawMenuSection(__state.policyColumn);
@@ -126,6 +128,20 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             // After the section's frame, so the open tab covers the frame's top edge, as on vanilla's filter.
             DrawPolicyTabs(__state.policyColumn, policy);
             OutfitPreviewPanel.Draw(__state.preview, __state.slot, policy);
+        }
+
+        /// <summary>
+        /// Ticks back a locked item that vanilla's filter just unticked (by hand, Clear all or a category's box), and says
+        /// why.
+        /// </summary>
+        private static void KeepLockedAllowed(ApparelPolicy policy)
+        {
+            List<ThingDef> ticked = ApparelOrdersComponent.Current?.KeepLockedAllowed(policy);
+            if (ticked != null && ticked.Count > 0)
+            {
+                string items = string.Join(", ", ticked.Select(item => item.LabelCap.Resolve()));
+                Messages.Message("OL_Lock_KeptAllowed".Translate(items), MessageTypeDefOf.RejectInput, historical: false);
+            }
         }
 
         private static void DrawPolicyTabs(Rect column, ApparelPolicy policy)

@@ -13,11 +13,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
     /// <summary>
     /// The outfit preview beside a policy's filter: any colonist drawn in the outfit the policy would give them, from
     /// every piece it allows, what the colony can make now, or what's in storage, and a list by layer saying why each
-    /// piece won and what the last edit changed. What it shows is the game's <see cref="PreviewSession"/>.
+    /// piece won and what your changes did. What it shows is the game's <see cref="PreviewSession"/>.
     /// </summary>
     public static class OutfitPreviewPanel
     {
         private const float PortraitSize = 180f;
+
+        private const float ClearButtonWidth = 60f;
 
         /// <summary>
         /// Draws the preview into <paramref name="rect"/>. With a <paramref name="slotRect"/>, an open slot's pieces get
@@ -273,20 +275,28 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// The outfit under a band for each layer, head layers first, each outermost first. A bracket on the left joins the
-        /// bands of a piece on several layers. From storage, what comes off follows. Then what the last change took off.
+        /// bands of a piece on several layers. While a piece is tried on, it's in its layer and what it takes off follows.
+        /// From storage, what comes off follows. Then what your changes took off.
         /// </summary>
         private static void DrawOutfitList(Rect rect, PreviewSession session)
         {
             PredictedOutfit outfit = session.Outfit;
-            DrawOutfitBand(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight));
+            DrawOutfitBand(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight), session);
             rect.yMin += UiStyle.RowHeight;
-            List<OutfitLayer> layers = OutfitLayers.For(session.Pawn, outfit.Worn);
+            List<OutfitLayer> layers = OutfitLayers.For(session.Pawn, session.Drawn);
             OutfitChanges marks = session.Changes;
-            // A worn piece taken off is listed under "Takes off" already.
-            List<Apparel> gone = marks == null ? new List<Apparel>() : marks.Removed.Except(outfit.TakenOff).ToList();
+            IReadOnlyList<Apparel> triedOff = session.TriedOnTakesOff;
+            // A worn piece taken off is listed under "Takes off" already, and a piece tried back on sits in its layer.
+            List<Apparel> gone = marks == null
+                ? new List<Apparel>()
+                : marks.Removed.Except(outfit.TakenOff).Where(piece => piece != session.Slot?.TriedOn).ToList();
             List<Bracket> brackets = Brackets(layers);
             float gutter = brackets.Count == 0 ? 0f : (brackets.Max(bracket => bracket.Lane) + 1) * UiStyle.BracketWidth;
             float height = layers.Sum(layer => UiStyle.BandHeight + layer.Pieces.Count * UiStyle.RowHeight);
+            if (triedOff.Count > 0)
+            {
+                height += (triedOff.Count + 1) * UiStyle.RowHeight;
+            }
             if (outfit.TakenOff.Count > 0)
             {
                 height += (outfit.TakenOff.Count + 1) * UiStyle.RowHeight;
@@ -301,7 +311,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 DrawBrackets(brackets, gutter);
                 Rect rows = new Rect(gutter, 0f, view.width - gutter, view.height);
-                DrawOutfitRows(rows, layers, session, marks, gone);
+                DrawOutfitRows(rows, layers, session, marks, triedOff, gone);
             }
             finally
             {
@@ -309,19 +319,38 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        /// <summary>The list's title, on a band like the layers' that sets it apart from the drawing above.</summary>
-        private static void DrawOutfitBand(Rect band)
+        /// <summary>
+        /// The list's title, on a band like the layers' that sets it apart from the drawing above. While there are change
+        /// marks, a button on the right clears them.
+        /// </summary>
+        private static void DrawOutfitBand(Rect band, PreviewSession session)
         {
             Widgets.DrawBoxSolid(band, UiStyle.BandColor);
+            Rect inner = band.ContractedBy(UiStyle.Gap / 2f, 0f);
+            if (session.Changes != null)
+            {
+                Rect clear = new Rect(inner.xMax - ClearButtonWidth, band.y + 2f, ClearButtonWidth, band.height - 4f);
+                using (new TextBlock(GameFont.Tiny))
+                {
+                    if (Widgets.ButtonText(clear, "OL_Preview_ClearMarks".Translate()))
+                    {
+                        session.ClearChanges();
+                    }
+                }
+                TooltipHandler.TipRegion(clear, "OL_Preview_ClearMarksTip".Translate());
+                inner.xMax = clear.x - UiStyle.Gap;
+            }
             using (new TextBlock(GameFont.Small, TextAnchor.MiddleLeft))
             {
-                Widgets.Label(band.ContractedBy(UiStyle.Gap / 2f, 0f), "OL_Preview_OutfitHeader".Translate());
+                Widgets.Label(inner, "OL_Preview_OutfitHeader".Translate());
             }
         }
 
-        private static void DrawOutfitRows(Rect rows, List<OutfitLayer> layers, PreviewSession session, OutfitChanges marks, List<Apparel> gone)
+        private static void DrawOutfitRows(Rect rows, List<OutfitLayer> layers, PreviewSession session, OutfitChanges marks,
+            IReadOnlyList<Apparel> triedOff, List<Apparel> gone)
         {
             PredictedOutfit outfit = session.Outfit;
+            Apparel tried = session.Slot?.TriedOn;
             float y = rows.y;
             // Pieces sit a little in from their layer's band.
             Rect pieces = new Rect(rows.x + UiStyle.Indent, rows.y, rows.width - UiStyle.Indent, rows.height);
@@ -333,7 +362,27 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 y += UiStyle.BandHeight;
                 foreach (Apparel piece in layer.Pieces)
                 {
-                    DrawWornRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, session, marks);
+                    Rect row = new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight);
+                    if (piece == tried)
+                    {
+                        // Opening its slot would end the try-on, so the row doesn't.
+                        DrawPieceRow(row, piece, false, "OL_Preview_TriedOnTip".Translate(), opensSlot: false, session, UiStyle.AddedColor);
+                    }
+                    else
+                    {
+                        DrawWornRow(row, piece, session, marks);
+                    }
+                    y += UiStyle.RowHeight;
+                }
+            }
+            if (triedOff.Count > 0)
+            {
+                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_TriedOnTakesOff".Translate());
+                y += UiStyle.RowHeight;
+                foreach (Apparel piece in triedOff)
+                {
+                    DrawPieceRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, true,
+                        "OL_Preview_ReplacedBy".Translate(tried.LabelCap).Resolve(), opensSlot: false, session, UiStyle.RemovedColor);
                     y += UiStyle.RowHeight;
                 }
             }
@@ -349,7 +398,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (gone.Count > 0)
             {
-                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_LastChangeTookOff".Translate());
+                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_ChangesTookOff".Translate());
                 y += UiStyle.RowHeight;
                 foreach (Apparel piece in gone)
                 {
@@ -408,7 +457,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        /// <summary>A piece of the outfit, with why it won and what the last change did.</summary>
+        /// <summary>A piece of the outfit, with why it won and what your changes did.</summary>
         private static void DrawWornRow(Rect row, Apparel piece, PreviewSession session, OutfitChanges marks)
         {
             PredictedOutfit outfit = session.Outfit;
@@ -430,7 +479,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             parts.Add("OL_Slot_ClickToOpen".Translate());
             Color? tint = null;
-            if (TakenOffByHoveredRow(piece, session) || TakenOffByTriedOn(piece, session))
+            if (TakenOffByHoveredRow(piece, session))
             {
                 tint = UiStyle.RemovedColor;
             }
@@ -446,13 +495,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         {
             SlotChoice hovered = session.Slot?.Hovered;
             return hovered != null && hovered.AlsoReplaces.Contains(piece);
-        }
-
-        /// <summary>Whether the piece being tried on takes this one off, the slot's own piece included.</summary>
-        private static bool TakenOffByTriedOn(Apparel piece, PreviewSession session)
-        {
-            Apparel tried = session.Slot?.TriedOn;
-            return tried != null && tried != piece && !ApparelUtility.CanWearTogether(piece.def, tried.def, session.Pawn.RaceProps.body);
         }
 
         /// <summary>
@@ -642,7 +684,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return "OL_Preview_RunnerUpLaterStat".Translate(name, onLine);
         }
 
-        /// <summary>Why a piece the last change took off is gone: what replaced it, or that it's no longer picked.</summary>
+        /// <summary>Why a piece your changes took off is gone: what replaced it, or that it's no longer picked.</summary>
         private static string WhyGone(Apparel piece, OutfitChanges marks)
         {
             Apparel replacement = marks.Added.FirstOrDefault(added => marks.Replaced(added).Contains(piece));

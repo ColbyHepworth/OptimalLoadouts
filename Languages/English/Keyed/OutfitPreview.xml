@@ -39,10 +39,16 @@
   <OL_Preview_LayerTip>Click to see everything that could go on this layer.</OL_Preview_LayerTip>
   <OL_Preview_LayerCoveredTip>{0} is worn on this layer too. Click to see everything that could go on it.</OL_Preview_LayerCoveredTip>
 
-  <!-- What the last change to the outfit did -->
-  <OL_Preview_New>New with your last change.</OL_Preview_New>
-  <OL_Preview_NewReplacing>New with your last change, replacing {0}.</OL_Preview_NewReplacing>
-  <OL_Preview_LastChangeTookOff>Your last change took off:</OL_Preview_LastChangeTookOff>
+  <!-- What your changes to the outfit did, since you started on it or cleared the marks -->
+  <OL_Preview_New>New with your changes.</OL_Preview_New>
+  <OL_Preview_NewReplacing>New with your changes, replacing {0}.</OL_Preview_NewReplacing>
+  <OL_Preview_ChangesTookOff>Your changes took off:</OL_Preview_ChangesTookOff>
+  <OL_Preview_ClearMarks>Clear</OL_Preview_ClearMarks>
+  <OL_Preview_ClearMarksTip>Clear the marks. Changes from here on are marked against the outfit as it is now.</OL_Preview_ClearMarksTip>
+
+  <!-- Trying a piece on from the slot browser -->
+  <OL_Preview_TriedOnTip>Trying it on. Click its row in the slot list again to stop.</OL_Preview_TriedOnTip>
+  <OL_Preview_TriedOnTakesOff>Trying it on takes off:</OL_Preview_TriedOnTakesOff>
   <OL_Preview_NoLongerPicked>No longer picked.</OL_Preview_NoLongerPicked>
 
   <!-- Why a piece won -->

@@ -9,7 +9,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 {
     /// <summary>
     /// What the outfit preview and slot browser show in the current game: the colonist, where pieces come from, the
-    /// material, the predicted outfit with what the last change did, and the open slot. Kept while the game runs, not
+    /// material, the predicted outfit with what your changes did, and the open slot. Kept while the game runs, not
     /// saved, so the choices survive closing the window and a loaded game starts fresh.
     /// </summary>
     public class PreviewSession
@@ -38,6 +38,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         private (Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material, int version) predictedFor;
         private List<Apparel> predictedFrom;
+
+        /// <summary>The outfit the change marks start from.</summary>
+        private PredictedOutfit markedFrom;
 
         /// <summary>Where the outfit list is scrolled to.</summary>
         public Vector2 OutfitScroll;
@@ -91,7 +94,10 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The outfit predicted for the colonist under the policy, or null before a policy is shown.</summary>
         public PredictedOutfit Outfit { get; private set; }
 
-        /// <summary>What the last change to the outfit put on and took off, or null since the colonist, policy, tab or material changed.</summary>
+        /// <summary>
+        /// What your changes put on and took off since you started on this colonist, policy, tab and material (or since
+        /// the marks were cleared), or null when the outfit is back where it started.
+        /// </summary>
         public OutfitChanges Changes { get; private set; }
 
         /// <summary>The open slot, or null.</summary>
@@ -141,7 +147,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return pieces.TryGetValue(from, out List<Apparel> offered) ? offered.Count : 0;
         }
 
-        /// <summary>The outfit to draw: as predicted, or with the piece being tried on in place of its slot's.</summary>
+        /// <summary>The outfit to draw: as predicted, or with the piece being tried on in place of what it takes off.</summary>
         public IReadOnlyList<Apparel> Drawn
         {
             get
@@ -151,11 +157,33 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 {
                     return Outfit.Worn;
                 }
-                BodyDef body = Pawn.RaceProps.body;
-                List<Apparel> drawn = Outfit.Worn.Where(worn => ApparelUtility.CanWearTogether(worn.def, tried.def, body)).ToList();
+                IReadOnlyList<Apparel> takenOff = TriedOnTakesOff;
+                List<Apparel> drawn = Outfit.Worn.Where(worn => worn != tried && !takenOff.Contains(worn)).ToList();
                 drawn.Add(tried);
                 return drawn;
             }
+        }
+
+        /// <summary>The worn pieces the piece being tried on can't be worn with, the slot's own included. Empty when nothing is tried on.</summary>
+        public IReadOnlyList<Apparel> TriedOnTakesOff
+        {
+            get
+            {
+                Apparel tried = Slot?.TriedOn;
+                if (tried == null)
+                {
+                    return new List<Apparel>();
+                }
+                BodyDef body = Pawn.RaceProps.body;
+                return Outfit.Worn.Where(worn => worn != tried && !ApparelUtility.CanWearTogether(worn.def, tried.def, body)).ToList();
+            }
+        }
+
+        /// <summary>Starts the change marks afresh from the outfit as it is now.</summary>
+        public void ClearChanges()
+        {
+            markedFrom = Outfit;
+            Changes = null;
         }
 
         /// <summary>Opens a slot. With <paramref name="followWhenFilled"/>, a layer opened while empty turns into the slot of the piece that fills it.</summary>
@@ -267,7 +295,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>
         /// Predicts the outfit again when the pawn, policy, source, material or any order changes, when the pieces on
         /// offer change, and every refresh for storage, where reach and what's worn change too. A new outfit for the same
-        /// pawn, policy, source and material is compared with the last, for the change marks.
+        /// pawn, policy, source and material is compared with the one the marks start from.
         /// </summary>
         private void Predict()
         {
@@ -279,8 +307,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 return;
             }
-            PredictedOutfit before = Outfit;
-            bool sameOutfit = before != null
+            bool sameOutfit = Outfit != null
                 && (Pawn, Policy, source, Material) == (predictedFor.pawn, predictedFor.policy, predictedFor.source, predictedFor.material);
             predictedFor = key;
             predictedFrom = offered;
@@ -294,19 +321,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 Outfit = new PredictedOutfit(new List<Apparel>(), new List<Apparel>(), new List<Apparel>(),
                     new List<Apparel>(), new List<PredictedSwap>(), true, false);
             }
-            if (!sameOutfit)
+            if (!sameOutfit || markedFrom == null)
             {
-                Changes = null;
+                ClearChanges();
+                return;
             }
-            else
-            {
-                // An outfit that came out the same keeps the marks of the last change that made a difference.
-                OutfitChanges fresh = OutfitChanges.Between(before, Outfit, Pawn.RaceProps.body);
-                if (fresh.Any)
-                {
-                    Changes = fresh;
-                }
-            }
+            OutfitChanges since = OutfitChanges.Between(markedFrom, Outfit, Pawn.RaceProps.body);
+            Changes = since.Any ? since : null;
         }
 
         private static bool SamePieces(List<Apparel> a, List<Apparel> b)

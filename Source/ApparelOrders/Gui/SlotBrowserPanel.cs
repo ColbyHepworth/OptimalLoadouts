@@ -365,11 +365,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     StatDef stat = columns.Stats[i];
                     OrderLine line = LineFor(lines, stat);
                     bool counts = line == null || line.CountsOn(piece.def);
-                    Widgets.Label(layout.Value(i), counts ? ValueText(piece, stat) : "OL_Slot_NoValue".Translate().Resolve());
+                    // A value under what the line counts from is grey, since it counts as none.
+                    float value = PieceStats.Value(piece, stat);
+                    bool underThreshold = line != null && Math.Abs(value) >= Epsilon && Math.Abs(line.Counted(value)) < Epsilon;
+                    using (new TextBlock(underThreshold ? ColoredText.SubtleGrayColor : textColor))
+                    {
+                        Widgets.Label(layout.Value(i), counts ? ValueText(piece, stat) : "OL_Slot_NoValue".Translate().Resolve());
+                    }
                 }
                 if (columns.Hidden.Count > 0)
                 {
-                    int more = columns.Hidden.Count(line => line.CountsOn(piece.def) && Math.Abs(PieceStats.Value(piece, line.stat)) >= Epsilon);
+                    int more = columns.Hidden.Count(line => Math.Abs(ApparelComparison.ValueOnLine(piece, line)) >= Epsilon);
                     if (more > 0)
                     {
                         Widgets.Label(layout.More, "OL_Slot_MorePriorities".Translate(more));
@@ -395,15 +401,20 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             var nothingFor = new List<string>();
             foreach (OrderLine line in lines.Where(line => !line.IsItem))
             {
-                // A line limited to a layer the piece isn't on doesn't count it, so it has nothing for that line.
-                if (line.CountsOn(choice.Piece.def) && Math.Abs(PieceStats.Value(choice.Piece, line.stat)) >= Epsilon)
+                // A line limited to a layer the piece isn't on doesn't count it, and one counting from more than the
+                // piece has counts it as none, so the piece has nothing for those lines.
+                if (Math.Abs(ApparelComparison.ValueOnLine(choice.Piece, line)) >= Epsilon)
                 {
                     parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)));
-                    shown.Add(line.stat);
                 }
                 else
                 {
                     nothingFor.Add(OrderLineText.StatOnLayer(line));
+                }
+                if (line.CountsOn(choice.Piece.def))
+                {
+                    // A bonus under the line's threshold isn't listed again under "Also gives".
+                    shown.Add(line.stat);
                 }
             }
             if (nothingFor.Count > 0)

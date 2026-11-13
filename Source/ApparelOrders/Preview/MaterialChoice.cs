@@ -67,7 +67,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 {
                     continue;
                 }
-                float delta = Value(def, a, line.stat) - Value(def, b, line.stat);
+                float delta = line.Counted(Value(def, a, line.stat)) - line.Counted(Value(def, b, line.stat));
                 if (line.lowerIsBetter)
                 {
                     delta = -delta;

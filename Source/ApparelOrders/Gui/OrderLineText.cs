@@ -71,6 +71,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return stat.ValueToString(value, sense);
         }
 
+        /// <summary>A threshold is a size, so it reads without a sign: "10%", not "+10%".</summary>
+        public static string CountsFromValue(StatDef stat, float value)
+        {
+            return stat.ValueToString(value, ToStringNumberSense.Absolute);
+        }
+
         /// <summary>
         /// The line's stat with its layers, lower case for use inside a sentence: "sharp armor on headgear and outer". An
         /// item line is its item: "cowboy hat".

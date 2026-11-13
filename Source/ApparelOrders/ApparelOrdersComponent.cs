@@ -352,6 +352,18 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
+        /// <summary>Sets the value a line counts from. 0 counts every amount.</summary>
+        public void SetCountsFrom(ApparelPolicy policy, int index, float countsFrom)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.lines.Count || order.lines[index].countsFrom == countsFrom)
+            {
+                return;
+            }
+            order.lines[index].countsFrom = countsFrom < 0f ? 0f : countsFrom;
+            NotifyChanged();
+        }
+
         /// <summary>The policy's own forbids, then its base's, then that base's. A base that would loop back is ignored.</summary>
         public List<ApparelForbid> EffectiveForbids(ApparelPolicy policy)
         {

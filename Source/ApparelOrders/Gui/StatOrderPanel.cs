@@ -166,9 +166,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
             Rect direction = new Rect(x, row.y + UiStyle.IconGap / 2f, DirectionWidth, row.height - UiStyle.IconGap);
             TooltipHandler.TipRegion(direction, "OL_Editor_DirectionTip".Translate());
-            if (Widgets.ButtonText(direction, DirectionLabel(line)))
+            if (Widgets.ButtonText(direction, DirectionButtonLabel(line).Truncate(DirectionWidth - 12f)))
             {
-                orders.ToggleDirection(policy, index);
+                Find.WindowStack.Add(new Dialog_LineDirection(line, () => orders.ToggleDirection(policy, index),
+                    value => orders.SetCountsFrom(policy, index, value)));
             }
             x += DirectionWidth + UiStyle.IconGap;
             DrawMoveAndRemove(x, row, orders, policy, index);
@@ -245,11 +246,25 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 return;
             }
+            string text = line.countsFrom > 0f
+                ? "OL_Editor_BaseLineFrom".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line),
+                    OrderLineText.CountsFromValue(line.stat, line.countsFrom)).Resolve()
+                : "OL_Editor_BaseLine".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line)).Resolve();
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
-                UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height),
-                    "OL_Editor_BaseLine".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line)));
+                UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height), text);
             }
+        }
+
+        /// <summary>"Higher first", or "Higher, from 3 mm" when the line counts from a value.</summary>
+        private static string DirectionButtonLabel(OrderLine line)
+        {
+            if (line.countsFrom <= 0f)
+            {
+                return DirectionLabel(line);
+            }
+            string value = OrderLineText.CountsFromValue(line.stat, line.countsFrom);
+            return line.lowerIsBetter ? "OL_Order_LowerFrom".Translate(value) : "OL_Order_HigherFrom".Translate(value);
         }
 
         private static string DirectionLabel(OrderLine line)

@@ -21,7 +21,15 @@
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
   <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>
-  <OL_Editor_DirectionTip>Click to switch between preferring higher and lower values.</OL_Editor_DirectionTip>
+  <OL_Editor_BaseLineFrom>{0} ({1}, from {2})</OL_Editor_BaseLineFrom>
+  <OL_Editor_DirectionTip>Click to choose whether higher or lower values are better, and the value this line counts from.</OL_Editor_DirectionTip>
+  <OL_Order_HigherFrom>Higher, from {0}</OL_Order_HigherFrom>
+  <OL_Order_LowerFrom>Lower, from {0}</OL_Order_LowerFrom>
+  <OL_LineDirection_CountsFrom>Counts from</OL_LineDirection_CountsFrom>
+  <OL_CountsFrom_Tip>On this line, a piece with less than this counts as having none, so a token amount doesn't win the line and the next line decides. A penalty smaller than this counts as none too. Leave it empty to count every amount.</OL_CountsFrom_Tip>
+  <OL_CountsFrom_Highest>The most any apparel has is {0}.</OL_CountsFrom_Highest>
+  <OL_CountsFrom_Count>{0} items count as none.</OL_CountsFrom_Count>
+  <OL_CountsFrom_CountOne>1 item counts as none.</OL_CountsFrom_CountOne>
   <OL_Editor_MoveUp>Move up</OL_Editor_MoveUp>
   <OL_Editor_MoveDown>Move down</OL_Editor_MoveDown>
   <OL_Editor_Remove>Remove</OL_Editor_Remove>

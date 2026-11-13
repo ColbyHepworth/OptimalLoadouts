@@ -74,7 +74,8 @@ namespace OptimalLoadouts.ApparelOrders
 
         /// <summary>
         /// A piece's value on a line: on an item line, 1 for a piece of the item and 0 for anything else; on a stat line,
-        /// its value on the stat when the line counts its layer, otherwise 0.
+        /// its value on the stat when the line counts its layer and the value reaches what the line counts from,
+        /// otherwise 0.
         /// </summary>
         public static float ValueOnLine(Apparel piece, OrderLine line)
         {
@@ -82,7 +83,7 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return piece.def == line.item ? 1f : 0f;
             }
-            return line.CountsOn(piece.def) ? PieceStats.Value(piece, line.stat) : 0f;
+            return line.CountsOn(piece.def) ? line.Counted(PieceStats.Value(piece, line.stat)) : 0f;
         }
 
         /// <summary>The worn pieces the candidate would replace, found the way the game's apparel check finds them.</summary>

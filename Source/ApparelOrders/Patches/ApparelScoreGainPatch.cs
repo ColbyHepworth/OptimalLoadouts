@@ -28,12 +28,16 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 {
                     return;
                 }
-                IReadOnlyList<OrderLine> lines = orders.EffectiveLines(PreviewPolicy.PolicyOf(pawn));
+                ApparelPolicy policy = PreviewPolicy.PolicyOf(pawn);
+                IReadOnlyList<OrderLine> lines = orders.EffectiveLines(policy);
                 if (lines.Count == 0)
                 {
                     return;
                 }
-                __result = ApparelScoreBands.ScoreGain(ApparelComparison.Compare(pawn, ap, lines), lines.Count, __result);
+                OrderVerdict verdict = ApparelComparison.Compare(pawn, ap, lines);
+                __result = orders.OnlyWhatHelps(policy) && ExtraPieces.Skipped(pawn, ap, verdict)
+                    ? ApparelScoreBands.Worse
+                    : ApparelScoreBands.ScoreGain(verdict, lines.Count, __result);
             }
             catch (Exception e)
             {

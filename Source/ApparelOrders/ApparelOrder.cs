@@ -25,6 +25,9 @@ namespace OptimalLoadouts.ApparelOrders
 
         public bool limitBest;
 
+        /// <summary>Whether pawns on the policy add a piece to an empty slot only when it helps the priorities.</summary>
+        public bool onlyWhatHelps;
+
         /// <summary>Which material the policy's limits judge apparel in.</summary>
         public LimitMaterial LimitMaterial
         {
@@ -45,6 +48,7 @@ namespace OptimalLoadouts.ApparelOrders
             Scribe_Collections.Look(ref unticked, "unticked", LookMode.Def);
             Scribe_Defs.Look(ref limitStuff, "limitStuff");
             Scribe_Values.Look(ref limitBest, "limitBest", false);
+            Scribe_Values.Look(ref onlyWhatHelps, "onlyWhatHelps", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (lines == null)

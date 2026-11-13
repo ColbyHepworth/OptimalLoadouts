@@ -462,6 +462,22 @@ namespace OptimalLoadouts.ApparelOrders
             ForbidsChanged();
         }
 
+        /// <summary>Whether pawns on the policy add a piece only when it helps its priorities. The policy's own setting, not its base's.</summary>
+        public bool OnlyWhatHelps(ApparelPolicy policy)
+        {
+            return OrderFor(policy)?.onlyWhatHelps ?? false;
+        }
+
+        public void SetOnlyWhatHelps(ApparelPolicy policy, bool on)
+        {
+            if (policy == null || OnlyWhatHelps(policy) == on)
+            {
+                return;
+            }
+            GetOrCreate(policy).onlyWhatHelps = on;
+            NotifyChanged();
+        }
+
         /// <summary>Gives a duplicated policy the same order and base as the policy it was copied from.</summary>
         public void CopyOrder(ApparelPolicy from, ApparelPolicy to)
         {
@@ -482,6 +498,7 @@ namespace OptimalLoadouts.ApparelOrders
             // The game copies the checklist, so the copy's forbids unticked the same items.
             copy.unticked = new List<ThingDef>(source.unticked);
             copy.LimitMaterial = source.LimitMaterial;
+            copy.onlyWhatHelps = source.onlyWhatHelps;
             copy.basePolicy = source.basePolicy != to ? source.basePolicy : null;
             ForbidsChanged();
         }

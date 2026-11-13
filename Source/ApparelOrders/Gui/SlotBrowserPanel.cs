@@ -452,7 +452,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (choice.GameWontWear)
             {
-                parts.Add(choice.CantWearReason ?? "OL_Slot_WontWearLowScore".Translate().Resolve());
+                parts.Add(choice.CantWearReason ?? choice.SkippedReason ?? "OL_Slot_WontWearLowScore".Translate().Resolve());
             }
             parts.Add("OL_Slot_ClickToTry".Translate());
             return string.Join("\n", parts);

@@ -5,6 +5,7 @@ using OptimalLoadouts.Orders;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
@@ -118,7 +119,31 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 IEnumerable<StatDef> listed = ownLines.Where(line => !line.IsItem).Select(line => line.stat);
                 Find.WindowStack.Add(new Dialog_PickStat(stat => orders.AddLine(policy, stat), listed));
             }
+            DrawOnlyWhatHelps(new Rect(AddButtonWidth + UiStyle.Gap, y, viewRect.width - AddButtonWidth - UiStyle.Gap, UiStyle.RowHeight),
+                orders, policy);
             Widgets.EndScrollView();
+        }
+
+        /// <summary>The "only add pieces that help" box with its words right after it, so the two read as one. Either toggles it.</summary>
+        private static void DrawOnlyWhatHelps(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy)
+        {
+            string label = "OL_Editor_OnlyWhatHelps".Translate();
+            float boxY = row.y + (row.height - UiStyle.IconSize) / 2f;
+            float labelWidth = Mathf.Min(Text.CalcSize(label).x, row.width - UiStyle.IconSize - UiStyle.IconGap);
+            Rect hit = new Rect(row.x, row.y, UiStyle.IconSize + UiStyle.IconGap + labelWidth, row.height);
+            bool on = orders.OnlyWhatHelps(policy);
+            Widgets.DrawHighlightIfMouseover(hit);
+            Widgets.CheckboxDraw(row.x, boxY, on, false, UiStyle.IconSize);
+            using (new TextBlock(TextAnchor.MiddleLeft))
+            {
+                Widgets.Label(new Rect(row.x + UiStyle.IconSize + UiStyle.IconGap, row.y, labelWidth, row.height), label.Truncate(labelWidth));
+            }
+            TooltipHandler.TipRegion(hit, "OL_Editor_OnlyWhatHelpsTip".Translate());
+            if (Widgets.ButtonInvisible(hit))
+            {
+                orders.SetOnlyWhatHelps(policy, !on);
+                (on ? SoundDefOf.Checkbox_TurnedOff : SoundDefOf.Checkbox_TurnedOn).PlayOneShotOnCamera();
+            }
         }
 
         /// <summary>One of the policy's own lines: <paramref name="index"/> is its place in the order, <paramref name="number"/> its place on screen.</summary>

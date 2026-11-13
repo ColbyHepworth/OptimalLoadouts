@@ -50,8 +50,10 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                     // Pieces in the slot are already on the pawn, and imagined pieces are nowhere to reach.
                     bool stored = !inSlot.Contains(piece) && piece.MapHeld != null;
                     bool reachable = !stored || OutfitPredictor.CanPutOn(pawn, piece, fromStorage: true);
+                    string cantWear = GameApparelRules.WhyCantWear(pawn, piece) ?? GameApparelRules.WhyModRulesOut(piece, score);
+                    string skipped = cantWear == null ? WhySkippedAsExtra(pawn, policy, piece, lines, score) : null;
                     var choice = new SlotChoice(piece, copies, policy.filter.Allows(piece.def), policy.filter.Allows(piece), reachable,
-                        score, GameApparelRules.WhyCantWear(pawn, piece) ?? GameApparelRules.WhyModRulesOut(piece, score), alsoReplaces);
+                        score, cantWear, skipped, alsoReplaces);
                     scored.Add((choice, raw));
                 }
             }
@@ -63,6 +65,19 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 choice.PickRank = choice.Pickable ? ++rank : 0;
             }
             return byStat == null ? byPick : Ordered(scored, byStat, lowestFirst, lines);
+        }
+
+        /// <summary>Why a piece the policy's "only add pieces that help" skips isn't put on, or null when it isn't skipped.</summary>
+        private static string WhySkippedAsExtra(Pawn pawn, ApparelPolicy policy, Apparel piece, IReadOnlyList<OrderLine> lines, float score)
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            if (score >= OutfitPredictor.MinimumGain || lines.Count == 0 || orders == null || !orders.OnlyWhatHelps(policy))
+            {
+                return null;
+            }
+            return ExtraPieces.Skipped(pawn, piece, ApparelComparison.Compare(pawn, piece, lines))
+                ? "OL_Slot_WontWearExtra".Translate().Resolve()
+                : null;
         }
 
         /// <summary>Pickable pieces first, then by the stat when one is given, then the way the pawn would pick.</summary>

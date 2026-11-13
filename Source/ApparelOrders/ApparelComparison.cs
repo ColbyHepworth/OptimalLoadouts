@@ -91,14 +91,32 @@ namespace OptimalLoadouts.ApparelOrders
         {
             replaced.Clear();
             List<Apparel> worn = pawn.apparel.WornApparel;
-            BodyDef body = pawn.RaceProps.body;
             for (int i = 0; i < worn.Count; i++)
             {
-                if (worn[i] != candidate && !ApparelUtility.CanWearTogether(worn[i].def, candidate.def, body))
+                if (Replaces(pawn, candidate, worn[i]))
                 {
                     replaced.Add(worn[i]);
                 }
             }
+        }
+
+        /// <summary>Whether the candidate would take off anything the pawn wears.</summary>
+        internal static bool ReplacesAny(Pawn pawn, Apparel candidate)
+        {
+            List<Apparel> worn = pawn.apparel.WornApparel;
+            for (int i = 0; i < worn.Count; i++)
+            {
+                if (Replaces(pawn, candidate, worn[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool Replaces(Pawn pawn, Apparel candidate, Apparel worn)
+        {
+            return worn != candidate && !ApparelUtility.CanWearTogether(worn.def, candidate.def, pawn.RaceProps.body);
         }
     }
 }

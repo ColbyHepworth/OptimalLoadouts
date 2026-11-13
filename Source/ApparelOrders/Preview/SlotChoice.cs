@@ -30,6 +30,12 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>Why the game never puts it on this pawn by itself (it blocks vision, it's for slaves), or null.</summary>
         public string CantWearReason { get; }
 
+        /// <summary>
+        /// Why the policy's "only add pieces that help" skips it, or null. Kept apart from <see cref="CantWearReason"/>,
+        /// since locking the piece makes it help.
+        /// </summary>
+        public string SkippedReason { get; }
+
         /// <summary>Whether the pawn would consider it at all: allowed, reachable and scored high enough.</summary>
         public bool Pickable => Allowed && Reachable && !GameWontWear;
 
@@ -46,7 +52,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public bool TakesOffMore => Pickable && AlsoReplaces.Count > 0;
 
         public SlotChoice(Apparel piece, int copies, bool typeAllowed, bool allowed, bool reachable, float score,
-            string cantWearReason, IReadOnlyList<Apparel> alsoReplaces)
+            string cantWearReason, string skippedReason, IReadOnlyList<Apparel> alsoReplaces)
         {
             Piece = piece;
             Copies = copies;
@@ -55,6 +61,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             Reachable = reachable;
             Score = score;
             CantWearReason = cantWearReason;
+            SkippedReason = skippedReason;
             AlsoReplaces = alsoReplaces;
         }
     }

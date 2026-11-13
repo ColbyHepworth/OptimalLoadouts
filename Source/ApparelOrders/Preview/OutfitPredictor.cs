@@ -24,9 +24,6 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         private static readonly List<OrderLine> NoLines = new List<OrderLine>();
 
-        /// <summary>The check's shared warmth need, which it sets for each pawn before scoring. Null if the game renames it.</summary>
-        private static readonly AccessTools.FieldRef<NeededWarmth> NeededWarmthField = FindNeededWarmth();
-
         /// <summary>
         /// The outfit the pawn would end up in under the policy, picking from pieces gathered by
         /// <see cref="PieceSources.For"/>. From storage it starts from what the pawn wears, as the game would. Imagined
@@ -163,24 +160,11 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         internal static void SetNeededWarmth(Pawn pawn)
         {
-            if (NeededWarmthField == null || pawn.Map == null)
+            if (pawn.Map == null)
             {
                 return;
             }
-            NeededWarmthField() = PawnApparelGenerator.CalculateNeededWarmth(pawn, pawn.Map.Tile, GenLocalDate.Twelfth(pawn));
-        }
-
-        private static AccessTools.FieldRef<NeededWarmth> FindNeededWarmth()
-        {
-            try
-            {
-                return AccessTools.StaticFieldRefAccess<NeededWarmth>(AccessTools.Field(typeof(JobGiver_OptimizeApparel), "neededWarmth"));
-            }
-            catch (Exception e)
-            {
-                Log.Warning("[Optimal Loadouts] Couldn't find the apparel check's warmth need, so the outfit preview uses the last value it set: " + e.Message);
-                return null;
-            }
+            GameApparelRules.NeededWarmth = PawnApparelGenerator.CalculateNeededWarmth(pawn, pawn.Map.Tile, GenLocalDate.Twelfth(pawn));
         }
     }
 }

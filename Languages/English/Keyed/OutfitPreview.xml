@@ -95,6 +95,7 @@
   <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
   <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
   <OL_Slot_WontWearLowScore>It scores too low for the game to put it on.</OL_Slot_WontWearLowScore>
+  <OL_Slot_WontWearExtra>It adds nothing for this policy's priorities, and this policy only adds pieces that help.</OL_Slot_WontWearExtra>
   <OL_Slot_WontWearPawn>This colonist can't wear it.</OL_Slot_WontWearPawn>
   <OL_Slot_WontWearBlocksVision>The game never puts on apparel that blocks vision by itself.</OL_Slot_WontWearBlocksVision>
   <OL_Slot_WontWearSlaves>The game only puts slave apparel on slaves.</OL_Slot_WontWearSlaves>

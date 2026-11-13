@@ -18,6 +18,8 @@
   <OL_Editor_NoBase>None</OL_Editor_NoBase>
   <OL_Editor_BaseTip>Another policy this one builds on. Its locked items and limits apply here too, and its stats go under this policy's own. Other allowed items aren't shared.</OL_Editor_BaseTip>
   <OL_Editor_AddStat>Add stat</OL_Editor_AddStat>
+  <OL_Editor_OnlyWhatHelps>Only add pieces that help</OL_Editor_OnlyWhatHelps>
+  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities. They still cover their torso and legs, and add insulation while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. It does nothing until the policy has a priority.</OL_Editor_OnlyWhatHelpsTip>
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
   <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>

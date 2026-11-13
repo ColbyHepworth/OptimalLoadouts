@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HarmonyLib;
 using RimWorld;
 using Verse;
 
@@ -10,6 +11,38 @@ namespace OptimalLoadouts.ApparelOrders
     /// </summary>
     public static class GameApparelRules
     {
+        /// <summary>The check's shared warmth need, which it sets for each pawn before scoring. Null if the game renames it.</summary>
+        private static readonly AccessTools.FieldRef<NeededWarmth> NeededWarmthField = FindNeededWarmth();
+
+        /// <summary>
+        /// Whether the colonist the apparel check is scoring for needs warmth this season. The game sets it before each
+        /// check, and the preview sets it before predicting. Any when the field can't be found.
+        /// </summary>
+        public static NeededWarmth NeededWarmth
+        {
+            get => NeededWarmthField != null ? NeededWarmthField() : NeededWarmth.Any;
+            set
+            {
+                if (NeededWarmthField != null)
+                {
+                    NeededWarmthField() = value;
+                }
+            }
+        }
+
+        private static AccessTools.FieldRef<NeededWarmth> FindNeededWarmth()
+        {
+            try
+            {
+                return AccessTools.StaticFieldRefAccess<NeededWarmth>(AccessTools.Field(typeof(JobGiver_OptimizeApparel), "neededWarmth"));
+            }
+            catch (System.Exception e)
+            {
+                Log.Warning("[Optimal Loadouts] Couldn't find the apparel check's warmth need, so the outfit preview and \"only add pieces that help\" treat warmth as not needed: " + e.Message);
+                return null;
+            }
+        }
+
         /// <summary>
         /// Whether the game should decide this swap: the pawn can't wear the piece, or the swap puts on or takes off
         /// apparel a title or ideoligion role requires, or the piece is below a title's minimum quality.

@@ -22,7 +22,7 @@ namespace OptimalLoadouts.ApparelOrders
         private const float MaxInBand = 999f;
 
         /// <summary>Below the apparel check's 0.05 threshold, so the piece is skipped, but not a "never wear this".</summary>
-        private const float Worse = -1f;
+        internal const float Worse = -1f;
 
         /// <summary>
         /// The apparel check's score for this verdict. A bigger gain on the same line ranks higher. A tie keeps the

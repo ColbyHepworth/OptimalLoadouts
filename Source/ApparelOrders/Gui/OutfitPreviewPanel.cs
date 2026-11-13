@@ -21,6 +21,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private const float ClearButtonWidth = 60f;
 
+        private static readonly List<OrderLine> NoLines = new List<OrderLine>();
+
         /// <summary>
         /// Draws the preview into <paramref name="rect"/>. With a <paramref name="slotRect"/>, an open slot's pieces get
         /// that panel of their own; without one (Rect.zero, on narrow screens), they take the outfit list's place.
@@ -482,6 +484,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             if (why != null)
             {
                 parts.Add(why);
+            }
+            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(session.Policy) ?? NoLines;
+            IReadOnlyList<(StatDef stat, float value)> bonuses = PieceBonuses.Of(piece, lines);
+            if (bonuses.Count > 0)
+            {
+                parts.Add("OL_Preview_Gives".Translate(PieceBonusText.List(bonuses)));
             }
             parts.Add("OL_Slot_ClickToOpen".Translate());
             Color? tint = null;

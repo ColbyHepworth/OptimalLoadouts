@@ -13,16 +13,18 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
     /// Every piece that could go in one slot of the previewed outfit (a worn piece's place, or a layer), as a table like
-    /// vanilla's pawn tables:
-    /// the pawn's rank, then the order's stats and one added by hand, sorted by clicking a header. A row can be tried on
-    /// the pawn, and its checkbox allows or forbids the item in the policy. Rows keep their place while boxes are ticked,
-    /// so the rank numbers and the highlight on the pawn's pick move instead. What it shows is the session's open
-    /// <see cref="SlotView"/>.
+    /// vanilla's pawn tables: the pawn's rank, then every stat of the order and one added by hand, sorted by clicking a
+    /// header. A row can be tried on the pawn, and its checkbox allows or forbids the item in
+    /// the policy. Rows keep their place while boxes are ticked, so the rank numbers and the highlight on the pawn's pick
+    /// move instead. What it shows is the session's open <see cref="SlotView"/>.
     /// </summary>
     public static class SlotBrowserPanel
     {
         private const float RankWidth = 28f;
-        private const float ValueWidth = 90f;
+        private const float ValueWidth = 64f;
+
+        /// <summary>The "+2" at a row's end for bonuses that have no column.</summary>
+        private const float MoreWidth = 28f;
 
         /// <summary>On narrow screens, stat columns give way before a piece's name gets shorter than this.</summary>
         private const float MinNameWidth = 120f;
@@ -34,7 +36,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private const float AllButtonHeight = 24f;
 
         private const float SearchGap = 3f;
-        private const int OrderColumns = 2;
 
         /// <summary>Gear bonuses come in steps of 0.01 or more, so anything smaller shows as none.</summary>
         private const float Epsilon = 0.0001f;
@@ -54,8 +55,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             ApparelPolicy policy = session.Policy;
             IReadOnlyList<Apparel> outfit = session.Outfit.Worn;
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy) ?? NoLines;
-            List<StatDef> columns = Columns(lines, rect.width - GenUI.ScrollBarWidth, session);
-            if (session.SortStat != null && !columns.Contains(session.SortStat))
+            Columns columns = Columns.For(lines, rect.width - GenUI.ScrollBarWidth, session);
+            if (session.SortStat != null && !columns.Stats.Contains(session.SortStat))
             {
                 session.SortStat = null;
             }
@@ -124,26 +125,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.EndScrollView();
             }
-        }
-
-        /// <summary>
-        /// The order's first stats (item lines aren't columns), then the stat added by hand when it isn't one of them, as
-        /// many as fit beside a readable name. A stat added by hand that has since joined the order is dropped, so "+"
-        /// comes back.
-        /// </summary>
-        private static List<StatDef> Columns(IReadOnlyList<OrderLine> lines, float width, PreviewSession session)
-        {
-            List<StatDef> columns = lines.Where(line => !line.IsItem).Take(OrderColumns).Select(line => line.stat).ToList();
-            if (columns.Contains(session.AddedStat))
-            {
-                session.AddedStat = null;
-            }
-            if (session.AddedStat != null)
-            {
-                columns.Add(session.AddedStat);
-            }
-            int fit = Mathf.Max(0, Mathf.FloorToInt((width - RowLayout.FixedWidth - MinNameWidth) / ValueWidth));
-            return columns.Take(fit).ToList();
         }
 
         private static void DrawTitle(Rect row, string header, bool showBack, PreviewSession session)
@@ -217,13 +198,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// The headers, laid out like the rows: "#" after the info button, a stat over each value column, and "+" over the
         /// checkboxes to add a column. Clicking a header sorts by it the way vanilla's pawn tables do.
         /// </summary>
-        private static void DrawColumnHeaders(Rect row, List<StatDef> columns, IReadOnlyList<OrderLine> lines, PreviewSession session)
+        private static void DrawColumnHeaders(Rect row, Columns columns, IReadOnlyList<OrderLine> lines, PreviewSession session)
         {
-            RowLayout layout = RowLayout.For(row, columns.Count);
+            RowLayout layout = RowLayout.For(row, columns);
             DrawRankHeader(layout.Rank, session);
-            for (int i = 0; i < columns.Count; i++)
+            for (int i = 0; i < columns.Stats.Count; i++)
             {
-                DrawStatHeader(layout.Value(i), columns[i], LineFor(lines, columns[i]), removable: columns[i] == session.AddedStat, session);
+                StatDef stat = columns.Stats[i];
+                DrawStatHeader(layout.Value(i), stat, LineFor(lines, stat), removable: stat == session.AddedStat, session);
             }
             if (session.AddedStat == null && Widgets.ButtonImage(layout.Checkbox, TexButton.Plus, true, "OL_Slot_AddColumn".Translate()))
             {
@@ -232,7 +214,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     session.AddedStat = stat;
                     session.SortStat = stat;
                     session.LowestFirst = false;
-                }, columns, "OL_Slot_AddColumnTitle".Translate()));
+                }, columns.Stats, "OL_Slot_AddColumnTitle".Translate()));
             }
         }
 
@@ -327,7 +309,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>Draws one piece.</summary>
-        private static void DrawRow(Rect row, SlotChoice choice, PreviewSession session, bool isPick, List<StatDef> columns,
+        private static void DrawRow(Rect row, SlotChoice choice, PreviewSession session, bool isPick, Columns columns,
             IReadOnlyList<OrderLine> lines)
         {
             Apparel piece = choice.Piece;
@@ -349,7 +331,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
 
             // Laid out like vanilla's filter: the info card button first, the checkbox at the far end.
-            RowLayout layout = RowLayout.For(row, columns.Count);
+            RowLayout layout = RowLayout.For(row, columns);
             Widgets.InfoCardButton(layout.Info.x, layout.Info.y, piece);
             bool locked = ApparelOrdersComponent.Current?.IsLocked(policy, piece.def) ?? false;
             bool allowed = choice.TypeAllowed;
@@ -374,19 +356,29 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines, policy), Gen.HashCombineInt(open.Slot.GetHashCode(), (int)row.y));
 
             bool dimmed = !choice.Pickable;
-            using (new TextBlock(TextAnchor.MiddleCenter, dimmed ? ColoredText.SubtleGrayColor : Color.white))
+            Color textColor = dimmed ? ColoredText.SubtleGrayColor : Color.white;
+            using (new TextBlock(TextAnchor.MiddleCenter, textColor))
             {
                 Widgets.Label(layout.Rank, choice.PickRank > 0 ? choice.PickRank.ToString() : "OL_Slot_NoValue".Translate().ToString());
-                for (int i = 0; i < columns.Count; i++)
+                for (int i = 0; i < columns.Stats.Count; i++)
                 {
-                    OrderLine line = LineFor(lines, columns[i]);
+                    StatDef stat = columns.Stats[i];
+                    OrderLine line = LineFor(lines, stat);
                     bool counts = line == null || line.CountsOn(piece.def);
-                    Widgets.Label(layout.Value(i), counts ? ValueText(piece, columns[i]) : "OL_Slot_NoValue".Translate().Resolve());
+                    Widgets.Label(layout.Value(i), counts ? ValueText(piece, stat) : "OL_Slot_NoValue".Translate().Resolve());
+                }
+                if (columns.Hidden.Count > 0)
+                {
+                    int more = columns.Hidden.Count(line => line.CountsOn(piece.def) && Math.Abs(PieceStats.Value(piece, line.stat)) >= Epsilon);
+                    if (more > 0)
+                    {
+                        Widgets.Label(layout.More, "OL_Slot_MorePriorities".Translate(more));
+                    }
                 }
             }
             Widgets.ThingIcon(layout.Icon, piece, dimmed ? 0.5f : 1f);
             string name = choice.Copies > 1 ? "OL_Slot_Copies".Translate(PieceLabel.Of(piece), choice.Copies).ToString() : PieceLabel.Of(piece);
-            using (new TextBlock(TextAnchor.MiddleLeft, dimmed ? ColoredText.SubtleGrayColor : Color.white))
+            using (new TextBlock(TextAnchor.MiddleLeft, textColor))
             {
                 Widgets.Label(layout.Name, name.Truncate(layout.Name.width));
             }
@@ -399,11 +391,29 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 parts.Add("OL_Slot_IsPick".Translate());
             }
+            var shown = new HashSet<StatDef>();
+            var nothingFor = new List<string>();
             foreach (OrderLine line in lines.Where(line => !line.IsItem))
             {
-                // A line limited to a layer the piece isn't on doesn't count it, so it shows no value there.
-                string value = line.CountsOn(choice.Piece.def) ? ValueText(choice.Piece, line.stat) : "OL_Slot_NoValue".Translate().Resolve();
-                parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), value));
+                // A line limited to a layer the piece isn't on doesn't count it, so it has nothing for that line.
+                if (line.CountsOn(choice.Piece.def) && Math.Abs(PieceStats.Value(choice.Piece, line.stat)) >= Epsilon)
+                {
+                    parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)));
+                    shown.Add(line.stat);
+                }
+                else
+                {
+                    nothingFor.Add(OrderLineText.StatOnLayer(line));
+                }
+            }
+            if (nothingFor.Count > 0)
+            {
+                parts.Add("OL_Slot_NothingFor".Translate(nothingFor.ToCommaList()).Resolve().Colorize(ColoredText.SubtleGrayColor));
+            }
+            List<(StatDef stat, float value)> alsoGives = PieceBonuses.Of(choice.Piece, lines).Where(bonus => !shown.Contains(bonus.stat)).ToList();
+            if (alsoGives.Count > 0)
+            {
+                parts.Add("OL_Slot_AlsoGives".Translate(PieceBonusText.List(alsoGives)));
             }
             if (choice.AlsoReplaces.Count > 0)
             {
@@ -526,6 +536,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             public Rect Rank { get; }
             public Rect Icon { get; }
             public Rect Name { get; }
+
+            /// <summary>After the stat columns, the "+2" for priorities with no column. Zero wide when none are hidden.</summary>
+            public Rect More { get; }
+
             public Rect Checkbox { get; }
             public Rect Lock { get; }
 
@@ -536,7 +550,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             private readonly float y;
             private readonly float height;
 
-            private RowLayout(Rect row, int columnCount)
+            private RowLayout(Rect row, Columns columns)
             {
                 y = row.y;
                 height = row.height;
@@ -547,22 +561,72 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Lock = new Rect(Checkbox.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 Rank = new Rect(Info.xMax + UiStyle.Gap / 2f, row.y, RankWidth, row.height);
                 Icon = new Rect(Rank.xMax + UiStyle.Gap / 2f, iconY, UiStyle.IconSize, UiStyle.IconSize);
-                valuesX = Lock.x - UiStyle.Gap - columnCount * ValueWidth;
+                float moreWidth = columns.Hidden.Count > 0 ? MoreWidth : 0f;
+                More = new Rect(Lock.x - UiStyle.Gap - moreWidth, row.y, moreWidth, row.height);
+                valuesX = More.x - columns.Stats.Count * ValueWidth;
                 Name = new Rect(Icon.xMax + UiStyle.Gap, row.y, valuesX - Icon.xMax - 2f * UiStyle.Gap, row.height);
                 Body = new Rect(Rank.x, row.y, Lock.x - UiStyle.Gap - Rank.x, row.height);
             }
 
-            /// <summary>Everything in a row but its name and value columns.</summary>
+            /// <summary>Everything in a row but its name, value columns and "+2".</summary>
             public static float FixedWidth => Widgets.InfoCardButtonSize + RankWidth + 3f * UiStyle.IconSize + UiStyle.IconGap + 4f * UiStyle.Gap;
 
-            public static RowLayout For(Rect row, int columnCount)
+            public static RowLayout For(Rect row, Columns columns)
             {
-                return new RowLayout(row, columnCount);
+                return new RowLayout(row, columns);
             }
 
             public Rect Value(int column)
             {
                 return new Rect(valuesX + column * ValueWidth, y, ValueWidth, height);
+            }
+        }
+
+        /// <summary>
+        /// The stat columns: every stat line of the order, a base's included (item lines aren't columns), then the stat
+        /// added by hand, as many as fit beside a readable name.
+        /// </summary>
+        private sealed class Columns
+        {
+            private Columns(List<StatDef> stats, List<OrderLine> hidden)
+            {
+                Stats = stats;
+                Hidden = hidden;
+            }
+
+            public List<StatDef> Stats { get; }
+
+            /// <summary>The order's lines that didn't fit, so a row says how many of them the piece has a value on.</summary>
+            public List<OrderLine> Hidden { get; }
+
+            /// <summary>
+            /// The columns that fit in <paramref name="width"/>. The added one keeps its room, and the order's last lines
+            /// give way first. A stat added by hand that has since joined the order is dropped, so "+" comes back.
+            /// </summary>
+            public static Columns For(IReadOnlyList<OrderLine> lines, float width, PreviewSession session)
+            {
+                List<OrderLine> statLines = lines.Where(line => !line.IsItem).ToList();
+                if (statLines.Any(line => line.stat == session.AddedStat))
+                {
+                    session.AddedStat = null;
+                }
+                float room = width - RowLayout.FixedWidth - MinNameWidth;
+                int capacity = Mathf.Max(0, Mathf.FloorToInt(room / ValueWidth));
+                int added = session.AddedStat != null && capacity > 0 ? 1 : 0;
+                int fit = capacity - added;
+                if (statLines.Count > fit)
+                {
+                    // Room for "+2" at the row's end, when there's room for it at all.
+                    fit = Mathf.Max(0, Mathf.FloorToInt((room - MoreWidth) / ValueWidth) - added);
+                }
+                List<StatDef> stats = statLines.Take(fit).Select(line => line.stat).ToList();
+                if (added > 0)
+                {
+                    stats.Add(session.AddedStat);
+                }
+                bool roomForMore = room - (fit + added) * ValueWidth >= MoreWidth;
+                List<OrderLine> hidden = roomForMore ? statLines.Skip(fit).ToList() : new List<OrderLine>();
+                return new Columns(stats, hidden);
             }
         }
     }

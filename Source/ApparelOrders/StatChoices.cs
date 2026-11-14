@@ -18,6 +18,7 @@ namespace OptimalLoadouts.ApparelOrders
         private static HashSet<StatCategoryDef> pieceCategories;
         private static HashSet<StatDef> wearerBonuses;
         private static List<StatSection> sections;
+        private static HashSet<StatDef> offered;
 
         /// <summary>Armor and insulation, the piece's own stats that are the same for every copy of an item.</summary>
         internal static bool IsArmorOrInsulation(StatDef stat)
@@ -52,6 +53,16 @@ namespace OptimalLoadouts.ApparelOrders
                 }
                 return sections;
             }
+        }
+
+        /// <summary>Whether an order can use the stat: one of the stats the stat picker offers.</summary>
+        public static bool IsOffered(StatDef stat)
+        {
+            if (offered == null)
+            {
+                offered = new HashSet<StatDef>(Sections.SelectMany(section => section.Stats).Select(choice => choice.Stat));
+            }
+            return stat != null && offered.Contains(stat);
         }
 
         private static void BuildKinds()

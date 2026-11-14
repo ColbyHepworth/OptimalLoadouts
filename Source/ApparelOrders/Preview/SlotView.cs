@@ -27,6 +27,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>Where the slot's list is scrolled to.</summary>
         public Vector2 Scroll;
 
+        /// <summary>Where a piece's stats, beside or under the slot's list, are scrolled to.</summary>
+        public Vector2 StatsScroll;
+
         internal SlotView(PreviewSession session, OutfitSlot slot)
         {
             this.session = session;
@@ -49,6 +52,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         /// <summary>The row under the mouse in the slot browser, or null. Set as the browser draws, read by the outfit list.</summary>
         public SlotChoice Hovered { get; set; }
+
+        /// <summary>The piece whose stats show beside or under the list: the one tried on, else the one filling the slot, else null.</summary>
+        public Apparel StatsPiece => TriedOn ?? Slot.FilledBy(session.Outfit.Worn, session.Pawn.RaceProps.body);
 
         /// <summary>Tries the piece on, or takes it off again when it's the one tried on.</summary>
         public void TryOn(Apparel piece)

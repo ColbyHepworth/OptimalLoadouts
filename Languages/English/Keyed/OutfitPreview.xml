@@ -111,6 +111,14 @@
   <OL_Slot_ClickToTry>Click to try it on. The checkbox allows or forbids it in this policy.</OL_Slot_ClickToTry>
   <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 
+  <!-- A piece's stats beside or under the slot browser -->
+  <OL_Stats_NoPiece>Click a piece to see its stats.</OL_Stats_NoPiece>
+  <OL_Stats_SortHint>Click to sort the list by this, highest first, then lowest first, then back to the colonist's choice.</OL_Stats_SortHint>
+  <OL_Stats_AddPriority>Add this stat as a priority of this policy.</OL_Stats_AddPriority>
+  <OL_Stats_RemovePriority>Remove this priority from this policy.</OL_Stats_RemovePriority>
+  <OL_Stats_PriorityHeader>Priority</OL_Stats_PriorityHeader>
+  <OL_Stats_PriorityHeaderTip>A number is the stat's place in this policy's priorities, grey when it comes from the policy this one builds on. + adds a stat as the last priority, and − removes it.</OL_Stats_PriorityHeaderTip>
+
   <!-- Material picker for imagined pieces -->
   <OL_MaterialPicker_Title>Imagine pieces in</OL_MaterialPicker_Title>
   <OL_MaterialPicker_NoMatches>No material matches.</OL_MaterialPicker_NoMatches>

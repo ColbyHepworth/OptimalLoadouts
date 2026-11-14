@@ -25,9 +25,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// Draws the preview into <paramref name="rect"/>. With a <paramref name="slotRect"/>, an open slot's pieces get
-        /// that panel of their own; without one (Rect.zero, on narrow screens), they take the outfit list's place.
+        /// that panel of their own; without one (Rect.zero, on narrow screens), they take the outfit list's place. With a
+        /// <paramref name="statsRect"/>, a piece's stats get a panel there; without one, they go under the slot's list.
         /// </summary>
-        public static void Draw(Rect rect, Rect slotRect, ApparelPolicy policy)
+        public static void Draw(Rect rect, Rect slotRect, Rect statsRect, ApparelPolicy policy)
         {
             PreviewSession session = PreviewSession.Current;
             if (session == null)
@@ -41,10 +42,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 slotSection.yMin = section.yMin;
             }
+            Rect statsSection = statsRect;
+            if (statsSection.width > 0f)
+            {
+                statsSection.yMin = section.yMin;
+            }
             Widgets.DrawMenuSection(section);
             try
             {
-                DrawContents(section, slotSection, policy, session);
+                DrawContents(section, slotSection, statsSection, policy, session);
             }
             catch (Exception e)
             {
@@ -52,7 +58,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static void DrawContents(Rect section, Rect slotSection, ApparelPolicy policy, PreviewSession session)
+        private static void DrawContents(Rect section, Rect slotSection, Rect statsSection, ApparelPolicy policy, PreviewSession session)
         {
             List<Pawn> pawns = Colonists(policy);
             if (pawns.Count == 0 || policy == null)
@@ -67,6 +73,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             float y = DrawControls(inner, session, pawns);
             Rect list = new Rect(inner.x, y, inner.width, inner.yMax - y);
             bool slotHasOwnPanel = slotSection.width > 0f;
+            bool statsHaveOwnPanel = statsSection.width > 0f;
             if (slotHasOwnPanel)
             {
                 // The slot panel always shows a slot: the one picked last if the outfit still has it, else the outermost.
@@ -83,16 +90,33 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 else if (session.Slot.Pieces != null)
                 {
-                    SlotBrowserPanel.Draw(slotArea, session, showBack: false);
+                    SlotBrowserPanel.Draw(slotArea, session, showBack: false, statsBelow: !statsHaveOwnPanel);
                 }
             }
             else if (session.Slot != null && session.Slot.Pieces != null)
             {
-                SlotBrowserPanel.Draw(list, session, showBack: true);
+                SlotBrowserPanel.Draw(list, session, showBack: true, statsBelow: !statsHaveOwnPanel);
             }
             else
             {
                 DrawOutfitList(list, session);
+            }
+            // After the slot panel, which opens a slot when it has none.
+            if (statsHaveOwnPanel)
+            {
+                Widgets.DrawMenuSection(statsSection);
+                Rect statsArea = statsSection.ContractedBy(UiStyle.Gap);
+                if (session.Slot == null)
+                {
+                    using (new TextBlock(TextAnchor.MiddleCenter))
+                    {
+                        UiStyle.Note(statsArea, "OL_Stats_NoPiece".Translate());
+                    }
+                }
+                else
+                {
+                    PieceStatsPanel.Draw(statsArea, session);
+                }
             }
         }
 

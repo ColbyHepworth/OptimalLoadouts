@@ -37,6 +37,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         private const float SearchGap = 3f;
 
+        /// <summary>The most of the room under the headers a piece's stats take when they go under the list.</summary>
+        private const float StatsShare = 0.5f;
+
+        /// <summary>The × on the added column's header, small enough to leave its name readable.</summary>
+        private const float RemoveColumnSize = 12f;
+
         /// <summary>Gear bonuses come in steps of 0.01 or more, so anything smaller shows as none.</summary>
         private const float Epsilon = 0.0001f;
 
@@ -44,10 +50,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// Draws the session's open slot, with a back arrow when <paramref name="showBack"/> (where the slot takes the
-        /// outfit list's place). A checkbox or an all button that changes the policy's filter tells the session, so it
+        /// outfit list's place), and with a piece's stats under the list when <paramref name="statsBelow"/> (where they have no
+        /// column of their own). A checkbox or an all button that changes the policy's filter tells the session, so it
         /// gathers its pieces again.
         /// </summary>
-        public static void Draw(Rect rect, PreviewSession session, bool showBack)
+        public static void Draw(Rect rect, PreviewSession session, bool showBack, bool statsBelow)
         {
             SlotView open = session.Slot;
             OutfitSlot slot = open.Slot;
@@ -56,10 +63,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             IReadOnlyList<Apparel> outfit = session.Outfit.Worn;
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy) ?? NoLines;
             Columns columns = Columns.For(lines, rect.width - GenUI.ScrollBarWidth, session);
-            if (session.SortStat != null && !columns.Stats.Contains(session.SortStat))
-            {
-                session.SortStat = null;
-            }
             List<SlotChoice> choices = open.Ranked()
                 .Where(choice => open.Search.filter.Matches(PieceLabel.Of(choice.Piece)))
                 .ToList();
@@ -97,8 +100,23 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             DrawColumnHeaders(new Rect(rect.x, y, rect.width - GenUI.ScrollBarWidth, HeaderHeight), columns, lines, session);
             y += HeaderHeight;
 
+            // Without a column of their own, the stats of the piece tried on (or the slot's own) go under the list, taking
+            // what they need up to their share, so a short sheet leaves the list more room.
+            float listBottom = rect.yMax;
+            if (statsBelow)
+            {
+                float statsHeight = Mathf.Min(PieceStatsPanel.HeightFor(session), (rect.yMax - y) * StatsShare);
+                Rect stats = new Rect(rect.x, rect.yMax - statsHeight, rect.width, statsHeight);
+                using (new TextBlock(Widgets.SeparatorLineColor))
+                {
+                    Widgets.DrawLineHorizontal(stats.x, stats.y, stats.width);
+                }
+                PieceStatsPanel.Draw(stats, session);
+                listBottom = stats.y - UiStyle.Gap;
+            }
+
             var picked = new HashSet<object>(outfit.Select(SlotView.RowKey));
-            Rect list = new Rect(rect.x, y, rect.width, rect.yMax - y);
+            Rect list = new Rect(rect.x, y, rect.width, listBottom - y);
             Rect view = new Rect(0f, 0f, list.width - GenUI.ScrollBarWidth, choices.Count * UiStyle.RowHeight);
             // A row half out of view mustn't count as hovered while the mouse is on the headers above it.
             bool mouseInList = Mouse.IsOver(list);
@@ -209,12 +227,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (session.AddedStat == null && Widgets.ButtonImage(layout.Checkbox, TexButton.Plus, true, "OL_Slot_AddColumn".Translate()))
             {
-                Find.WindowStack.Add(new Dialog_PickStat(stat =>
-                {
-                    session.AddedStat = stat;
-                    session.SortStat = stat;
-                    session.LowestFirst = false;
-                }, columns.Stats, "OL_Slot_AddColumnTitle".Translate()));
+                Find.WindowStack.Add(new Dialog_PickStat(session.ShowColumn, columns.Stats, "OL_Slot_AddColumnTitle".Translate()));
             }
         }
 
@@ -252,7 +265,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             if (removable)
             {
-                Rect remove = new Rect(cell.xMax - TexButton.CloseXSmall.width, cell.y, TexButton.CloseXSmall.width, TexButton.CloseXSmall.height);
+                Rect remove = new Rect(cell.xMax - RemoveColumnSize, cell.y, RemoveColumnSize, RemoveColumnSize);
                 if (Widgets.ButtonImage(remove, TexButton.CloseXSmall, true, "OL_Slot_RemoveColumn".Translate()))
                 {
                     session.AddedStat = null;
@@ -277,29 +290,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        /// <summary>
-        /// Vanilla's pawn table cycle: left click sorts highest first, then lowest first, then back to the pawn's pick.
-        /// Right click runs the other way.
-        /// </summary>
-        private static void CycleSort(StatDef stat, PreviewSession session)
+        /// <summary>Sorts by the column the way vanilla's pawn tables do, with their sounds. Right click runs the other way.</summary>
+        internal static void CycleSort(StatDef stat, PreviewSession session)
         {
-            bool rightClick = Event.current.button == 1;
-            if (session.SortStat != stat)
-            {
-                session.SortStat = stat;
-                session.LowestFirst = rightClick;
-                SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            }
-            else if (session.LowestFirst != rightClick)
-            {
-                session.SortStat = null;
-                SoundDefOf.Tick_Low.PlayOneShotOnCamera();
-            }
-            else
-            {
-                session.LowestFirst = !session.LowestFirst;
-                SoundDefOf.Tick_High.PlayOneShotOnCamera();
-            }
+            session.CycleSort(stat, reverse: Event.current.button == 1);
+            (session.SortStat == null ? SoundDefOf.Tick_Low : SoundDefOf.Tick_High).PlayOneShotOnCamera();
         }
 
         private static void DrawSortIcon(Rect cell, bool descending)
@@ -368,9 +363,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     // A value under what the line counts from is grey, since it counts as none.
                     float value = PieceStats.Value(piece, stat);
                     bool underThreshold = line != null && Math.Abs(value) >= Epsilon && Math.Abs(line.Counted(value)) < Epsilon;
-                    using (new TextBlock(underThreshold ? ColoredText.SubtleGrayColor : textColor))
+                    // One line, so a long unit (CE's "mm RHA") doesn't wrap and lift the value.
+                    using (new TextBlock(null, null, false, underThreshold ? ColoredText.SubtleGrayColor : textColor))
                     {
-                        Widgets.Label(layout.Value(i), counts ? ValueText(piece, stat) : "OL_Slot_NoValue".Translate().Resolve());
+                        Rect cell = layout.Value(i);
+                        Widgets.Label(cell, (counts ? ValueText(piece, stat) : "OL_Slot_NoValue".Translate().Resolve()).Truncate(cell.width));
                     }
                 }
                 if (columns.Hidden.Count > 0)

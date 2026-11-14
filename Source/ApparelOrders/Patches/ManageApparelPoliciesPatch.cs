@@ -13,27 +13,13 @@ namespace OptimalLoadouts.ApparelOrders.Patches
     /// <summary>
     /// Widens Manage apparel policies (and makes it taller where the screen has room), gives the policy's column three
     /// tabs (vanilla's filter, its priorities and its limits), and draws the outfit preview beside them, with a panel for a slot's
-    /// pieces beside that where the screen is wide enough. The filter is a little wider than vanilla's, which other
+    /// pieces and one for a piece's stats beside that where the screen is wide enough. The filter is a little wider than vanilla's, which other
     /// mods that draw on it (Apparel Policy Builder's button, at its right edge) follow. Windows that replace this one
     /// with their own subclass (Choose Your Outfit) are left alone, since they lay out the space themselves.
     /// </summary>
     [HarmonyPatch(typeof(Dialog_ManageApparelPolicies))]
     public static class ManageApparelPoliciesPatch
     {
-        private const float PreviewWidth = 400f;
-
-        /// <summary>Room added to the policy's column for each stat line's layer button.</summary>
-        private const float PolicyColumnExtra = 100f;
-
-        /// <summary>Wide enough for a slot's pieces with their names and two stat columns.</summary>
-        private const float PreferredSlotWidth = 620f;
-
-        /// <summary>The narrowest slot panel worth its own column. Narrower screens show the slot inside the preview.</summary>
-        private const float MinSlotWidth = 420f;
-
-        /// <summary>The narrowest the preview gets before the filter gives way instead, on small screens.</summary>
-        private const float MinPreviewWidth = 380f;
-
         /// <summary>Choose Your Outfit's margin, so the window never runs off a small or high-UI-scale screen.</summary>
         private const float ScreenMargin = 80f;
 
@@ -59,8 +45,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             if (IsVanillaWindow(__instance))
             {
                 vanillaWidth = __result.x;
-                float wanted = __result.x + PolicyColumnExtra + PreviewWidth + PreferredSlotWidth + 2f * UiStyle.Gap;
-                __result.x = Mathf.Min(wanted, UI.screenWidth - ScreenMargin);
+                __result.x = Mathf.Min(PolicyWindowLayout.WantedWidth(__result.x), UI.screenWidth - ScreenMargin);
                 __result.y = Mathf.Max(__result.y, Mathf.Min(PreferredHeight, UI.screenHeight - ScreenMargin));
             }
         }
@@ -84,20 +69,11 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 tabWindow = __instance;
                 tab = PolicyTab.AllowedItems;
             }
-            float room = __instance.windowRect.width - vanillaWidth - PolicyColumnExtra - UiStyle.Gap;
-            if (room >= PreviewWidth + UiStyle.Gap + MinSlotWidth)
-            {
-                float slotWidth = room - PreviewWidth - UiStyle.Gap;
-                __state.slot = new Rect(rect.xMax - slotWidth, rect.y, slotWidth, rect.height);
-                __state.preview = new Rect(__state.slot.x - UiStyle.Gap - PreviewWidth, rect.y, PreviewWidth, rect.height);
-                rect.width -= room + UiStyle.Gap;
-            }
-            else
-            {
-                float previewWidth = Mathf.Min(Mathf.Max(room, MinPreviewWidth), rect.width / 2f);
-                __state.preview = new Rect(rect.xMax - previewWidth, rect.y, previewWidth, rect.height);
-                rect.width -= previewWidth + UiStyle.Gap;
-            }
+            PolicyWindowLayout layout = PolicyWindowLayout.For(rect, __instance.windowRect.width, vanillaWidth);
+            __state.preview = layout.Preview;
+            __state.slot = layout.Slot;
+            __state.stats = layout.Stats;
+            rect = layout.PolicyColumn;
 
             // The tab row sits where the preview's does, so the two columns' tabs line up.
             rect.yMin += TabDrawer.TabHeight;
@@ -127,7 +103,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             }
             // After the section's frame, so the open tab covers the frame's top edge, as on vanilla's filter.
             DrawPolicyTabs(__state.policyColumn, policy);
-            OutfitPreviewPanel.Draw(__state.preview, __state.slot, policy);
+            OutfitPreviewPanel.Draw(__state.preview, __state.slot, __state.stats, policy);
         }
 
         /// <summary>
@@ -172,6 +148,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
             public Rect policyColumn;
             public Rect preview;
             public Rect slot;
+            public Rect stats;
         }
 
         private enum PolicyTab

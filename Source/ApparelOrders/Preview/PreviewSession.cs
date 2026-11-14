@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OptimalLoadouts.Orders;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -111,6 +112,40 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>A stat shown as an extra column in the slot browser, kept across slots until it's removed.</summary>
         public StatDef AddedStat { get; set; }
 
+        /// <summary>Sorts the slot browser by the stat, highest first, adding it as the extra column when no priority shows it.</summary>
+        public void ShowColumn(StatDef stat)
+        {
+            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(Policy);
+            bool onLine = lines != null && lines.Any(line => !line.IsItem && line.stat == stat);
+            if (!onLine)
+            {
+                AddedStat = stat;
+            }
+            SortStat = stat;
+            LowestFirst = false;
+        }
+
+        /// <summary>
+        /// Vanilla's pawn table cycle on a column: highest first, then lowest first, then back to the colonist's pick.
+        /// <paramref name="reverse"/> (a right click) runs the other way.
+        /// </summary>
+        public void CycleSort(StatDef stat, bool reverse)
+        {
+            if (SortStat != stat)
+            {
+                SortStat = stat;
+                LowestFirst = reverse;
+            }
+            else if (LowestFirst != reverse)
+            {
+                SortStat = null;
+            }
+            else
+            {
+                LowestFirst = !LowestFirst;
+            }
+        }
+
         /// <summary>
         /// Shows the policy: keeps the chosen colonist if they're still among <paramref name="colonists"/>, else the
         /// first. Closes the slot when the colonist, policy, tab or material changed since it opened. Gathers pieces (at
@@ -134,6 +169,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             GatherPieces();
             Predict();
             FollowFilledLayer();
+            DropStaleSort();
         }
 
         public void ChoosePawn(Pawn pawn)
@@ -234,6 +270,23 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public void FilterChanged()
         {
             gatheredAt = float.MinValue;
+        }
+
+        /// <summary>
+        /// The slot browser stays sorted by a priority or the added column, even one without room on screen (the stats
+        /// beside or under the list show which). A stat that's neither any more, such as a removed priority, stops sorting it.
+        /// </summary>
+        private void DropStaleSort()
+        {
+            if (SortStat == null || SortStat == AddedStat)
+            {
+                return;
+            }
+            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(Policy);
+            if (lines == null || !lines.Any(line => !line.IsItem && line.stat == SortStat))
+            {
+                SortStat = null;
+            }
         }
 
         /// <summary>

@@ -79,26 +79,14 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             List<float> wornScores = pawn.apparel.WornApparel.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
             Apparel best = null;
             float bestScore = 0f;
-            Apparel runnerUp = null;
-            float runnerUpScore = float.MinValue;
             foreach (Apparel candidate in candidates)
             {
                 float score = JobGiver_OptimizeApparel.ApparelScoreGain(pawn, candidate, wornScores);
                 // The check's other tests, reach among them, run only for a piece that would win, as in the game.
                 if (score >= MinimumGain && score >= bestScore && CanPutOn(pawn, candidate, fromStorage))
                 {
-                    if (best != null)
-                    {
-                        runnerUp = best;
-                        runnerUpScore = bestScore;
-                    }
                     best = candidate;
                     bestScore = score;
-                }
-                else if (score > runnerUpScore)
-                {
-                    runnerUp = candidate;
-                    runnerUpScore = score;
                 }
             }
             if (best == null)
@@ -110,8 +98,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             var partners = new List<Apparel>();
             OrderVerdict verdict = VerdictFor(pawn, best, lines, partners);
             ExtraNeed addedFor = onlyWhatHelps ? ExtraPieces.LetThroughFor(pawn, best, verdict, lines) : ExtraNeed.None;
-            return new PredictedSwap(best, replaced, bestScore, verdict, partners, runnerUp,
-                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null), runnerUpScore, addedFor);
+            return new PredictedSwap(best, replaced, bestScore, verdict, partners, addedFor);
         }
 
         private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines, List<Apparel> partners)

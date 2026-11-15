@@ -8,20 +8,20 @@ namespace OptimalLoadouts.ApparelOrders.Gui
     /// <summary>How a piece's bonuses read: each in short, "+30 bulk capacity", a penalty in red.</summary>
     internal static class PieceBonusText
     {
-        private const string Separator = ", ";
+        private const string Indent = "  ";
 
         public static string Of(StatDef stat, float value)
         {
             return "OL_Slot_GivesEntry".Translate(stat.ValueToString(value, ToStringNumberSense.Offset), stat.label).Resolve();
         }
 
-        /// <summary>The bonuses in one line for a tooltip, a penalty in red.</summary>
-        public static string List(IEnumerable<(StatDef stat, float value)> bonuses)
+        /// <summary>The bonuses for a tooltip, one to a line under its heading, a penalty in red.</summary>
+        public static string Lines(IEnumerable<(StatDef stat, float value)> bonuses)
         {
-            return string.Join(Separator, bonuses.Select(bonus =>
+            return string.Join("\n", bonuses.Select(bonus =>
             {
                 string text = Of(bonus.stat, bonus.value);
-                return bonus.value < 0f ? text.Colorize(ColorLibrary.RedReadable) : text;
+                return Indent + (bonus.value < 0f ? text.Colorize(ColorLibrary.RedReadable) : text);
             }));
         }
     }

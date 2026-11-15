@@ -621,7 +621,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             IReadOnlyList<(StatDef stat, float value)> bonuses = PieceBonuses.Of(piece, lines);
             if (bonuses.Count > 0)
             {
-                parts.Add("OL_Preview_Gives".Translate(PieceBonusText.List(bonuses)));
+                parts.Add("OL_Preview_Gives".Translate() + "\n" + PieceBonusText.Lines(bonuses));
             }
             parts.Add("OL_Slot_ClickToOpen".Translate());
             Color? tint = null;
@@ -782,7 +782,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(session.Policy);
             bool hasOrder = lines != null && lines.Count > 0;
-            string why = AddedFor(swap, session.Pawn) ?? ReasonWon(swap.Verdict, lines, hasOrder);
+            string why = AddedFor(swap) ?? ReasonWon(piece, swap.Verdict, lines, hasOrder);
             bool wonOnOrder = !swap.Verdict.GameDecides && !swap.Verdict.IsTie && swap.Verdict.Delta > 0f;
             if (swap.Partners.Count > 0 && wonOnOrder)
             {
@@ -791,17 +791,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 string partners = swap.Partners.Select(partner => partner.LabelNoParenthesis).ToCommaList(useAnd: true);
                 why += " " + "OL_Preview_WithPartners".Translate(partners);
             }
-            string runnerUp = swap.RunnerUp == null ? null : ReasonRunnerUpLost(swap, lines, hasOrder);
-            return runnerUp == null ? why : why + "\n\n" + runnerUp;
+            return why;
         }
 
         /// <summary>Why "only add pieces that help" let the piece through though it helps on no priority, or null.</summary>
-        private static string AddedFor(PredictedSwap swap, Pawn pawn)
+        private static string AddedFor(PredictedSwap swap)
         {
             switch (swap.AddedFor)
             {
                 case ExtraNeed.Warmth:
-                    return "OL_Preview_WhyAddedWarmth".Translate(pawn.LabelShort);
+                    return "OL_Preview_WhyAddedWarmth".Translate();
                 case ExtraNeed.Cover:
                     return "OL_Preview_WhyAddedCover".Translate();
                 default:
@@ -809,7 +808,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static string ReasonWon(OrderVerdict verdict, IReadOnlyList<OrderLine> lines, bool hasOrder)
+        private static string ReasonWon(Apparel piece, OrderVerdict verdict, IReadOnlyList<OrderLine> lines, bool hasOrder)
         {
             if (!hasOrder)
             {
@@ -826,65 +825,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             OrderLine line = lines[verdict.DecidingLine];
             if (line.IsItem)
             {
-                return "OL_Preview_WhyLocked".Translate(line.item.LabelCap);
+                // A set can win on a locked partner, so the item is named when it isn't this piece.
+                return piece.def == line.item ? "OL_Preview_WhyLocked".Translate() : "OL_Preview_WhyPartnerLocked".Translate(line.item.LabelCap);
             }
             if (line.IsCoverage)
             {
                 return "OL_Preview_WhyCoverage".Translate(OrderLineText.StatOnLayerCap(line));
             }
-            return "OL_Preview_WhyBetter".Translate(AmountSubject(line), Amount(line.stat, verdict.Delta));
-        }
-
-        private static string ReasonRunnerUpLost(PredictedSwap swap, IReadOnlyList<OrderLine> lines, bool hasOrder)
-        {
-            string name = swap.RunnerUp.LabelCap;
-            OrderVerdict runnerUp = swap.RunnerUpVerdict;
-            if (!hasOrder || runnerUp.GameDecides || runnerUp.IsTie || runnerUp.DecidingLine >= lines.Count)
-            {
-                return "OL_Preview_RunnerUpScoredLower".Translate(name);
-            }
-            OrderLine line = lines[runnerUp.DecidingLine];
-            if (line.IsItem)
-            {
-                if (runnerUp.Delta < 0f)
-                {
-                    return "OL_Preview_RunnerUpNotLocked".Translate(name, line.item.label);
-                }
-                if (runnerUp.DecidingLine != swap.Verdict.DecidingLine)
-                {
-                    return "OL_Preview_RunnerUpLaterItem".Translate(name);
-                }
-                return SettledByGame(swap)
-                    ? "OL_Preview_RunnerUpSameLockedGame".Translate(name)
-                    : "OL_Preview_RunnerUpSameLocked".Translate(name);
-            }
-            string onLine = OrderLineText.StatOnLayer(line);
-            if (runnerUp.Delta < 0f)
-            {
-                return line.IsCoverage
-                    ? "OL_Preview_RunnerUpWorseOn".Translate(name, onLine)
-                    : "OL_Preview_RunnerUpWorse".Translate(name, AmountSubject(line), Amount(line.stat, runnerUp.Delta));
-            }
-            if (runnerUp.DecidingLine == swap.Verdict.DecidingLine)
-            {
-                if (!line.IsCoverage)
-                {
-                    return "OL_Preview_RunnerUpSmallerGain".Translate(name, onLine);
-                }
-                return SettledByGame(swap)
-                    ? "OL_Preview_RunnerUpSameCoverageGame".Translate(name, onLine)
-                    : "OL_Preview_RunnerUpSameCoverage".Translate(name, onLine);
-            }
-            return "OL_Preview_RunnerUpLaterStat".Translate(name, onLine);
-        }
-
-        /// <summary>
-        /// Whether the pick and the runner-up won the same line alike and the game's own score put the runner-up lower.
-        /// Identical copies score the same, and then nothing chose between them.
-        /// </summary>
-        private static bool SettledByGame(PredictedSwap swap)
-        {
-            return swap.Verdict.RestTies && swap.RunnerUpVerdict.RestTies && swap.RunnerUpScore < swap.Score;
+            string key = line.lowerIsBetter ? "OL_Preview_WhyLess" : "OL_Preview_WhyMore";
+            return key.Translate(OrderLineText.StatOnLayer(line), Amount(line, verdict.Delta));
         }
 
         /// <summary>Why a piece your changes took off is gone: what replaced it, or that it's no longer picked.</summary>
@@ -911,16 +860,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         /// What an amount on the line is of: the stat with its layers, "over the body" when it's totalled body part by body
         /// part or by the body each piece covers, so the amount reads as an average over the body, not a piece's own value.
         /// </summary>
-        private static string AmountSubject(OrderLine line)
+        /// <summary>How much the outfit's total on the line changed, signed: up on a higher-first line, down on a lower-first one.</summary>
+        private static string Amount(OrderLine line, float delta)
         {
-            string subject = OrderLineText.StatOnLayer(line);
-            return OutfitTotals.KindOf(line.stat) == StatTotal.Summed ? subject : "OL_Preview_OverBody".Translate(subject).Resolve();
-        }
-
-        private static string Amount(StatDef stat, float delta)
-        {
+            float change = line.lowerIsBetter ? -Mathf.Abs(delta) : Mathf.Abs(delta);
             // A difference, so temperatures convert as a span (10 °C reads 18 °F, not 50 °F).
-            return stat.ValueToString(Mathf.Abs(delta), ToStringNumberSense.Offset);
+            return line.stat.ValueToString(change, ToStringNumberSense.Offset);
         }
     }
 }

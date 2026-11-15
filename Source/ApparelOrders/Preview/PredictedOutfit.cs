@@ -41,7 +41,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         }
     }
 
-    /// <summary>One piece put on: what it replaced, why it won, and the piece that came closest.</summary>
+    /// <summary>One piece put on: what it replaced and why it won.</summary>
     public sealed class PredictedSwap
     {
         public Apparel PutOn { get; }
@@ -52,14 +52,6 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The pieces it won together with, covering the rest of what it took off. Empty when it won alone.</summary>
         public IReadOnlyList<Apparel> Partners { get; }
 
-        /// <summary>The next best piece the pawn could have put on at this swap, or null when there was none.</summary>
-        public Apparel RunnerUp { get; }
-
-        public OrderVerdict RunnerUpVerdict { get; }
-
-        /// <summary>The runner-up's score in the apparel check, to compare with <see cref="Score"/>.</summary>
-        public float RunnerUpScore { get; }
-
         /// <summary>
         /// Why "only add pieces that help" let the piece through though it helps on no priority, or None when it won on
         /// a priority or the option is off.
@@ -67,17 +59,14 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public ExtraNeed AddedFor { get; }
 
         public PredictedSwap(Apparel putOn, IReadOnlyList<Apparel> replaced, float score, OrderVerdict verdict,
-            IReadOnlyList<Apparel> partners, Apparel runnerUp, OrderVerdict runnerUpVerdict, float runnerUpScore, ExtraNeed addedFor)
+            IReadOnlyList<Apparel> partners, ExtraNeed addedFor)
         {
-            RunnerUpScore = runnerUpScore;
             AddedFor = addedFor;
             PutOn = putOn;
             Replaced = replaced;
             Score = score;
             Verdict = verdict;
             Partners = partners;
-            RunnerUp = runnerUp;
-            RunnerUpVerdict = runnerUpVerdict;
         }
     }
 }

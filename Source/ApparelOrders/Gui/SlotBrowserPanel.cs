@@ -444,7 +444,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             List<(StatDef stat, float value)> alsoGives = PieceBonuses.Of(choice.Piece, lines).Where(bonus => !shown.Contains(bonus.stat)).ToList();
             if (alsoGives.Count > 0)
             {
-                parts.Add("OL_Slot_AlsoGives".Translate(PieceBonusText.List(alsoGives)));
+                parts.Add("OL_Slot_AlsoGives".Translate() + "\n" + PieceBonusText.Lines(alsoGives));
             }
             if (choice.Partners.Count > 0)
             {

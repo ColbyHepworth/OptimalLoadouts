@@ -100,15 +100,15 @@
   <OL_Slot_Covers>✓</OL_Slot_Covers>
   <OL_Slot_Copies>{0} ×{1}</OL_Slot_Copies>
   <OL_Slot_TipValue>{0}: {1}</OL_Slot_TipValue>
-  <OL_Slot_AlsoReplaces>Also replaces {0}.</OL_Slot_AlsoReplaces>
+  <OL_Slot_AlsoReplaces>Also takes off: {0}.</OL_Slot_AlsoReplaces>
   <OL_Slot_WithPartners>Ranked together with {0} for the rest of the slot.</OL_Slot_WithPartners>
   <OL_Slot_GivesEntry>{0} {1}</OL_Slot_GivesEntry>
   <OL_Slot_MorePriorities>+{0}</OL_Slot_MorePriorities>
-  <OL_Slot_NothingFor>Nothing for {0}.</OL_Slot_NothingFor>
+  <OL_Slot_None>none</OL_Slot_None>
   <OL_Slot_AlsoGives>Also gives:</OL_Slot_AlsoGives>
   <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
   <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
-  <OL_Slot_WontWearLowScore>It scores too low for the game to put it on.</OL_Slot_WontWearLowScore>
+  <OL_Slot_WontWearLowScore>Scores too low to be put on.</OL_Slot_WontWearLowScore>
   <OL_Slot_WontWearExtra>It adds nothing for this policy's priorities, and this policy only adds pieces that help.</OL_Slot_WontWearExtra>
   <OL_Slot_WontWearPawn>This colonist can't wear it.</OL_Slot_WontWearPawn>
   <OL_Slot_WontWearBlocksVision>The game never puts on apparel that blocks vision by itself.</OL_Slot_WontWearBlocksVision>
@@ -123,7 +123,8 @@
   <OL_Slot_LockedInBase>Locked in {0}, the policy this one builds on. Unlock it there.</OL_Slot_LockedInBase>
   <OL_Slot_IsLocked>Locked.</OL_Slot_IsLocked>
   <OL_Slot_LockedCheckbox>Locked, so it stays allowed. Unlock it to forbid it.</OL_Slot_LockedCheckbox>
-  <OL_Slot_ClickToTry>Click to try it on. The checkbox allows or forbids it in this policy.</OL_Slot_ClickToTry>
+  <OL_Slot_ClickToTry>Click to try it on.</OL_Slot_ClickToTry>
+  <OL_Slot_ClickToGoBack>Click to go back to the outfit.</OL_Slot_ClickToGoBack>
   <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 
   <!-- A piece's stats beside or under the slot browser -->

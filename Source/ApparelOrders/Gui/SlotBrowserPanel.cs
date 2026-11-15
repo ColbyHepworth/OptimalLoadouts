@@ -356,7 +356,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 open.TryOn(piece);
             }
             // Imagined pieces may share an ID, so each row's place in the list keeps its tooltip apart.
-            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, lines, policy), Gen.HashCombineInt(open.Slot.GetHashCode(), (int)row.y));
+            bool triedOn = piece == open.TriedOn;
+            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, triedOn, lines, policy), Gen.HashCombineInt(open.Slot.GetHashCode(), (int)row.y));
 
             bool dimmed = !choice.Pickable;
             Color textColor = dimmed ? ColoredText.SubtleGrayColor : Color.white;
@@ -402,15 +403,83 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
         }
 
-        private static string Tooltip(SlotChoice choice, bool isPick, IReadOnlyList<OrderLine> lines, ApparelPolicy policy)
+        /// <summary>
+        /// A row's tooltip in groups: its name, then why it is or isn't picked, then its value on each priority and what
+        /// else it gives, then what else it takes off, then how to try it on.
+        /// </summary>
+        private static string Tooltip(SlotChoice choice, bool isPick, bool triedOn, IReadOnlyList<OrderLine> lines, ApparelPolicy policy)
         {
-            var parts = new List<string> { choice.Piece.LabelCap };
+            var groups = new List<string>
+            {
+                PieceLabel.Of(choice.Piece),
+                Joined(Status(choice, isPick, lines, policy)),
+                Joined(Priorities(choice, lines)),
+                Joined(TakesOff(choice)),
+                (triedOn ? "OL_Slot_ClickToGoBack" : "OL_Slot_ClickToTry").Translate().Resolve().Colorize(ColoredText.SubtleGrayColor),
+            };
+            return string.Join("\n\n", groups.Where(group => !group.NullOrEmpty()));
+        }
+
+        private static string Joined(List<string> lines)
+        {
+            return string.Join("\n", lines);
+        }
+
+        /// <summary>Whether it's the pick, locked, or kept from being put on, and why.</summary>
+        private static List<string> Status(SlotChoice choice, bool isPick, IReadOnlyList<OrderLine> lines, ApparelPolicy policy)
+        {
+            var status = new List<string>();
             if (isPick)
             {
-                parts.Add("OL_Slot_IsPick".Translate());
+                status.Add("OL_Slot_IsPick".Translate());
+                // A pick with nothing on any priority can only have won on the game's own score.
+                if (!lines.Any(line => !line.IsItem))
+                {
+                    status.Add("OL_Preview_WhyNoOrder".Translate());
+                }
+                else if (!HasValueOnAnyLine(choice, lines) && !(ApparelOrdersComponent.Current?.IsLocked(policy, choice.Piece.def) ?? false))
+                {
+                    status.Add("OL_Preview_WhyTie".Translate());
+                }
             }
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            if (orders != null && orders.IsLocked(policy, choice.Piece.def))
+            {
+                status.Add("OL_Slot_IsLocked".Translate());
+            }
+            if (!choice.TypeAllowed)
+            {
+                ApparelForbid forbiddenBy = ApparelForbids.ForbiddenBy(policy, choice.Piece.def);
+                status.Add(forbiddenBy != null
+                    ? "OL_Slot_RuledOut".Translate(OrderLineText.ForbidCap(forbiddenBy).UncapitalizeFirst()).Resolve()
+                    : "OL_Preview_NotAllowed".Translate().Resolve());
+            }
+            else if (!choice.Allowed)
+            {
+                status.Add("OL_Slot_PieceNotAllowed".Translate());
+            }
+            if (!choice.Reachable)
+            {
+                status.Add("OL_Slot_CantReach".Translate());
+            }
+            if (choice.GameWontWear)
+            {
+                status.Add(choice.CantWearReason ?? choice.SkippedReason ?? "OL_Slot_WontWearLowScore".Translate().Resolve());
+            }
+            return status;
+        }
+
+        private static bool HasValueOnAnyLine(SlotChoice choice, IReadOnlyList<OrderLine> lines)
+        {
+            return lines.Any(line => !line.IsItem && line.CountsOn(choice.Piece.def)
+                && Math.Abs(ApparelComparison.ValueOnLine(choice.Piece, line)) >= Epsilon);
+        }
+
+        /// <summary>Its value on each priority, one to a line, then what else it gives.</summary>
+        private static List<string> Priorities(SlotChoice choice, IReadOnlyList<OrderLine> lines)
+        {
+            var values = new List<string>();
             var shown = new HashSet<StatDef>();
-            var nothingFor = new List<string>();
             foreach (OrderLine line in lines.Where(line => !line.IsItem))
             {
                 // A line limited to a layer the piece isn't on doesn't count it, and one counting from more than the
@@ -420,16 +489,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     // Said by what the piece does. A piece off the line's layers isn't judged by it.
                     if (line.CountsOn(choice.Piece.def))
                     {
-                        parts.Add(OrderLineText.CoverageOf(line, ApparelComparison.ValueOnLine(choice.Piece, line) > 0f));
+                        bool covers = ApparelComparison.ValueOnLine(choice.Piece, line) > 0f;
+                        string coverage = OrderLineText.CoverageOf(line, covers);
+                        values.Add(covers ? coverage : coverage.Colorize(ColoredText.SubtleGrayColor));
                     }
                 }
                 else if (Math.Abs(ApparelComparison.ValueOnLine(choice.Piece, line)) >= Epsilon)
                 {
-                    parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)).Resolve());
+                    values.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)).Resolve());
                 }
                 else
                 {
-                    nothingFor.Add(OrderLineText.StatOnLayer(line));
+                    values.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), "OL_Slot_None".Translate()).Resolve()
+                        .Colorize(ColoredText.SubtleGrayColor));
                 }
                 if (line.IsStat && line.CountsOn(choice.Piece.def))
                 {
@@ -437,49 +509,27 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     shown.Add(line.stat);
                 }
             }
-            if (nothingFor.Count > 0)
-            {
-                parts.Add("OL_Slot_NothingFor".Translate(nothingFor.ToCommaList()).Resolve().Colorize(ColoredText.SubtleGrayColor));
-            }
             List<(StatDef stat, float value)> alsoGives = PieceBonuses.Of(choice.Piece, lines).Where(bonus => !shown.Contains(bonus.stat)).ToList();
             if (alsoGives.Count > 0)
             {
-                parts.Add("OL_Slot_AlsoGives".Translate() + "\n" + PieceBonusText.Lines(alsoGives));
+                values.Add("OL_Slot_AlsoGives".Translate() + "\n" + PieceBonusText.Lines(alsoGives));
+            }
+            return values;
+        }
+
+        /// <summary>What else putting it on takes off, and the partners it's ranked with.</summary>
+        private static List<string> TakesOff(SlotChoice choice)
+        {
+            var effects = new List<string>();
+            if (choice.AlsoReplaces.Count > 0)
+            {
+                effects.Add("OL_Slot_AlsoReplaces".Translate(choice.AlsoReplaces.Select(worn => PieceLabel.Of(worn).UncapitalizeFirst()).ToCommaList(useAnd: true)));
             }
             if (choice.Partners.Count > 0)
             {
-                parts.Add("OL_Slot_WithPartners".Translate(choice.Partners.Select(partner => partner.LabelNoParenthesis).ToCommaList(useAnd: true)));
+                effects.Add("OL_Slot_WithPartners".Translate(choice.Partners.Select(partner => partner.LabelNoParenthesis).ToCommaList(useAnd: true)));
             }
-            if (choice.AlsoReplaces.Count > 0)
-            {
-                parts.Add("OL_Slot_AlsoReplaces".Translate(string.Join(", ", choice.AlsoReplaces.Select(worn => worn.LabelCap.ToString()))));
-            }
-            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
-            if (orders != null && orders.IsLocked(policy, choice.Piece.def))
-            {
-                parts.Add("OL_Slot_IsLocked".Translate());
-            }
-            if (!choice.TypeAllowed)
-            {
-                ApparelForbid forbiddenBy = ApparelForbids.ForbiddenBy(policy, choice.Piece.def);
-                parts.Add(forbiddenBy != null
-                    ? "OL_Slot_RuledOut".Translate(OrderLineText.ForbidCap(forbiddenBy).UncapitalizeFirst()).Resolve()
-                    : "OL_Preview_NotAllowed".Translate().Resolve());
-            }
-            else if (!choice.Allowed)
-            {
-                parts.Add("OL_Slot_PieceNotAllowed".Translate());
-            }
-            if (!choice.Reachable)
-            {
-                parts.Add("OL_Slot_CantReach".Translate());
-            }
-            if (choice.GameWontWear)
-            {
-                parts.Add(choice.CantWearReason ?? choice.SkippedReason ?? "OL_Slot_WontWearLowScore".Translate().Resolve());
-            }
-            parts.Add("OL_Slot_ClickToTry".Translate());
-            return string.Join("\n", parts);
+            return effects;
         }
 
         /// <summary>The order's line for a column's stat, or null for a column added by hand.</summary>

@@ -5,11 +5,26 @@ using Verse;
 
 namespace OptimalLoadouts.ApparelOrders.Preview
 {
-    /// <summary>Whether the colony could make a piece now: a researched recipe, a bench for it, and the cost in stock.</summary>
+    /// <summary>
+    /// Whether the colony has researched a piece (an unlocked recipe at a researched bench), and whether it could make it
+    /// now (a bench for it built, and the cost in stock).
+    /// </summary>
     public static class CraftableApparel
     {
         private static Dictionary<ThingDef, List<RecipeDef>> recipesFor;
         private static readonly Dictionary<RecipeDef, List<ThingDef>> benchesFor = new Dictionary<RecipeDef, List<ThingDef>>();
+
+        /// <summary>
+        /// A recipe for the piece is unlocked now, as the bills menu judges it (its research finished, and any meme,
+        /// faction or ideoligion it needs), at a bench whose research is finished too, or one the colony has built (a
+        /// traded bench works without its research). The bench needn't be built.
+        /// </summary>
+        public static bool IsResearched(ThingDef def, Map map)
+        {
+            return RecipesFor().TryGetValue(def, out List<RecipeDef> recipes)
+                && recipes.Any(recipe => recipe.AvailableNow
+                    && BenchesFor(recipe).Any(bench => bench.IsResearchFinished || map.listerBuildings.ColonistsHaveBuilding(bench)));
+        }
 
         /// <summary>A recipe for the piece is researched and the colony has built a bench that does it.</summary>
         public static bool HasRecipeNow(ThingDef def, Map map)

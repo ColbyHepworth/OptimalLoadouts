@@ -38,7 +38,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 return InStorage(pawn, policy, slot);
             }
-            return Imagined(pawn, policy, source == PieceSource.CraftableNow, material, slot);
+            return Imagined(pawn, policy, source, material, slot);
         }
 
         /// <summary>
@@ -76,9 +76,11 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return pieces;
         }
 
-        private static List<Apparel> Imagined(Pawn pawn, ApparelPolicy policy, bool craftableOnly, MaterialChoice material,
+        private static List<Apparel> Imagined(Pawn pawn, ApparelPolicy policy, PieceSource source, MaterialChoice material,
             OutfitSlot slot)
         {
+            bool craftableOnly = source == PieceSource.CraftableNow;
+            bool researchedOnly = source == PieceSource.Researched;
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             IReadOnlyList<OrderLine> lines = orders?.EffectiveLines(policy) ?? NoLines;
             int version = orders?.Version ?? 0;
@@ -94,7 +96,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             foreach (ThingDef def in defs)
             {
                 if (def.apparel == null || !RightGender(pawn, def) || (slot != null && !slot.Holds(def, pawn.RaceProps.body))
-                    || (craftableOnly && !CraftableApparel.HasRecipeNow(def, map)))
+                    || (craftableOnly && !CraftableApparel.HasRecipeNow(def, map))
+                    || (researchedOnly && !CraftableApparel.IsResearched(def, map)))
                 {
                     continue;
                 }

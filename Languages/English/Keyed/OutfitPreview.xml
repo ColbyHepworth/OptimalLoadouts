@@ -10,21 +10,24 @@
   <OL_Preview_Turn>Turn</OL_Preview_Turn>
 
   <!-- Where the pieces come from -->
-  <OL_Preview_SourceAllowed>Allowed ({0})</OL_Preview_SourceAllowed>
-  <OL_Preview_SourceCraftable>Craftable ({0})</OL_Preview_SourceCraftable>
-  <OL_Preview_SourceStorage>In storage ({0})</OL_Preview_SourceStorage>
-  <OL_Preview_FromAllowed>From everything this policy allows, made new</OL_Preview_FromAllowed>
-  <OL_Preview_FromCraftable>From what the colony can make now</OL_Preview_FromCraftable>
-  <OL_Preview_FromStorage>From what's in storage now</OL_Preview_FromStorage>
-  <OL_Preview_AsIfOnPolicy>{0}, as if on this policy</OL_Preview_AsIfOnPolicy>
+  <OL_Preview_ResearchedOnly>Researched</OL_Preview_ResearchedOnly>
+  <OL_Preview_CanMakeNow>Craftable</OL_Preview_CanMakeNow>
+  <OL_Preview_InStorage>In storage</OL_Preview_InStorage>
+  <OL_Preview_FilterCount>{0} pieces this colonist could wear.</OL_Preview_FilterCount>
+  <OL_Preview_FromResearched>Only what a recipe the colony has unlocked makes, at a researched bench, whether or not the bench is built or the material is in stock. With nothing ticked, the preview picks from everything this policy allows, made new.</OL_Preview_FromResearched>
+  <OL_Preview_FromCraftable>Only what the colony can make now: researched, with the bench built and the material in stock. Ticks Researched too.</OL_Preview_FromCraftable>
+  <OL_Preview_FromStorage>The real items in storage now, played out the way the colonist will from what they wear. Researched and Craftable don't apply to them.</OL_Preview_FromStorage>
+  <OL_Preview_FilterOffInStorage>Off while In storage is ticked: stored items are worn whatever's researched.</OL_Preview_FilterOffInStorage>
+  <OL_Preview_AsIfOnPolicy>Shown as if this colonist were on this policy.</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
-  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (on the Craftable tab), uses the best material for this policy's priorities instead.</OL_Preview_MaterialTip>
+  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (when picking from what's craftable), uses the best material for this policy's priorities instead.</OL_Preview_MaterialTip>
   <OL_Preview_MaterialBest>Best for its priorities</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 
   <!-- What the outfit comes to -->
   <OL_Preview_Unsettled>Still changing after {0} swaps.</OL_Preview_Unsettled>
   <OL_Preview_NothingAllowed>This policy allows nothing this colonist can wear.</OL_Preview_NothingAllowed>
+  <OL_Preview_NothingResearched>The colony hasn't researched anything this policy allows yet.</OL_Preview_NothingResearched>
   <OL_Preview_NothingCraftable>The colony can't make anything this policy allows yet.</OL_Preview_NothingCraftable>
   <OL_Preview_NothingToPick>Nothing in storage this policy allows.</OL_Preview_NothingToPick>
   <OL_Preview_NoChanges>Keeps what they wear now.</OL_Preview_NoChanges>

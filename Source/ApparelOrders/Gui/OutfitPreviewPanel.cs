@@ -12,7 +12,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
     /// The outfit preview beside a policy's filter: any colonist drawn in the outfit the policy would give them, from
-    /// every piece it allows, what the colony can make now, or what's in storage, and a list by layer saying why each
+    /// every piece it allows, what the colony has researched or can make now, or what's in storage, and a list by layer saying why each
     /// piece won and what your changes did. What it shows is the game's <see cref="PreviewSession"/>.
     /// </summary>
     public static class OutfitPreviewPanel
@@ -36,6 +36,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             Rect section = rect;
+            // Level with the policy column's box, which sits under its Allowed items and Priorities tabs.
             section.yMin += TabDrawer.TabHeight;
             Rect slotSection = slotRect;
             if (slotSection.width > 0f)
@@ -67,7 +68,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 return;
             }
             session.Show(policy, pawns);
-            DrawSourceTabs(section, session);
 
             Rect inner = section.ContractedBy(UiStyle.Gap);
             float y = DrawControls(inner, session, pawns);
@@ -136,8 +136,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             float y = area.y;
             DrawPawnRow(new Rect(area.x, y, area.width, UiStyle.RowHeight), session, pawns);
             y += UiStyle.RowHeight;
-            y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), SourceText(session));
-            if (session.Source != PieceSource.InStorage)
+            if (session.Pawn.outfits.CurrentApparelPolicy != session.Policy)
+            {
+                y += DrawWrappedNote(new Rect(area.x, y, area.width, 0f), "OL_Preview_AsIfOnPolicy".Translate());
+            }
+            DrawFilters(new Rect(area.x, y, area.width, UiStyle.RowHeight), session);
+            y += UiStyle.RowHeight;
+            if (!session.InStorage)
             {
                 Rect button = new Rect(area.x, y, area.width, UiStyle.RowHeight);
                 if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(session.Material.Label).ToString().Truncate(button.width)))
@@ -189,41 +194,47 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 .ToList();
         }
 
-        private static void DrawSourceTabs(Rect section, PreviewSession session)
+        /// <summary>
+        /// Three toggles in one row, each with how many pieces it leaves: Researched, Craftable and In storage. With none
+        /// ticked, pieces are everything allowed, made new. In storage greys out the other two, which keep their ticks.
+        /// </summary>
+        private static void DrawFilters(Rect row, PreviewSession session)
         {
-            var tabs = new List<TabRecord>
-            {
-                SourceTab(session, PieceSource.AnythingAllowed, "OL_Preview_SourceAllowed"),
-                SourceTab(session, PieceSource.CraftableNow, "OL_Preview_SourceCraftable"),
-                SourceTab(session, PieceSource.InStorage, "OL_Preview_SourceStorage"),
-            };
-            using (new TextBlock(GameFont.Small, TextAnchor.UpperLeft))
-            {
-                TabDrawer.DrawTabs(section, tabs);
-            }
+            float third = (row.width - 2f * UiStyle.Gap) / 3f;
+            Rect researchedRect = new Rect(row.x, row.y, third, row.height);
+            Rect craftableRect = new Rect(researchedRect.xMax + UiStyle.Gap, row.y, third, row.height);
+            Rect storageRect = new Rect(craftableRect.xMax + UiStyle.Gap, row.y, third, row.height);
+            bool inStorage = session.InStorage;
+
+            bool researched = session.ResearchedOnly;
+            Widgets.CheckboxLabeled(researchedRect, Fit("OL_Preview_ResearchedOnly".Translate(), researchedRect), ref researched,
+                disabled: inStorage, placeCheckboxNearText: true);
+            session.ResearchedOnly = researched;
+            TooltipHandler.TipRegion(researchedRect, FilterTip("OL_Preview_FromResearched", session.PieceCount(PieceSource.Researched), inStorage));
+
+            bool craftable = session.CanMakeNow;
+            Widgets.CheckboxLabeled(craftableRect, Fit("OL_Preview_CanMakeNow".Translate(), craftableRect), ref craftable,
+                disabled: inStorage, placeCheckboxNearText: true);
+            session.CanMakeNow = craftable;
+            TooltipHandler.TipRegion(craftableRect, FilterTip("OL_Preview_FromCraftable", session.PieceCount(PieceSource.CraftableNow), inStorage));
+
+            bool storage = inStorage;
+            Widgets.CheckboxLabeled(storageRect, Fit("OL_Preview_InStorage".Translate(), storageRect), ref storage, placeCheckboxNearText: true);
+            session.InStorage = storage;
+            TooltipHandler.TipRegion(storageRect, FilterTip("OL_Preview_FromStorage", session.PieceCount(PieceSource.InStorage), false));
         }
 
-        private static TabRecord SourceTab(PreviewSession session, PieceSource tabSource, string key)
+        /// <summary>The label cut to leave room for the checkbox, so a long translation stays on one line.</summary>
+        private static string Fit(string label, Rect rect)
         {
-            return new TabRecord(key.Translate(session.PieceCount(tabSource)), () => session.Source = tabSource, session.Source == tabSource);
+            return label.Truncate(rect.width - Widgets.CheckboxSize - UiStyle.Gap);
         }
 
-        private static string SourceText(PreviewSession session)
+        /// <summary>What the toggle picks, how many pieces it leaves, and while In storage is on, that it doesn't apply.</summary>
+        private static string FilterTip(string key, int pieces, bool offInStorage)
         {
-            string from;
-            switch (session.Source)
-            {
-                case PieceSource.AnythingAllowed:
-                    from = "OL_Preview_FromAllowed".Translate();
-                    break;
-                case PieceSource.CraftableNow:
-                    from = "OL_Preview_FromCraftable".Translate();
-                    break;
-                default:
-                    from = "OL_Preview_FromStorage".Translate();
-                    break;
-            }
-            return session.Pawn.outfits.CurrentApparelPolicy == session.Policy ? from : "OL_Preview_AsIfOnPolicy".Translate(from).ToString();
+            string tip = key.Translate() + "\n\n" + "OL_Preview_FilterCount".Translate(pieces);
+            return offInStorage ? tip + "\n\n" + "OL_Preview_FilterOffInStorage".Translate() : tip;
         }
 
         private static void DrawPawnRow(Rect row, PreviewSession session, List<Pawn> pawns)
@@ -292,6 +303,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 {
                     case PieceSource.AnythingAllowed:
                         return "OL_Preview_NothingAllowed".Translate();
+                    case PieceSource.Researched:
+                        return "OL_Preview_NothingResearched".Translate();
                     case PieceSource.CraftableNow:
                         return "OL_Preview_NothingCraftable".Translate();
                     default:

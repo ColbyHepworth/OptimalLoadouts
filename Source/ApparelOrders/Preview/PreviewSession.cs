@@ -18,12 +18,18 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>How often the pieces on offer are gathered again, so edits to the filter, stock and storage show up.</summary>
         private const float RefreshSeconds = 1f;
 
-        private static readonly PieceSource[] Sources = { PieceSource.AnythingAllowed, PieceSource.CraftableNow, PieceSource.InStorage };
+        private static readonly PieceSource[] Sources =
+        {
+            PieceSource.AnythingAllowed, PieceSource.Researched, PieceSource.CraftableNow, PieceSource.InStorage,
+        };
 
         private static PreviewSession current;
 
         private readonly Game game;
         private PieceSource source = PieceSource.AnythingAllowed;
+
+        /// <summary>The made-new source picked last, so In storage and back keeps Made new's filters.</summary>
+        private PieceSource lastMadeNew = PieceSource.AnythingAllowed;
 
         private readonly Dictionary<PieceSource, List<Apparel>> pieces = new Dictionary<PieceSource, List<Apparel>>();
         private float gatheredAt = float.MinValue;
@@ -78,15 +84,82 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The policy shown, or null before one is.</summary>
         public ApparelPolicy Policy { get; private set; }
 
+        /// <summary>Where the pieces come from, set by the three toggles below.</summary>
         public PieceSource Source
         {
             get => source;
-            set
+            private set
             {
                 source = value;
+                if (value != PieceSource.InStorage)
+                {
+                    lastMadeNew = value;
+                }
                 OutfitScroll = Vector2.zero;
             }
         }
+
+        /// <summary>
+        /// Whether the pieces are the real ones in storage, rather than made new. While it's on, the other two toggles
+        /// keep their ticks but don't apply.
+        /// </summary>
+        public bool InStorage
+        {
+            get => source == PieceSource.InStorage;
+            set
+            {
+                if (value != InStorage)
+                {
+                    Source = value ? PieceSource.InStorage : lastMadeNew;
+                }
+            }
+        }
+
+        /// <summary>The source pieces made new come from, by the two toggles below, whether or not In storage is on.</summary>
+        public PieceSource MadeNewSource => lastMadeNew;
+
+        /// <summary>
+        /// Only what a recipe the colony has unlocked makes. Unticking it unticks <see cref="CanMakeNow"/> too, since a
+        /// piece the colony can make now is a researched one.
+        /// </summary>
+        public bool ResearchedOnly
+        {
+            get => lastMadeNew != PieceSource.AnythingAllowed;
+            set
+            {
+                if (value != ResearchedOnly)
+                {
+                    SetMadeNew(value ? PieceSource.Researched : PieceSource.AnythingAllowed);
+                }
+            }
+        }
+
+        /// <summary>Only what the colony can make now. Ticking it ticks <see cref="ResearchedOnly"/> too.</summary>
+        public bool CanMakeNow
+        {
+            get => lastMadeNew == PieceSource.CraftableNow;
+            set
+            {
+                if (value != CanMakeNow)
+                {
+                    SetMadeNew(value ? PieceSource.CraftableNow : PieceSource.Researched);
+                }
+            }
+        }
+
+        /// <summary>Sets where pieces made new come from, shown now unless In storage is on.</summary>
+        private void SetMadeNew(PieceSource madeNew)
+        {
+            if (InStorage)
+            {
+                lastMadeNew = madeNew;
+            }
+            else
+            {
+                Source = madeNew;
+            }
+        }
+
 
         public MaterialChoice Material { get; set; } = MaterialChoice.BestForOrder;
 
@@ -96,7 +169,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public PredictedOutfit Outfit { get; private set; }
 
         /// <summary>
-        /// What your changes put on and took off since you started on this colonist, policy, tab and material (or since
+        /// What your changes put on and took off since you started on this colonist, policy, source and material (or since
         /// the marks were cleared), or null when the outfit is back where it started.
         /// </summary>
         public OutfitChanges Changes { get; private set; }
@@ -148,7 +221,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         /// <summary>
         /// Shows the policy: keeps the chosen colonist if they're still among <paramref name="colonists"/>, else the
-        /// first. Closes the slot when the colonist, policy, tab or material changed since it opened. Gathers pieces (at
+        /// first. Closes the slot when the colonist, policy, source or material changed since it opened. Gathers pieces (at
         /// most once a second) and predicts again when anything the outfit depends on changed.
         /// </summary>
         public void Show(ApparelPolicy policy, List<Pawn> colonists)

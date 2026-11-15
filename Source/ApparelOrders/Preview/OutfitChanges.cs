@@ -5,7 +5,7 @@ using Verse;
 
 namespace OptimalLoadouts.ApparelOrders.Preview
 {
-    /// <summary>What changed between two predictions for the same colonist, policy, tab and material.</summary>
+    /// <summary>What changed between two predictions for the same colonist, policy, source and material.</summary>
     public sealed class OutfitChanges
     {
         private readonly BodyDef body;

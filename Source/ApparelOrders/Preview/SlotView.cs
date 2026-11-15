@@ -41,7 +41,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// <summary>The search box over the slot's list.</summary>
         public QuickSearchWidget Search { get; } = new QuickSearchWidget();
 
-        /// <summary>The open tab's pieces for the slot, allowed or not, or null until they're gathered.</summary>
+        /// <summary>The open source's pieces for the slot, allowed or not, or null until they're gathered.</summary>
         public List<Apparel> Pieces { get; private set; }
 
         /// <summary>The source the pieces were gathered from.</summary>

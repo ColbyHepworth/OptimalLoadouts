@@ -348,6 +348,49 @@ namespace OptimalLoadouts.ApparelOrders
             return ApparelForbids.Apparel.Where(def => !kept.Contains(def) && policy.filter.Allows(def)).ToList();
         }
 
+        /// <summary>
+        /// Takes the policy back to what its priorities pick: removes its own locks and ticks every apparel item, then lets
+        /// its lines that rule pieces out untick what they catch. Its priorities, base, material and settings stay, and so
+        /// do its base's locks.
+        /// </summary>
+        public void ResetToPriorities(ApparelPolicy policy)
+        {
+            if (policy == null)
+            {
+                return;
+            }
+            ApparelOrder order = OrderFor(policy);
+            if (order != null)
+            {
+                order.lines.RemoveAll(line => line.IsItem);
+                order.unticked.Clear();
+            }
+            foreach (ThingDef def in ApparelForbids.Apparel)
+            {
+                policy.filter.SetAllow(def, true);
+            }
+            ForbidsChanged();
+        }
+
+        /// <summary>
+        /// The items <see cref="ResetToPriorities"/> would tick back: every unticked item no line rules out once the
+        /// policy's own locks are gone.
+        /// </summary>
+        public List<ThingDef> TickedByReset(ApparelPolicy policy)
+        {
+            if (policy == null)
+            {
+                return new List<ThingDef>();
+            }
+            var stillLocked = new HashSet<ThingDef>(LockedItems(BaseOf(policy)));
+            LimitMaterial material = LimitMaterialOf(policy);
+            List<ApparelForbid> forbids = EffectiveForbids(policy);
+            return ApparelForbids.Apparel
+                .Where(def => !policy.filter.Allows(def)
+                    && (stillLocked.Contains(def) || !forbids.Any(forbid => forbid.Forbids(def, material))))
+                .ToList();
+        }
+
         private HashSet<ThingDef> KeptByAllowOnly(ApparelPolicy policy, IEnumerable<ThingDef> items)
         {
             var kept = new HashSet<ThingDef>(items);

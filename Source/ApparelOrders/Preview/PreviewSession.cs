@@ -313,6 +313,17 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             Changes = null;
         }
 
+        /// <summary>
+        /// The policy's filter changed and the change marks start afresh from the outfit predicted next, so what a reset
+        /// changed isn't marked.
+        /// </summary>
+        public void StartChangesAfresh()
+        {
+            FilterChanged();
+            markedFrom = null;
+            Changes = null;
+        }
+
         /// <summary>Opens a slot. With <paramref name="followWhenFilled"/>, a layer opened while empty turns into the slot of the piece that fills it.</summary>
         public void OpenSlot(OutfitSlot slot, bool followWhenFilled = false)
         {

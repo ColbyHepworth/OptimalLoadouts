@@ -347,19 +347,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             // Laid out like vanilla's filter: the info card button first, the checkbox at the far end.
             RowLayout layout = RowLayout.For(row, columns);
             Widgets.InfoCardButton(layout.Info.x, layout.Info.y, piece);
-            bool locked = ApparelOrdersComponent.Current?.IsLocked(policy, piece.def) ?? false;
-            bool allowed = choice.TypeAllowed;
-            Widgets.Checkbox(layout.Checkbox.x, layout.Checkbox.y, ref allowed, UiStyle.IconSize, disabled: locked);
-            if (locked)
-            {
-                TooltipHandler.TipRegion(layout.Checkbox, "OL_Slot_LockedCheckbox".Translate());
-            }
-            if (allowed != choice.TypeAllowed)
-            {
-                policy.filter.SetAllow(piece.def, allowed);
-                session.FilterChanged();
-            }
-            DrawLock(layout.Lock, choice, pawn, policy);
+            ItemControls.DrawAllowed(layout.Checkbox, piece.def, policy, session);
+            ItemControls.DrawLock(layout.Lock, piece.def, pawn, policy, choice.CantWearReason);
 
             Rect body = layout.Body;
             if (UiStyle.ClickableRow(body))
@@ -493,63 +482,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return string.Join("\n", parts);
         }
 
-        /// <summary>
-        /// The lock that keeps the item worn and allowed in the policy. Faint when unlocked. A base's lock is greyed and
-        /// does nothing here, since it's unlocked in the base. Locking a piece the game never puts on this pawn says why,
-        /// since the lock can't change that.
-        /// </summary>
-        private static void DrawLock(Rect rect, SlotChoice choice, Pawn pawn, ApparelPolicy policy)
-        {
-            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
-            if (orders == null)
-            {
-                return;
-            }
-            ThingDef item = choice.Piece.def;
-            bool locked = orders.IsLocked(policy, item);
-            if (locked && !orders.LocksOwn(policy, item))
-            {
-                TooltipHandler.TipRegion(rect, "OL_Slot_LockedInBase".Translate(LockingBase(orders, policy, item)?.label ?? ""));
-                using (new TextBlock(ColoredText.SubtleGrayColor))
-                {
-                    GUI.DrawTexture(rect, UiStyle.LockIcon);
-                }
-                return;
-            }
-            TooltipHandler.TipRegion(rect, locked ? "OL_Slot_Unlock".Translate() : "OL_Slot_Lock".Translate());
-            Color color = locked ? Color.white : new Color(1f, 1f, 1f, UiStyle.UnlockedAlpha);
-            if (Widgets.ButtonImage(rect, UiStyle.LockIcon, color))
-            {
-                if (locked)
-                {
-                    orders.Unlock(policy, item);
-                }
-                else
-                {
-                    orders.Lock(policy, item);
-                    if (choice.CantWearReason != null)
-                    {
-                        Messages.Message("OL_Slot_LockWontWear".Translate(choice.CantWearReason, pawn.LabelShort), MessageTypeDefOf.RejectInput,
-                            historical: false);
-                    }
-                }
-            }
-        }
-
-        /// <summary>The nearest base whose own lines lock the item, or null.</summary>
-        private static ApparelPolicy LockingBase(ApparelOrdersComponent orders, ApparelPolicy policy, ThingDef item)
-        {
-            var visited = new HashSet<ApparelPolicy> { policy };
-            for (ApparelPolicy basePolicy = orders.BaseOf(policy); basePolicy != null && visited.Add(basePolicy); basePolicy = orders.BaseOf(basePolicy))
-            {
-                if (orders.LocksOwn(basePolicy, item))
-                {
-                    return basePolicy;
-                }
-            }
-            return null;
-        }
-
         /// <summary>The order's line for a column's stat, or null for a column added by hand.</summary>
         private static OrderLine LineFor(IReadOnlyList<OrderLine> lines, StatDef stat)
         {
@@ -589,7 +521,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             public Rect Checkbox { get; }
             public Rect Lock { get; }
 
-            /// <summary>Everything between the info button and the lock, which a click tries on.</summary>
+            /// <summary>Everything from the rank to the lock, which a click tries on.</summary>
             public Rect Body { get; }
 
             private readonly float valuesX;
@@ -601,11 +533,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 y = row.y;
                 height = row.height;
                 float iconY = row.y + (row.height - UiStyle.IconSize) / 2f;
-                Info = new Rect(row.x, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f, Widgets.InfoCardButtonSize,
-                    Widgets.InfoCardButtonSize);
-                Checkbox = new Rect(row.xMax - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
+                Info = new Rect(row.xMax - Widgets.InfoCardButtonSize, row.y + (row.height - Widgets.InfoCardButtonSize) / 2f,
+                    Widgets.InfoCardButtonSize, Widgets.InfoCardButtonSize);
+                Checkbox = new Rect(Info.x - UiStyle.Gap / 2f - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 Lock = new Rect(Checkbox.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
-                Rank = new Rect(Info.xMax + UiStyle.Gap / 2f, row.y, RankWidth, row.height);
+                Rank = new Rect(row.x, row.y, RankWidth, row.height);
                 Icon = new Rect(Rank.xMax + UiStyle.Gap / 2f, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 float moreWidth = columns.Hidden.Count > 0 ? MoreWidth : 0f;
                 More = new Rect(Lock.x - UiStyle.Gap - moreWidth, row.y, moreWidth, row.height);

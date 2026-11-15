@@ -47,8 +47,16 @@
   <OL_Preview_New>New with your changes.</OL_Preview_New>
   <OL_Preview_NewReplacing>New with your changes, replacing {0}.</OL_Preview_NewReplacing>
   <OL_Preview_ChangesTookOff>Your changes took off:</OL_Preview_ChangesTookOff>
+  <OL_Preview_ChangesPutOn>Your changes put on the pieces marked green.</OL_Preview_ChangesPutOn>
   <OL_Preview_ClearMarks>Clear</OL_Preview_ClearMarks>
   <OL_Preview_ClearMarksTip>Clear the marks. Changes from here on are marked against the outfit as it is now.</OL_Preview_ClearMarksTip>
+  <OL_Preview_Reset>Reset</OL_Preview_Reset>
+  <OL_Preview_ResetTip>Take this policy back to what its priorities pick: remove its locks and tick every item in Allowed items. Priorities that rule pieces out still untick what they catch. The priorities, the material and the policy's settings stay.</OL_Preview_ResetTip>
+  <OL_Preview_ResetConfirm>Reset {0} to what its priorities pick?\n\n{1} locks will be removed and {2} items ticked in Allowed items, for every colonist on this policy. Policies built on it lose its locks too.</OL_Preview_ResetConfirm>
+  <OL_Preview_ResetNothing>{0} has no locks, and every item its priorities allow is ticked.</OL_Preview_ResetNothing>
+  <OL_Preview_Remove>Remove: forbid it in this policy.</OL_Preview_Remove>
+  <OL_Preview_RemoveLocked>Locked. Unlock it to remove it.</OL_Preview_RemoveLocked>
+  <OL_Preview_GoneForbidden>Removed: {0} no longer allows it.</OL_Preview_GoneForbidden>
   <OL_Preview_AllowOnly>Allow only this</OL_Preview_AllowOnly>
   <OL_Preview_AllowOnlyTip>Make this policy allow only the items in this outfit, and its locked items. Everything else is unticked in Allowed items, so colonists on this policy wear these and nothing else, and leave a slot empty while its piece doesn't exist. Any material and quality of these items is allowed. Tick items again by hand to undo it.</OL_Preview_AllowOnlyTip>
   <OL_Preview_AllowOnlyConfirm>Allow only the {0} items in {3}'s outfit in {1}?\n\n{2} items will be unticked in Allowed items, for every colonist on this policy. Locked items stay allowed. Check that colonists of another age or race on it can wear these.</OL_Preview_AllowOnlyConfirm>
@@ -121,8 +129,9 @@
   <OL_Slot_WontWearModRule>The game or another mod rules it out for this colonist.</OL_Slot_WontWearModRule>
   <OL_Slot_WontWearCEShield>Combat Extended only lets a colonist use a shield with a one-handed weapon or none.</OL_Slot_WontWearCEShield>
   <OL_Slot_LockWontWear>{0} Locking it won't change what {1} wears.</OL_Slot_LockWontWear>
-  <OL_Slot_Lock>Lock: pawns on this policy wear it over anything not locked, and it stays allowed. It's never swapped for a better piece that isn't locked, and nothing else you change in this window takes it off until it's unlocked. The game's own rules still apply.</OL_Slot_Lock>
+  <OL_Slot_Lock>Lock: always wear this, and keep it allowed.</OL_Slot_Lock>
   <OL_Slot_Unlock>Locked. Click to unlock.</OL_Slot_Unlock>
+  <OL_Slot_AllowedCheckbox>Whether this policy allows the item, in any material and quality. Untick to forbid it.</OL_Slot_AllowedCheckbox>
   <OL_Slot_LockedInBase>Locked in {0}, the policy this one builds on. Unlock it there.</OL_Slot_LockedInBase>
   <OL_Slot_IsLocked>Locked.</OL_Slot_IsLocked>
   <OL_Slot_LockedCheckbox>Locked, so it stays allowed. Unlock it to forbid it.</OL_Slot_LockedCheckbox>

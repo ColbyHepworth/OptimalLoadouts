@@ -343,7 +343,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 height += (outfit.TakenOff.Count + 1) * UiStyle.RowHeight;
             }
-            if (gone.Count > 0)
+            if (marks != null)
             {
                 height += (gone.Count + 1) * UiStyle.RowHeight;
             }
@@ -362,30 +362,18 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// The list's title, on a band like the layers' that sets it apart from the drawing above. While there are change
-        /// marks, a button on the right clears them. While the outfit has pieces, a button makes the policy allow only them.
+        /// The list's title, on a band like the layers' that sets it apart from the drawing above. While the outfit has
+        /// pieces, a button makes the policy allow only them. Reset takes the policy back to what its priorities pick.
         /// </summary>
         private static void DrawOutfitBand(Rect band, PreviewSession session)
         {
             Widgets.DrawBoxSolid(band, UiStyle.BandColor);
             Rect inner = band.ContractedBy(UiStyle.Gap / 2f, 0f);
-            if (session.Changes != null)
-            {
-                Rect clear = new Rect(inner.xMax - ClearButtonWidth, band.y + 2f, ClearButtonWidth, band.height - 4f);
-                using (new TextBlock(GameFont.Tiny))
-                {
-                    if (Widgets.ButtonText(clear, "OL_Preview_ClearMarks".Translate()))
-                    {
-                        session.ClearChanges();
-                    }
-                }
-                TooltipHandler.TipRegion(clear, "OL_Preview_ClearMarksTip".Translate());
-                inner.xMax = clear.x - UiStyle.Gap;
-            }
             if (session.Drawn.Count > 0)
             {
                 inner.xMax = DrawAllowOnly(inner, band, session) - UiStyle.Gap;
             }
+            inner.xMax = DrawReset(inner, band, session) - UiStyle.Gap;
             using (new TextBlock(GameFont.Small, TextAnchor.MiddleLeft))
             {
                 Widgets.Label(inner, "OL_Preview_OutfitHeader".Translate());
@@ -414,6 +402,53 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             TooltipHandler.TipRegion(button, "OL_Preview_AllowOnlyTip".Translate());
             return button.x;
+        }
+
+        /// <summary>
+        /// The button that takes the policy back to what its priorities pick, after the game's confirmation. Returns where
+        /// it starts, so the title stops short of it.
+        /// </summary>
+        private static float DrawReset(Rect inner, Rect band, PreviewSession session)
+        {
+            string label = "OL_Preview_Reset".Translate();
+            float width;
+            using (new TextBlock(GameFont.Tiny))
+            {
+                width = Text.CalcSize(label).x + 2f * UiStyle.Gap;
+            }
+            Rect button = new Rect(inner.xMax - width, band.y + 2f, width, band.height - 4f);
+            using (new TextBlock(GameFont.Tiny))
+            {
+                if (Widgets.ButtonText(button, label))
+                {
+                    ConfirmReset(session);
+                }
+            }
+            TooltipHandler.TipRegion(button, "OL_Preview_ResetTip".Translate());
+            return button.x;
+        }
+
+        private static void ConfirmReset(PreviewSession session)
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            ApparelPolicy policy = session.Policy;
+            if (orders == null || policy == null)
+            {
+                return;
+            }
+            int locks = orders.OrderFor(policy)?.lines.Count(line => line.IsItem) ?? 0;
+            int ticking = orders.TickedByReset(policy).Count;
+            if (locks == 0 && ticking == 0)
+            {
+                Messages.Message("OL_Preview_ResetNothing".Translate(policy.label), MessageTypeDefOf.RejectInput, historical: false);
+                return;
+            }
+            string text = "OL_Preview_ResetConfirm".Translate(policy.label, locks, ticking);
+            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(text, () =>
+            {
+                orders.ResetToPriorities(policy);
+                session.StartChangesAfresh();
+            }, destructive: true));
         }
 
         private static void ConfirmAllowOnly(PreviewSession session)
@@ -484,17 +519,34 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     y += UiStyle.RowHeight;
                 }
             }
-            if (gone.Count > 0)
+            if (marks != null)
             {
-                UiStyle.Note(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), "OL_Preview_ChangesTookOff".Translate());
+                DrawChangesLine(new Rect(rows.x, y, rows.width, UiStyle.RowHeight), session,
+                    gone.Count > 0 ? "OL_Preview_ChangesTookOff" : "OL_Preview_ChangesPutOn");
                 y += UiStyle.RowHeight;
                 foreach (Apparel piece in gone)
                 {
-                    DrawPieceRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, true, WhyGone(piece, marks), opensSlot: false, session,
+                    DrawPieceRow(new Rect(pieces.x, y, pieces.width, UiStyle.RowHeight), piece, true, WhyGone(piece, marks, session.Policy), opensSlot: false, session,
                         UiStyle.RemovedColor);
                     y += UiStyle.RowHeight;
                 }
             }
+        }
+
+        /// <summary>What the change marks show, with the button that clears them at its end.</summary>
+        private static void DrawChangesLine(Rect line, PreviewSession session, string key)
+        {
+            Rect clear = new Rect(line.xMax - ClearButtonWidth, line.y + 2f, ClearButtonWidth, line.height - 4f);
+            using (new TextBlock(GameFont.Tiny))
+            {
+                if (Widgets.ButtonText(clear, "OL_Preview_ClearMarks".Translate()))
+                {
+                    session.ClearChanges();
+                }
+            }
+            TooltipHandler.TipRegion(clear, "OL_Preview_ClearMarksTip".Translate());
+            line.xMax = clear.x - UiStyle.Gap;
+            UiStyle.Note(line, key.Translate());
         }
 
         /// <summary>
@@ -581,7 +633,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 tint = UiStyle.AddedColor;
             }
-            DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, session, tint);
+            DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, session, tint, withControls: true);
         }
 
         /// <summary>Whether the slot browser row under the mouse would take this piece off too, besides the slot's own.</summary>
@@ -593,10 +645,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// One piece of the outfit, on a faint <paramref name="tint"/> when given. A worn piece's row opens its slot. The ⓘ
-        /// button opens its info card.
+        /// button at its far right opens its info card. With <paramref name="withControls"/>, the slot browser's lock and a
+        /// remove button sit before it.
         /// </summary>
         private static void DrawPieceRow(Rect row, Apparel piece, bool dimmed, string tooltip, bool opensSlot, PreviewSession session,
-            Color? tint = null)
+            Color? tint = null, bool withControls = false)
         {
             if (tint != null)
             {
@@ -610,6 +663,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Widgets.InfoCardButtonSize, Widgets.InfoCardButtonSize);
             Widgets.InfoCardButton(info.x, info.y, piece);
             row.xMax = info.x - UiStyle.Gap;
+            if (withControls)
+            {
+                float iconY = row.y + (row.height - UiStyle.IconSize) / 2f;
+                Rect remove = new Rect(row.xMax - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
+                Rect lockRect = new Rect(remove.x - UiStyle.IconGap - UiStyle.IconSize, iconY, UiStyle.IconSize, UiStyle.IconSize);
+                ItemControls.DrawRemove(remove, piece.def, session.Policy, session);
+                ItemControls.DrawLock(lockRect, piece.def, session.Pawn, session.Policy, null);
+                row.xMax = lockRect.x - UiStyle.Gap;
+            }
             if (opensSlot && UiStyle.ClickableRow(row))
             {
                 session.OpenSlot(OutfitSlot.Of(piece));
@@ -826,12 +888,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>Why a piece your changes took off is gone: what replaced it, or that it's no longer picked.</summary>
-        private static string WhyGone(Apparel piece, OutfitChanges marks)
+        private static string WhyGone(Apparel piece, OutfitChanges marks, ApparelPolicy policy)
         {
             Apparel replacement = marks.Added.FirstOrDefault(added => marks.Replaced(added).Contains(piece));
-            return replacement != null
+            string why = replacement != null
                 ? "OL_Preview_ReplacedBy".Translate(replacement.LabelCap).Resolve()
                 : "OL_Preview_NoLongerPicked".Translate().Resolve();
+            return policy.filter.Allows(piece.def) ? why : "OL_Preview_GoneForbidden".Translate(policy.label).Resolve() + "\n\n" + why;
         }
 
         private static string WhyTakenOff(Apparel piece, PredictedOutfit outfit)

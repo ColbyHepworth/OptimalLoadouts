@@ -62,6 +62,8 @@
   <OL_Preview_WhyBetter>Better on {0} by {1}.</OL_Preview_WhyBetter>
   <OL_Preview_WhyLocked>{0} is locked.</OL_Preview_WhyLocked>
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
+  <OL_Preview_WhyAddedWarmth>Added for warmth: {0} is short of warmth this month. It doesn't help on any priority, but "Only add pieces that help" still adds warmth.</OL_Preview_WhyAddedWarmth>
+  <OL_Preview_WhyAddedCover>Added to cover a bare torso or legs. It doesn't help on any priority, but "Only add pieces that help" still adds cover.</OL_Preview_WhyAddedCover>
   <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
   <OL_Preview_WhyCoverage>{0}.</OL_Preview_WhyCoverage>

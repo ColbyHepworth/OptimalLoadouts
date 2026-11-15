@@ -40,6 +40,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             var candidates = new List<Apparel>(pieces);
             bool nothingToPick = candidates.Count == 0;
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy) ?? NoLines;
+            bool onlyWhatHelps = ApparelOrdersComponent.Current?.OnlyWhatHelps(policy) ?? false;
             SetNeededWarmth(pawn);
 
             var swaps = new List<PredictedSwap>();
@@ -51,7 +52,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 using (new ImaginedOutfit(pawn, outfit))
                 using (PartnerPool.Use(pawn, candidates))
                 {
-                    swap = BestSwap(pawn, outfit, candidates, lines, fromStorage);
+                    swap = BestSwap(pawn, outfit, candidates, lines, fromStorage, onlyWhatHelps);
                 }
                 if (swap == null)
                 {
@@ -72,7 +73,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// the later piece wins, as the check compares with "less than".
         /// </summary>
         private static PredictedSwap BestSwap(Pawn pawn, List<Apparel> outfit, List<Apparel> candidates, IReadOnlyList<OrderLine> lines,
-            bool fromStorage)
+            bool fromStorage, bool onlyWhatHelps)
         {
             // The check reads the scores by the pawn's worn list, which the imagined outfit keeps in draw order.
             List<float> wornScores = pawn.apparel.WornApparel.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
@@ -108,8 +109,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             List<Apparel> replaced = outfit.Where(worn => !ApparelUtility.CanWearTogether(worn.def, best.def, body)).ToList();
             var partners = new List<Apparel>();
             OrderVerdict verdict = VerdictFor(pawn, best, lines, partners);
+            ExtraNeed addedFor = onlyWhatHelps ? ExtraPieces.LetThroughFor(pawn, best, verdict, lines) : ExtraNeed.None;
             return new PredictedSwap(best, replaced, bestScore, verdict, partners, runnerUp,
-                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null), runnerUpScore);
+                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null), runnerUpScore, addedFor);
         }
 
         private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines, List<Apparel> partners)

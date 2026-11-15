@@ -723,7 +723,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(session.Policy);
             bool hasOrder = lines != null && lines.Count > 0;
-            string why = ReasonWon(swap.Verdict, lines, hasOrder);
+            string why = AddedFor(swap, session.Pawn) ?? ReasonWon(swap.Verdict, lines, hasOrder);
             bool wonOnOrder = !swap.Verdict.GameDecides && !swap.Verdict.IsTie && swap.Verdict.Delta > 0f;
             if (swap.Partners.Count > 0 && wonOnOrder)
             {
@@ -734,6 +734,20 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             string runnerUp = swap.RunnerUp == null ? null : ReasonRunnerUpLost(swap, lines, hasOrder);
             return runnerUp == null ? why : why + "\n\n" + runnerUp;
+        }
+
+        /// <summary>Why "only add pieces that help" let the piece through though it helps on no priority, or null.</summary>
+        private static string AddedFor(PredictedSwap swap, Pawn pawn)
+        {
+            switch (swap.AddedFor)
+            {
+                case ExtraNeed.Warmth:
+                    return "OL_Preview_WhyAddedWarmth".Translate(pawn.LabelShort);
+                case ExtraNeed.Cover:
+                    return "OL_Preview_WhyAddedCover".Translate();
+                default:
+                    return null;
+            }
         }
 
         private static string ReasonWon(OrderVerdict verdict, IReadOnlyList<OrderLine> lines, bool hasOrder)

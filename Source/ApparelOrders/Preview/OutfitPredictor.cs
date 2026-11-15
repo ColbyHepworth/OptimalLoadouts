@@ -109,7 +109,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             var partners = new List<Apparel>();
             OrderVerdict verdict = VerdictFor(pawn, best, lines, partners);
             return new PredictedSwap(best, replaced, bestScore, verdict, partners, runnerUp,
-                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null));
+                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null), runnerUpScore);
         }
 
         private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines, List<Apparel> partners)

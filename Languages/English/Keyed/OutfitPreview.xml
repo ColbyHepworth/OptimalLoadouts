@@ -58,14 +58,19 @@
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
   <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
+  <OL_Preview_WhyCoverage>{0}.</OL_Preview_WhyCoverage>
   <OL_Preview_WithPartners>Counted together with {0} for the rest of what it takes off.</OL_Preview_WithPartners>
 
   <!-- Why the runner-up lost -->
   <OL_Preview_RunnerUpWorse>Runner-up: {0}, worse on {1} by {2}.</OL_Preview_RunnerUpWorse>
+  <OL_Preview_RunnerUpSameCoverage>Runner-up: {0}, which also {1}, but loses further down.</OL_Preview_RunnerUpSameCoverage>
+  <OL_Preview_RunnerUpSameCoverageGame>Runner-up: {0}, which also {1}. The priorities below don't tell them apart, and the game rates it lower.</OL_Preview_RunnerUpSameCoverageGame>
+  <OL_Preview_RunnerUpWorseOn>Runner-up: {0}, which loses on "{1}".</OL_Preview_RunnerUpWorseOn>
   <OL_Preview_RunnerUpSmallerGain>Runner-up: {0}, with a smaller gain on {1}.</OL_Preview_RunnerUpSmallerGain>
   <OL_Preview_RunnerUpLaterStat>Runner-up: {0}, which only gains on {1}.</OL_Preview_RunnerUpLaterStat>
   <OL_Preview_RunnerUpNotLocked>Runner-up: {0}, not the locked {1}.</OL_Preview_RunnerUpNotLocked>
   <OL_Preview_RunnerUpSameLocked>Runner-up: {0}, the same locked item, worse on the priorities below it.</OL_Preview_RunnerUpSameLocked>
+  <OL_Preview_RunnerUpSameLockedGame>Runner-up: {0}, the same locked item. The priorities below don't tell them apart, and the game rates it lower.</OL_Preview_RunnerUpSameLockedGame>
   <OL_Preview_RunnerUpLaterItem>Runner-up: {0}, a locked item lower in the priorities.</OL_Preview_RunnerUpLaterItem>
   <OL_Preview_RunnerUpScoredLower>Runner-up: {0}, which the game scored lower.</OL_Preview_RunnerUpScoredLower>
 
@@ -86,6 +91,8 @@
   <OL_Slot_ClearAllTip>Forbid every item listed in this policy. Locked items stay allowed.</OL_Slot_ClearAllTip>
   <OL_Slot_IsPick>The colonist's pick for this slot.</OL_Slot_IsPick>
   <OL_Slot_NoValue>–</OL_Slot_NoValue>
+  <OL_Slot_RuledOut>Ruled out by a priority: {0}.</OL_Slot_RuledOut>
+  <OL_Slot_Covers>✓</OL_Slot_Covers>
   <OL_Slot_Copies>{0} ×{1}</OL_Slot_Copies>
   <OL_Slot_TipValue>{0}: {1}</OL_Slot_TipValue>
   <OL_Slot_AlsoReplaces>Also replaces {0}.</OL_Slot_AlsoReplaces>

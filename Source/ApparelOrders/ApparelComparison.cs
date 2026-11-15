@@ -11,7 +11,8 @@ namespace OptimalLoadouts.ApparelOrders
     /// Compares a piece a pawn could put on with what it would replace, line by line down an order. With a
     /// <see cref="PartnerPool"/> in use, a piece that takes off something covering another area of the body is judged
     /// as a set: each side gets the best pool pieces for the area the other covers, so a shirt and trousers can beat a
-    /// one-piece suit, and the suit never wins back against the same pair.
+    /// one-piece suit, and the suit never wins back against the same pair. A body part the outfit must cover is judged on
+    /// everything worn.
     /// </summary>
     public static class ApparelComparison
     {
@@ -40,6 +41,7 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return OrderVerdict.LeftToGame;
             }
+            FindRest(pawn, candidate);
             candidateSide.Clear();
             candidateSide.Add(candidate);
             otherSide.Clear();
@@ -53,10 +55,12 @@ namespace OptimalLoadouts.ApparelOrders
                 float delta = Difference(line);
                 if (Math.Abs(delta) > Epsilon)
                 {
-                    if (line.IsItem)
+                    if (line.IsItem || line.IsCoverage)
                     {
-                        // Every copy of a locked item wins its line by the same 1, so the lines under it rank the copies.
-                        delta += ItemTieBreak(lines, i + 1);
+                        // Every winner of an item or coverage line wins it by the same 1, so the lines under it rank them,
+                        // and when none of them differs, the game's own score does.
+                        float tieBreak = ItemTieBreak(lines, i + 1);
+                        return new OrderVerdict(i, delta + tieBreak, tieBreak == 0f);
                     }
                     return new OrderVerdict(i, delta);
                 }
@@ -76,6 +80,14 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return;
             }
+            (List<Apparel> forCandidate, List<Apparel> forReplaced) = pool.Partners(candidate, replaced, rest, lines);
+            candidateSide.AddRange(forCandidate);
+            otherSide.AddRange(forReplaced);
+        }
+
+        /// <summary>The worn pieces the candidate would keep on: neither the candidate nor anything it replaces.</summary>
+        private static void FindRest(Pawn pawn, Apparel candidate)
+        {
             rest.Clear();
             List<Apparel> worn = pawn.apparel.WornApparel;
             for (int i = 0; i < worn.Count; i++)
@@ -85,14 +97,24 @@ namespace OptimalLoadouts.ApparelOrders
                     rest.Add(worn[i]);
                 }
             }
-            (List<Apparel> forCandidate, List<Apparel> forReplaced) = pool.Partners(candidate, replaced, rest, lines);
-            candidateSide.AddRange(forCandidate);
-            otherSide.AddRange(forReplaced);
         }
 
         /// <summary>How much better the candidate's side is on the line, with the line's direction applied.</summary>
         private static float Difference(OrderLine line)
         {
+            if (line.IsRequiredCoverage)
+            {
+                // The whole outfit counts, as the game's torso and legs cover does: covering a bare part wins, leaving it bare
+                // loses, and covered either way is a tie, so the lines under it pick the cover.
+                float kept = Covers(rest, line);
+                return Math.Max(kept, Covers(candidateSide, line)) - Math.Max(kept, Covers(otherSide, line));
+            }
+            if (line.IsCoverage)
+            {
+                // A side covers a part once however many of its pieces cover it.
+                float covered = Covers(candidateSide, line) - Covers(otherSide, line);
+                return line.lowerIsBetter ? -covered : covered;
+            }
             float delta = 0f;
             for (int j = 0; j < candidateSide.Count; j++)
             {
@@ -122,16 +144,32 @@ namespace OptimalLoadouts.ApparelOrders
             return 0f;
         }
 
+        private static float Covers(List<Apparel> side, OrderLine line)
+        {
+            for (int i = 0; i < side.Count; i++)
+            {
+                if (ValueOnLine(side[i], line) > 0f)
+                {
+                    return 1f;
+                }
+            }
+            return 0f;
+        }
+
         /// <summary>
-        /// A piece's value on a line: on an item line, 1 for a piece of the item and 0 for anything else; on a stat line,
-        /// its value on the stat when the line counts its layer and the value reaches what the line counts from,
-        /// otherwise 0.
+        /// A piece's value on a line: on an item line, 1 for a piece of the item and 0 for anything else; on a coverage
+        /// line, 1 when the piece covers the part on a layer the line counts; on a stat line, its value on the stat when
+        /// the line counts its layer and the value reaches what the line counts from, otherwise 0.
         /// </summary>
         public static float ValueOnLine(Apparel piece, OrderLine line)
         {
             if (line.IsItem)
             {
                 return piece.def == line.item ? 1f : 0f;
+            }
+            if (line.IsCoverage)
+            {
+                return line.CountsOn(piece.def) && PieceCoverage.Covers(piece.def, line.covers) ? 1f : 0f;
             }
             return line.CountsOn(piece.def) ? line.Counted(PieceStats.Value(piece, line.stat)) : 0f;
         }

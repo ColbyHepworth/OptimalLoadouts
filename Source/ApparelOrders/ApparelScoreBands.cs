@@ -21,12 +21,25 @@ namespace OptimalLoadouts.ApparelOrders
 
         private const float MaxInBand = 999f;
 
+        /// <summary>
+        /// How far the game's own score can move a win that nothing under its line told apart. Under the tie-break a
+        /// line below adds for a difference of 0.01, so any real difference there still outranks the game.
+        /// </summary>
+        private const float GameShare = 0.004f;
+
+        /// <summary>
+        /// The log of the game's score where it takes half of <see cref="GameShare"/>, about a score of 20. The game's scores
+        /// run from under 1 to the hundreds under Combat Extended, so they're squashed on a log scale to keep both ends apart.
+        /// </summary>
+        private const float GameScoreScale = 3f;
+
         /// <summary>Below the apparel check's 0.05 threshold, so the piece is skipped, but not a "never wear this".</summary>
         internal const float Worse = -1f;
 
         /// <summary>
         /// The apparel check's score for this verdict. A bigger gain on the same line ranks higher. A tie keeps the
-        /// game's own score, capped below every band, and a choice left to the game keeps its score as it is.
+        /// game's own score, capped below every band, and a choice left to the game keeps its score as it is. Pieces that
+        /// won an item or body part line alike, with nothing under it differing, are ranked by the game's score.
         /// </summary>
         public static float ScoreGain(OrderVerdict verdict, int lineCount, float gameGain)
         {
@@ -42,8 +55,15 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return Worse;
             }
+            float delta = verdict.Delta;
+            if (verdict.RestTies)
+            {
+                float logGain = (float)Math.Log(1f + Math.Abs(gameGain));
+                float sign = gameGain > 0f ? 1f : gameGain < 0f ? -1f : 0f;
+                delta += sign * GameShare * logGain / (logGain + GameScoreScale);
+            }
             // Squashed into the band so big stats (carrying capacity, CE armor) still rank by size.
-            float withinBand = MaxInBand * verdict.Delta / (verdict.Delta + 1f);
+            float withinBand = MaxInBand * delta / (delta + 1f);
             return BandSize * (lineCount - verdict.DecidingLine) + withinBand;
         }
     }

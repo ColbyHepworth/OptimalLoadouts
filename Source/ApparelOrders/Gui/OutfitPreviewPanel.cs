@@ -696,6 +696,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return "OL_Preview_WhyLocked".Translate(line.item.LabelCap);
             }
+            if (line.IsCoverage)
+            {
+                return "OL_Preview_WhyCoverage".Translate(OrderLineText.StatOnLayerCap(line));
+            }
             return "OL_Preview_WhyBetter".Translate(OrderLineText.StatOnLayer(line), Amount(line.stat, verdict.Delta));
         }
 
@@ -714,20 +718,41 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 {
                     return "OL_Preview_RunnerUpNotLocked".Translate(name, line.item.label);
                 }
-                return runnerUp.DecidingLine == swap.Verdict.DecidingLine
-                    ? "OL_Preview_RunnerUpSameLocked".Translate(name)
-                    : "OL_Preview_RunnerUpLaterItem".Translate(name);
+                if (runnerUp.DecidingLine != swap.Verdict.DecidingLine)
+                {
+                    return "OL_Preview_RunnerUpLaterItem".Translate(name);
+                }
+                return SettledByGame(swap)
+                    ? "OL_Preview_RunnerUpSameLockedGame".Translate(name)
+                    : "OL_Preview_RunnerUpSameLocked".Translate(name);
             }
             string onLine = OrderLineText.StatOnLayer(line);
             if (runnerUp.Delta < 0f)
             {
-                return "OL_Preview_RunnerUpWorse".Translate(name, onLine, Amount(line.stat, runnerUp.Delta));
+                return line.IsCoverage
+                    ? "OL_Preview_RunnerUpWorseOn".Translate(name, onLine)
+                    : "OL_Preview_RunnerUpWorse".Translate(name, onLine, Amount(line.stat, runnerUp.Delta));
             }
             if (runnerUp.DecidingLine == swap.Verdict.DecidingLine)
             {
-                return "OL_Preview_RunnerUpSmallerGain".Translate(name, onLine);
+                if (!line.IsCoverage)
+                {
+                    return "OL_Preview_RunnerUpSmallerGain".Translate(name, onLine);
+                }
+                return SettledByGame(swap)
+                    ? "OL_Preview_RunnerUpSameCoverageGame".Translate(name, onLine)
+                    : "OL_Preview_RunnerUpSameCoverage".Translate(name, onLine);
             }
             return "OL_Preview_RunnerUpLaterStat".Translate(name, onLine);
+        }
+
+        /// <summary>
+        /// Whether the pick and the runner-up won the same line alike and the game's own score put the runner-up lower.
+        /// Identical copies score the same, and then nothing chose between them.
+        /// </summary>
+        private static bool SettledByGame(PredictedSwap swap)
+        {
+            return swap.Verdict.RestTies && swap.RunnerUpVerdict.RestTies && swap.RunnerUpScore < swap.Score;
         }
 
         /// <summary>Why a piece your changes took off is gone: what replaced it, or that it's no longer picked.</summary>

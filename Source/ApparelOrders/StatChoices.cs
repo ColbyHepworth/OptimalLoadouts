@@ -19,6 +19,7 @@ namespace OptimalLoadouts.ApparelOrders
         private static HashSet<StatDef> wearerBonuses;
         private static List<StatSection> sections;
         private static HashSet<StatDef> offered;
+        private static List<CoveredPart> coveredParts;
 
         /// <summary>Armor and insulation, the piece's own stats that are the same for every copy of an item.</summary>
         internal static bool IsArmorOrInsulation(StatDef stat)
@@ -52,6 +53,30 @@ namespace OptimalLoadouts.ApparelOrders
                     sections = BuildSections();
                 }
                 return sections;
+            }
+        }
+
+        /// <summary>
+        /// Every body part some apparel names in its own coverage, from whichever mods are loaded, with the items that
+        /// cover it as their info cards say, by name. A part no apparel names (the head a pawn headbutts with) isn't one.
+        /// </summary>
+        public static IReadOnlyList<CoveredPart> CoveredParts
+        {
+            get
+            {
+                if (coveredParts == null)
+                {
+                    List<ThingDef> apparel = Apparel().ToList();
+                    coveredParts = apparel
+                        .SelectMany(def => def.apparel.bodyPartGroups ?? new List<BodyPartGroupDef>())
+                        .Where(part => part != null)
+                        .Distinct()
+                        .Select(part => new CoveredPart(part, apparel.Where(def => PieceCoverage.Covers(def, part)).OrderBy(def => def.label).ToList()))
+                        .Where(entry => entry.Items.Count > 0)
+                        .OrderBy(entry => entry.Part.label)
+                        .ToList();
+                }
+                return coveredParts;
             }
         }
 
@@ -195,6 +220,21 @@ namespace OptimalLoadouts.ApparelOrders
         {
             return DefDatabase<ThingDef>.AllDefsListForReading.Where(def => def.IsApparel);
         }
+    }
+
+    /// <summary>A body part the stat picker offers, with the apparel items that cover it.</summary>
+    public class CoveredPart
+    {
+        public CoveredPart(BodyPartGroupDef part, List<ThingDef> items)
+        {
+            Part = part;
+            Items = items;
+        }
+
+        public BodyPartGroupDef Part { get; }
+
+        /// <summary>The items that cover it, by name.</summary>
+        public IReadOnlyList<ThingDef> Items { get; }
     }
 
     /// <summary>One info card section of the stats an order can use.</summary>

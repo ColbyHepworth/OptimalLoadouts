@@ -8,23 +8,24 @@
   <!-- The policy's column in Manage apparel policies -->
   <OL_Policy_PrioritiesTab>Priorities</OL_Policy_PrioritiesTab>
   <OL_Policy_AllowedItemsTab>Allowed items</OL_Policy_AllowedItemsTab>
-  <OL_Policy_LimitsTab>Limits</OL_Policy_LimitsTab>
-  <OL_Policy_LimitsTabCount>Limits ({0})</OL_Policy_LimitsTabCount>
 
   <!-- Stat order editor, the Priorities tab -->
   <OL_Editor_Note>Pawns wear the best allowed piece, judged stat by stat from the top.</OL_Editor_Note>
-  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. Lock items in the slot browser to keep them over the stats. What's allowed is set on the Allowed items tab.</OL_Editor_Help>
+  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. A line can also rule pieces out, which unticks them in Allowed items. Lock items in the slot browser to keep them over the stats. What's allowed by hand is set on the Allowed items tab.</OL_Editor_Help>
   <OL_Editor_Base>Builds on:</OL_Editor_Base>
   <OL_Editor_NoBase>None</OL_Editor_NoBase>
-  <OL_Editor_BaseTip>Another policy this one builds on. Its locked items and limits apply here too, and its stats go under this policy's own. Other allowed items aren't shared.</OL_Editor_BaseTip>
-  <OL_Editor_AddStat>Add stat</OL_Editor_AddStat>
+  <OL_Editor_BaseTip>Another policy this one builds on. Its locked items and priorities apply here too, under this policy's own, and so does what its priorities rule out. A line of this policy's own on the same stat replaces its base's. Other allowed items aren't shared.</OL_Editor_BaseTip>
+  <OL_Editor_AddStat>Add priority</OL_Editor_AddStat>
+  <OL_Editor_CoversPart>covers {0}</OL_Editor_CoversPart>
+  <OL_Editor_LeavesFree>leaves {0} free</OL_Editor_LeavesFree>
+  <OL_Editor_CoversTip>A piece covers what its info card lists under "Covers". A helmet that covers the full head covers the eyes too, and a cowboy hat covers the full head, since the head is one part. To get a helmet over a hat, pick the eyes, or armor on a line below.</OL_Editor_CoversTip>
+  <OL_Editor_CoverageDirectionTip>Click to choose: required or not allowed.</OL_Editor_CoverageDirectionTip>
   <OL_Editor_OnlyWhatHelps>Only add pieces that help</OL_Editor_OnlyWhatHelps>
-  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities. They still cover their torso and legs, and add insulation while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. It does nothing until the policy has a priority.</OL_Editor_OnlyWhatHelpsTip>
+  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities. They still cover their torso and legs, and add insulation while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. It does nothing until the policy has a priority, and a body part that's not allowed doesn't count as one. A required body part does: a piece that covers it while it's bare is put on.</OL_Editor_OnlyWhatHelpsTip>
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
   <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>
-  <OL_Editor_BaseLineFrom>{0} ({1}, from {2})</OL_Editor_BaseLineFrom>
-  <OL_Editor_DirectionTip>Click to choose whether higher or lower values are better, and the value this line counts from.</OL_Editor_DirectionTip>
+  <OL_Editor_DirectionTip>Click to choose: higher or lower first, or at least or at most a value, which also rules out what's past it.</OL_Editor_DirectionTip>
   <OL_Order_HigherFrom>Higher, from {0}</OL_Order_HigherFrom>
   <OL_Order_LowerFrom>Lower, from {0}</OL_Order_LowerFrom>
   <OL_LineDirection_CountsFrom>Counts from</OL_LineDirection_CountsFrom>
@@ -42,38 +43,41 @@
   <OL_Layer_Body>Body</OL_Layer_Body>
   <OL_LayerPicker_Title>Layers</OL_LayerPicker_Title>
   <OL_LayerPicker_LastTip>It needs at least one layer. Tick another first, or tick All layers.</OL_LayerPicker_LastTip>
-  <OL_Layer_Tip>Which layers this stat counts on. A piece only counts on this line when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
+  <OL_Layer_Tip>Which layers this line counts on. A piece only counts on it, and is only ruled out by it, when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
   <OL_Editor_LockedItem>locked</OL_Editor_LockedItem>
   <OL_Editor_LockedItemTip>Pawns wear {0} over anything not locked, in any material and quality, and it stays allowed. Lock or unlock items in the slot browser, or remove this line to unlock it. Click for its info card.</OL_Editor_LockedItemTip>
   <OL_Editor_BaseItemLine>{0} (locked in {1})</OL_Editor_BaseItemLine>
   <OL_Editor_LocksFirst>Locked items stay above the stats.</OL_Editor_LocksFirst>
   <OL_Lock_KeptAllowed>{0} is locked, so it stays allowed. Unlock it first.</OL_Lock_KeptAllowed>
-  <OL_Editor_Empty>No stats yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
+  <OL_Editor_Empty>No priorities yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
 
-  <!-- Limits (forbids by stat), the Limits tab -->
-  <OL_Forbid_Note>Apparel that misses a limit is unticked in Allowed items. Order doesn't matter.</OL_Forbid_Note>
-  <OL_Forbid_Empty>No limits yet. Everything ticked in Allowed items can be worn.</OL_Forbid_Empty>
-  <OL_Forbid_HeadingTip>Each limit is a minimum or maximum on one stat. Apparel that misses one is unticked in this policy's Allowed items, judged at normal quality in the material picked above. Pawns take off what's unticked, and items tick back once they meet every limit. Items unticked by hand stay unticked, and locked items are never unticked.</OL_Forbid_HeadingTip>
-  <OL_Forbid_Material>Judged in: {0}</OL_Forbid_Material>
-  <OL_Forbid_MaterialTip>The material this policy's limits judge apparel in. The usual material is the game's default for each item. With the best material, an item passes a limit if any material it can be made of passes. A specific material judges items that can be made of it in that material and the rest in their usual one. Items not made of a material are judged as they are.</OL_Forbid_MaterialTip>
-  <OL_Forbid_MaterialTitle>Judge limits in</OL_Forbid_MaterialTitle>
-  <OL_Forbid_MaterialUsual>Usual material</OL_Forbid_MaterialUsual>
-  <OL_Forbid_MaterialBest>Best material for each limit</OL_Forbid_MaterialBest>
-  <OL_Forbid_Add>Add limit</OL_Forbid_Add>
-  <OL_Forbid_AddTitle>Limit a stat</OL_Forbid_AddTitle>
-  <OL_Forbid_AtLeast>At least</OL_Forbid_AtLeast>
-  <OL_Forbid_AtMost>At most</OL_Forbid_AtMost>
-  <OL_Forbid_DirectionTip>Click to switch between a minimum (at least) and a maximum (at most).</OL_Forbid_DirectionTip>
-  <OL_Forbid_LayerTip>Which layers this limit covers. Apparel on other layers isn't held to it.</OL_Forbid_LayerTip>
-  <OL_Forbid_Count>{0} items</OL_Forbid_Count>
-  <OL_Forbid_CountOne>1 item</OL_Forbid_CountOne>
-  <OL_Forbid_AndMore>and {0} more</OL_Forbid_AndMore>
-  <OL_Forbid_RuleAtLeast>{0} at least {1}</OL_Forbid_RuleAtLeast>
-  <OL_Forbid_RuleAtMost>{0} at most {1}</OL_Forbid_RuleAtMost>
-  <OL_Forbid_SlotTip>Misses this policy's limit: {0}.</OL_Forbid_SlotTip>
+  <!-- The material cutoffs judge apparel in, under "Builds on" -->
+  <OL_Editor_Material>Judged in: {0}</OL_Editor_Material>
+  <OL_Editor_MaterialTip>The material this policy's cutoffs judge apparel in, for priorities that rule pieces out. The usual material is the game's default for each item. With the best material, an item passes a cutoff if any material it can be made of passes. A specific material judges items that can be made of it in that material and the rest in their usual one. Items not made of a material are judged as they are.</OL_Editor_MaterialTip>
+  <OL_Editor_MaterialTitle>Judge cutoffs in</OL_Editor_MaterialTitle>
+  <OL_Editor_MaterialUsual>Usual material</OL_Editor_MaterialUsual>
+  <OL_Editor_MaterialBest>Best material for each cutoff</OL_Editor_MaterialBest>
+
+  <!-- A priority line that rules pieces out -->
+  <OL_Rule_AtLeast>At least {0}</OL_Rule_AtLeast>
+  <OL_Rule_AtMost>At most {0}</OL_Rule_AtMost>
+  <OL_Rule_Required>Required</OL_Rule_Required>
+  <OL_Rule_RequiredTip>While nothing a colonist wears covers {0}, a piece that covers it wins this line, and a swap that would leave it bare loses. Once it's covered, the lines under this one pick the best cover. It's a priority like any other, so it only wins over the lines under it, and it can't cover {0} when no allowed piece that covers it is there.</OL_Rule_RequiredTip>
+  <OL_Rule_NotAllowed>Not allowed</OL_Rule_NotAllowed>
+  <OL_Rule_NotAllowedTip>Pieces that cover {0} are unticked in Allowed items, so colonists take them off and never put them on. They tick back once nothing rules them out. Locked items stay allowed, and rank below pieces that leave {0} free.</OL_Rule_NotAllowedTip>
+  <OL_Rule_AtLeastChoice>At least</OL_Rule_AtLeastChoice>
+  <OL_Rule_AtMostChoice>At most</OL_Rule_AtMostChoice>
+  <OL_Rule_ValueTip>Pieces past this are ruled out. The rest still rank by it, higher or lower first.</OL_Rule_ValueTip>
+  <OL_Rule_Tip>Ranks the same way as higher or lower first, and also rules pieces out. Pieces it rules out are unticked in Allowed items, so colonists take them off and never put them on, even when nothing better is there. They tick back once nothing rules them out. Items unticked by hand stay unticked, and locked items are never unticked. A policy built on this one follows it too.</OL_Rule_Tip>
+  <OL_Rule_Count>{0} items ruled out.</OL_Rule_Count>
+  <OL_Rule_CountOne>1 item ruled out.</OL_Rule_CountOne>
+  <OL_Rule_AndMore>and {0} more</OL_Rule_AndMore>
+  <OL_Rule_StatAtLeast>{0} at least {1}</OL_Rule_StatAtLeast>
+  <OL_Rule_StatAtMost>{0} at most {1}</OL_Rule_StatAtMost>
+  <OL_Rule_MustNotCover>must not cover {0}</OL_Rule_MustNotCover>
 
   <!-- Stat picker -->
-  <OL_StatPicker_Title>Add a stat</OL_StatPicker_Title>
+  <OL_StatPicker_Title>Add a priority</OL_StatPicker_Title>
   <OL_StatPicker_PieceItself>The piece itself</OL_StatPicker_PieceItself>
   <OL_StatPicker_GivesWearer>What it gives the wearer</OL_StatPicker_GivesWearer>
   <OL_StatPicker_NoMatches>No stats match.</OL_StatPicker_NoMatches>
@@ -83,5 +87,8 @@
   <OL_StatPicker_HadBy>{0} apparel items have a value for this.</OL_StatPicker_HadBy>
   <OL_StatPicker_Highest>Highest:</OL_StatPicker_Highest>
   <OL_StatPicker_HighestItem>{0}: {1}</OL_StatPicker_HighestItem>
+  <OL_StatPicker_WhatItCovers>What it covers</OL_StatPicker_WhatItCovers>
+  <OL_StatPicker_BodyParts>Body parts</OL_StatPicker_BodyParts>
+  <OL_StatPicker_CoversTip>{0} apparel items cover {1}.</OL_StatPicker_CoversTip>
 
 </LanguageData>

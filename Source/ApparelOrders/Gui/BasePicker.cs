@@ -7,8 +7,8 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// The "Builds on" row: the policy whose priorities and limits go under this one's. The same row tops the
-    /// Priorities and Limits tabs, since the base covers both.
+    /// The "Builds on" row at the top of the Priorities tab: the policy whose priorities, and what they rule out, go under
+    /// this one's.
     /// </summary>
     public static class BasePicker
     {

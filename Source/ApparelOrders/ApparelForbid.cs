@@ -1,21 +1,26 @@
 using System.Collections.Generic;
+using OptimalLoadouts.Orders;
 using RimWorld;
 using Verse;
 
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// A rule that rules out apparel by one stat: values below (or above) a threshold, on a layer pick. It's written into
-    /// the policy's checklist (<see cref="ApparelForbids"/>), so the game takes such apparel off by itself.
+    /// What a priority line that rules pieces out rules out: values below (or above) its value on a stat, or pieces that
+    /// cover a body part, on the line's layers. It's written into the policy's checklist
+    /// (<see cref="ApparelForbids"/>), so the game takes such apparel off by itself. Made from the line each time, not saved.
     /// </summary>
-    public class ApparelForbid : IExposable
+    public class ApparelForbid
     {
         /// <summary>Values this close to the threshold count as on it, so a forbid at the lowest value catches nothing.</summary>
         private const float Epsilon = 0.0001f;
 
         public StatDef stat;
 
-        /// <summary>True to forbid values above the threshold, false to forbid values below it.</summary>
+        /// <summary>The body part on a coverage line's rule, or null on a stat line's.</summary>
+        public BodyPartGroupDef covers;
+
+        /// <summary>True to forbid values above the threshold, false to forbid values below it. Unused on a coverage rule.</summary>
         public bool forbidAbove;
 
         public float threshold;
@@ -33,9 +38,28 @@ namespace OptimalLoadouts.ApparelOrders
             this.threshold = threshold;
         }
 
+        /// <summary>
+        /// What the line rules out: on a stat, values below its value when higher is better, above it when lower is; on a
+        /// body part line, pieces that cover the part.
+        /// </summary>
+        public static ApparelForbid From(OrderLine line)
+        {
+            var forbid = line.IsCoverage
+                ? new ApparelForbid { covers = line.covers }
+                : new ApparelForbid(line.stat, line.countsFrom) { forbidAbove = line.lowerIsBetter };
+            forbid.layers = line.layers;
+            return forbid;
+        }
+
+        public bool IsCoverage => covers != null;
+
         /// <summary>Whether this forbid rules out the item, judged in the material at normal quality.</summary>
         public bool Forbids(ThingDef apparel, LimitMaterial material)
         {
+            if (IsCoverage)
+            {
+                return LayerScope.Covers(apparel, layers) && PieceCoverage.Covers(apparel, covers);
+            }
             if (stat == null || !LayerScope.Covers(apparel, layers))
             {
                 return false;
@@ -47,22 +71,5 @@ namespace OptimalLoadouts.ApparelOrders
             return forbidAbove ? value > threshold + Epsilon : value < threshold - Epsilon;
         }
 
-        public ApparelForbid Copy()
-        {
-            return new ApparelForbid(stat, threshold) { forbidAbove = forbidAbove, layers = new List<ApparelLayerDef>(layers) };
-        }
-
-        public void ExposeData()
-        {
-            Scribe_Defs.Look(ref stat, "stat");
-            Scribe_Values.Look(ref forbidAbove, "forbidAbove", false);
-            Scribe_Values.Look(ref threshold, "threshold", 0f);
-            Scribe_Collections.Look(ref layers, "layers", LookMode.Def);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                layers = layers ?? new List<ApparelLayerDef>();
-                layers.RemoveAll(layer => layer == null);
-            }
-        }
     }
 }

@@ -5,7 +5,7 @@ using Verse;
 
 namespace OptimalLoadouts.ApparelOrders
 {
-    /// <summary>The apparel layers the mod's lines and limits can count on, and which of them are on the head.</summary>
+    /// <summary>The apparel layers the mod's lines can count on, and which of them are on the head.</summary>
     public static class ApparelLayers
     {
         private static List<ApparelLayerDef> worn;

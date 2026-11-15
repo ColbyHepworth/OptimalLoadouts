@@ -9,7 +9,7 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// Tick boxes for the layers a priority line or a limit counts on, opened by its layer button: "All layers", then the
+    /// Tick boxes for the layers a priority line counts on, opened by its layer button: "All layers", then the
     /// head layers and the body layers, each under a heading that ticks its whole group. Each tick applies at once, so the
     /// preview follows while the list is open.
     /// </summary>

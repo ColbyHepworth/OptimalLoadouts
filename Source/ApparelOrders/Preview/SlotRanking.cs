@@ -81,7 +81,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 return null;
             }
-            return ExtraPieces.Skipped(pawn, piece, ApparelComparison.Compare(pawn, piece, lines))
+            return ExtraPieces.Skipped(pawn, piece, ApparelComparison.Compare(pawn, piece, lines), lines)
                 ? "OL_Slot_WontWearExtra".Translate().Resolve()
                 : null;
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using Verse;
 
@@ -14,6 +15,8 @@ namespace OptimalLoadouts.ApparelOrders
             new Dictionary<ThingDef, List<(ApparelLayerDef layer, BodyPartGroupDef group)>>();
 
         private static readonly Dictionary<(ThingDef, ThingDef, BodyDef), bool> wearableTogether = new Dictionary<(ThingDef, ThingDef, BodyDef), bool>();
+
+        private static readonly Dictionary<(ThingDef, BodyPartGroupDef), bool> covers = new Dictionary<(ThingDef, BodyPartGroupDef), bool>();
 
         public static IReadOnlyList<(ApparelLayerDef layer, BodyPartGroupDef group)> Of(ThingDef def)
         {
@@ -45,6 +48,21 @@ namespace OptimalLoadouts.ApparelOrders
                 wearableTogether[(a, b, body)] = together;
             }
             return together;
+        }
+
+        /// <summary>
+        /// Whether the item covers the body part as its info card says: it covers some outer part of the human body in that
+        /// group. A helmet listed for the full head covers the eyes, since the eyes are in the full head too.
+        /// </summary>
+        public static bool Covers(ThingDef item, BodyPartGroupDef part)
+        {
+            if (!covers.TryGetValue((item, part), out bool result))
+            {
+                result = item.apparel?.bodyPartGroups != null && BodyDefOf.Human.AllParts.Any(record =>
+                    record.depth == BodyPartDepth.Outside && record.groups.Contains(part) && item.apparel.CoversBodyPart(record));
+                covers[(item, part)] = result;
+            }
+            return result;
         }
 
         /// <summary>Adds what the pieces cover to <paramref name="area"/>.</summary>

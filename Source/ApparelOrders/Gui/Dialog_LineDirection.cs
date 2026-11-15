@@ -12,14 +12,16 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// A priority line's direction and the value it counts from, opened by its direction button like the layer picker:
-    /// higher or lower first, then a box for the value, typed in the units the info card shows (a percent stat takes "10"
-    /// for 10%, a temperature the player's own scale). Each change applies at once, and an empty box counts every amount.
-    /// Under the box, the most any apparel has and how many items count as none.
+    /// How a priority line treats a piece, opened by its direction button like the layer picker. A stat line: one choice
+    /// of four, higher first, lower first, at least or at most, then its value, typed in the units the info card shows (a
+    /// percent stat takes "10" for 10%, a temperature the player's own scale): the value it counts from when it ranks, its
+    /// cutoff when it rules out. A body part line: required or not allowed. A note says the most any apparel has and how
+    /// many items count as none, how many items cover the part, or how many items the line rules out. Each change applies
+    /// at once.
     /// </summary>
     public class Dialog_LineDirection : Window
     {
-        private const float Width = 300f;
+        private const float Width = 320f;
         private const float BoxWidth = 70f;
         private const int ItemsListed = 20;
 
@@ -30,36 +32,49 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static readonly Regex LeadingNumber = new Regex(@"^[+\-−]?[\d.,]+\s*");
 
         private readonly OrderLine line;
-        private readonly Action toggleDirection;
+        private readonly ApparelPolicy policy;
+        private readonly Action<bool, bool> setChoice;
         private readonly Action<float> setCountsFrom;
         private readonly string highest;
 
-        /// <summary>Each apparel item with a value on the stat, in its usual material.</summary>
-        private readonly List<(ThingDef item, float value)> items;
+        /// <summary>The most any apparel has, as stored, where "at most" starts so it rules nothing out until it's lowered.</summary>
+        private readonly float most;
 
-        private string text;
+        /// <summary>Each apparel item with a value on the stat, in its usual material. Empty on a body part line.</summary>
+        private readonly List<(ThingDef item, float value)> items = new List<(ThingDef item, float value)>();
 
-        public Dialog_LineDirection(OrderLine line, Action toggleDirection, Action<float> setCountsFrom)
+        private string text = "";
+
+        /// <summary>The items covering a body part line's part, worked out the first time the note is drawn.</summary>
+        private List<ThingDef> covering;
+
+        /// <param name="setChoice">Called with lower-is-better and rules-out for the choice picked.</param>
+        public Dialog_LineDirection(OrderLine line, ApparelPolicy policy, Action<bool, bool> setChoice, Action<float> setCountsFrom)
         {
             this.line = line;
-            this.toggleDirection = toggleDirection;
+            this.policy = policy;
+            this.setChoice = setChoice;
             this.setCountsFrom = setCountsFrom;
-            StatDef stat = line.stat;
-            text = line.countsFrom > 0f ? ToShown(stat, line.countsFrom).ToString("0.###", CultureInfo.InvariantCulture) : "";
-            items = DefDatabase<ThingDef>.AllDefsListForReading
-                .Where(def => def.IsApparel)
-                .Select(def => (item: def, ok: ApparelForbids.TryValueOf(def, stat, LimitMaterial.Usual, false, out float value), value))
-                .Where(entry => entry.ok && Mathf.Abs(entry.value) > Epsilon)
-                .Select(entry => (entry.item, entry.value))
-                .ToList();
-            float most = items.Count == 0 ? 0f : items.Max(entry => Mathf.Abs(entry.value));
-            highest = stat.ValueToString(most, ToStringNumberSense.Absolute);
+            if (line.IsStat)
+            {
+                StatDef stat = line.stat;
+                text = line.countsFrom > 0f ? ToShown(stat, line.countsFrom).ToString("0.###", CultureInfo.InvariantCulture) : "";
+                items = DefDatabase<ThingDef>.AllDefsListForReading
+                    .Where(def => def.IsApparel)
+                    .Select(def => (item: def, ok: ApparelForbids.TryValueOf(def, stat, LimitMaterial.Usual, false, out float value), value))
+                    .Where(entry => entry.ok && Mathf.Abs(entry.value) > Epsilon)
+                    .Select(entry => (entry.item, entry.value))
+                    .ToList();
+                most = items.Count == 0 ? 0f : items.Max(entry => Mathf.Abs(entry.value));
+                highest = stat.ValueToString(most, ToStringNumberSense.Absolute);
+            }
             closeOnClickedOutside = true;
             absorbInputAroundWindow = true;
             doWindowBackground = true;
         }
 
-        public override Vector2 InitialSize => new Vector2(Width, 4f * UiStyle.RowHeight + UiStyle.Gap + 2f * Margin);
+        /// <summary>A stat's four choices, then its value, then a note; or a body part's two choices and a note.</summary>
+        public override Vector2 InitialSize => new Vector2(Width, (line.IsStat ? 6f : 3f) * UiStyle.RowHeight + UiStyle.Gap + 2f * Margin);
 
         /// <summary>Opens by the mouse, as a menu does, kept on screen.</summary>
         protected override void SetInitialSizeAndPosition()
@@ -74,13 +89,92 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         public override void DoWindowContents(Rect inRect)
         {
             float y = inRect.y;
-            DrawDirection(new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight), "OL_Order_HigherFirst".Translate(), !line.lowerIsBetter);
-            y += UiStyle.RowHeight;
-            DrawDirection(new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight), "OL_Order_LowerFirst".Translate(), line.lowerIsBetter);
-            y += UiStyle.RowHeight + UiStyle.Gap;
+            if (line.IsCoverage)
+            {
+                y = DrawChoice(inRect, y, "OL_Rule_Required".Translate(), false, false, "OL_Rule_RequiredTip".Translate(line.covers.label));
+                y = DrawChoice(inRect, y, "OL_Rule_NotAllowed".Translate(), true, true, "OL_Rule_NotAllowedTip".Translate(line.covers.label));
+                y += UiStyle.Gap;
+                Rect partNote = new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight);
+                if (line.rulesOut)
+                {
+                    DrawRuledOut(partNote);
+                }
+                else
+                {
+                    DrawCovering(partNote);
+                }
+                return;
+            }
+            y = DrawChoice(inRect, y, "OL_Order_HigherFirst".Translate(), false, false, null);
+            y = DrawChoice(inRect, y, "OL_Order_LowerFirst".Translate(), true, false, null);
+            y = DrawChoice(inRect, y, "OL_Rule_AtLeastChoice".Translate(), false, true, "OL_Rule_Tip".Translate());
+            y = DrawChoice(inRect, y, "OL_Rule_AtMostChoice".Translate(), true, true, "OL_Rule_Tip".Translate());
+            y += UiStyle.Gap;
+            y = DrawValue(inRect, y);
+            Rect noteRect = new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight);
+            if (line.rulesOut)
+            {
+                DrawRuledOut(noteRect);
+            }
+            else
+            {
+                DrawCountsAsNone(noteRect);
+            }
+        }
 
+        /// <summary>
+        /// One of the choices, as a radio button, with its tooltip when it has one. On a stat, "At most" starts at the most
+        /// any apparel has, and leaving it clears the value, since an "at most" value read as the value a line counts from,
+        /// or a value read as "at most", would rule out or count as none nearly everything.
+        /// </summary>
+        private float DrawChoice(Rect inRect, float y, string label, bool lowerIsBetter, bool rulesOut, string tip)
+        {
             Rect row = new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight);
-            string label = "OL_LineDirection_CountsFrom".Translate();
+            bool chosen = line.lowerIsBetter == lowerIsBetter && line.rulesOut == rulesOut;
+            if (Widgets.RadioButtonLabeled(row, label, chosen) && !chosen)
+            {
+                bool wasAtMost = line.lowerIsBetter && line.rulesOut;
+                bool atMost = lowerIsBetter && rulesOut;
+                if (line.IsStat && (atMost || wasAtMost))
+                {
+                    float value = atMost ? most : 0f;
+                    setCountsFrom(value);
+                    text = value > 0f ? ToShown(line.stat, value).ToString("0.###", CultureInfo.InvariantCulture) : "";
+                }
+                setChoice(lowerIsBetter, rulesOut);
+            }
+            if (tip != null)
+            {
+                TooltipHandler.TipRegion(row, tip);
+            }
+            return y + UiStyle.RowHeight;
+        }
+
+        /// <summary>How many items cover the body part on the line's layers, listed on hover.</summary>
+        private void DrawCovering(Rect noteRect)
+        {
+            // The popup takes all input while it's open, so the line's layers can't change under it.
+            if (covering == null)
+            {
+                covering = DefDatabase<ThingDef>.AllDefsListForReading
+                    .Where(def => def.IsApparel && line.CountsOn(def) && PieceCoverage.Covers(def, line.covers))
+                    .OrderBy(def => def.label)
+                    .ToList();
+            }
+            string note = "OL_StatPicker_CoversTip".Translate(covering.Count, line.covers.label);
+            UiStyle.Note(noteRect, note.Truncate(noteRect.width));
+            if (covering.Count > 0)
+            {
+                TooltipHandler.TipRegion(noteRect, () => ItemsTip(covering), line.GetHashCode() + 2);
+            }
+        }
+
+        /// <summary>The value: what the line counts from while it ranks, its cutoff while it rules out.</summary>
+        private float DrawValue(Rect inRect, float y)
+        {
+            Rect row = new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight);
+            string label = !line.rulesOut ? "OL_LineDirection_CountsFrom".Translate()
+                : line.lowerIsBetter ? "OL_Rule_AtMostChoice".Translate() : "OL_Rule_AtLeastChoice".Translate();
             float labelWidth = Text.CalcSize(label).x;
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
@@ -92,7 +186,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.Label(new Rect(box.xMax + UiStyle.Gap, row.y, row.xMax - box.xMax - UiStyle.Gap, row.height), Unit(line.stat));
             }
-            TooltipHandler.TipRegion(row, "OL_CountsFrom_Tip".Translate());
+            TooltipHandler.TipRegion(row, line.rulesOut ? "OL_Rule_ValueTip".Translate() : "OL_CountsFrom_Tip".Translate());
             float? typed = Typed();
             if (typed.HasValue)
             {
@@ -102,24 +196,31 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     setCountsFrom(stored);
                 }
             }
-            y += UiStyle.RowHeight;
+            return y + UiStyle.RowHeight;
+        }
 
+        /// <summary>The most any apparel has, and how many items count as none under the value, listed on hover.</summary>
+        private void DrawCountsAsNone(Rect noteRect)
+        {
             string note = "OL_CountsFrom_Highest".Translate(highest);
             List<ThingDef> under = line.countsFrom > 0f ? Under() : new List<ThingDef>();
             if (under.Count > 0)
             {
                 note += " " + (under.Count == 1 ? "OL_CountsFrom_CountOne".Translate() : "OL_CountsFrom_Count".Translate(under.Count));
             }
-            Rect noteRect = new Rect(inRect.x, y, inRect.width, UiStyle.RowHeight);
             UiStyle.Note(noteRect, note.Truncate(noteRect.width));
-            TooltipHandler.TipRegion(noteRect, () => under.Count == 0 ? note : note + "\n\n" + UnderTip(under), line.GetHashCode());
+            TooltipHandler.TipRegion(noteRect, () => under.Count == 0 ? note : note + "\n\n" + ItemsTip(under), line.GetHashCode());
         }
 
-        private void DrawDirection(Rect row, string label, bool chosen)
+        /// <summary>How many items the line rules out, listed on hover.</summary>
+        private void DrawRuledOut(Rect noteRect)
         {
-            if (Widgets.RadioButtonLabeled(row, label, chosen) && !chosen)
+            List<ThingDef> caught = ApparelForbids.Caught(policy, ApparelForbid.From(line));
+            string note = caught.Count == 1 ? "OL_Rule_CountOne".Translate() : "OL_Rule_Count".Translate(caught.Count);
+            UiStyle.Note(noteRect, note.Truncate(noteRect.width));
+            if (caught.Count > 0)
             {
-                toggleDirection();
+                TooltipHandler.TipRegion(noteRect, () => ItemsTip(caught), line.GetHashCode() + 1);
             }
         }
 
@@ -139,10 +240,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return items.Where(entry => Mathf.Abs(line.Counted(entry.value)) < Epsilon).Select(entry => entry.item).ToList();
         }
 
-        private static string UnderTip(List<ThingDef> under)
+        private static string ItemsTip(List<ThingDef> listed)
         {
-            string listed = string.Join("\n", under.Take(ItemsListed).Select(def => def.LabelCap.Resolve()));
-            return under.Count > ItemsListed ? listed + "\n" + "OL_Forbid_AndMore".Translate(under.Count - ItemsListed) : listed;
+            string names = string.Join("\n", listed.Take(ItemsListed).Select(def => def.LabelCap.Resolve()));
+            return listed.Count > ItemsListed ? names + "\n" + "OL_Rule_AndMore".Translate(listed.Count - ItemsListed) : names;
         }
 
         /// <summary>The stored value as the info card shows it: percent stats in percent, temperatures in the player's scale.</summary>

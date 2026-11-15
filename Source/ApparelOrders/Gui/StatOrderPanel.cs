@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Gui;
@@ -10,8 +11,9 @@ using Verse.Sound;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, its
-    /// own lines to edit, the lines it gets from its base, and a button to add a stat.
+    /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, the
+    /// material its cutoffs are judged in, its own lines to edit (any of which can also rule pieces out), the lines it
+    /// gets from its base, and a button to add a priority.
     /// </summary>
     public static class StatOrderPanel
     {
@@ -31,6 +33,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             float y = rect.y;
             BasePicker.Draw(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
+            y += UiStyle.RowHeight + UiStyle.Gap / 2f;
+            DrawMaterial(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
             y += UiStyle.RowHeight + UiStyle.Gap / 2f;
 
             string noteText = "OL_Editor_Note".Translate();
@@ -116,12 +120,31 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             if (Widgets.ButtonText(new Rect(0f, y, AddButtonWidth, UiStyle.RowHeight), "OL_Editor_AddStat".Translate()))
             {
                 // Only the policy's own stats are hidden, so a base's stat can be added here to move it up or flip it.
-                IEnumerable<StatDef> listed = ownLines.Where(line => !line.IsItem).Select(line => line.stat);
-                Find.WindowStack.Add(new Dialog_PickStat(stat => orders.AddLine(policy, stat), listed));
+                IEnumerable<StatDef> listed = ownLines.Where(line => line.IsStat).Select(line => line.stat);
+                IEnumerable<BodyPartGroupDef> listedParts = ownLines.Where(line => line.IsCoverage).Select(line => line.covers);
+                Find.WindowStack.Add(new Dialog_PickStat(stat => orders.AddLine(policy, stat), listed, null,
+                    part => orders.AddCoverageLine(policy, part), listedParts));
             }
             DrawOnlyWhatHelps(new Rect(AddButtonWidth + UiStyle.Gap, y, viewRect.width - AddButtonWidth - UiStyle.Gap, UiStyle.RowHeight),
                 orders, policy);
             Widgets.EndScrollView();
+        }
+
+        /// <summary>Which material the policy's cutoffs judge apparel in, as a button opening the material list.</summary>
+        private static void DrawMaterial(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy)
+        {
+            string label = "OL_Editor_Material".Translate(OrderLineText.MaterialLabel(orders.LimitMaterialOf(policy)));
+            if (Widgets.ButtonText(row, label.Truncate(row.width)))
+            {
+                var general = new List<(string, Action)>
+                {
+                    ("OL_Editor_MaterialUsual".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Usual)),
+                    ("OL_Editor_MaterialBest".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Best)),
+                };
+                Find.WindowStack.Add(new Dialog_PickMaterial("OL_Editor_MaterialTitle".Translate(), general,
+                    stuff => orders.SetLimitMaterial(policy, LimitMaterial.Of(stuff))));
+            }
+            TooltipHandler.TipRegion(row, "OL_Editor_MaterialTip".Translate());
         }
 
         /// <summary>The "only add pieces that help" box with its words right after it, so the two read as one. Either toggles it.</summary>
@@ -163,6 +186,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 {
                     DrawItemLabel(labelRect, line.item);
                 }
+                else if (line.IsCoverage)
+                {
+                    string label = "OL_Editor_CoversPart".Translate(line.covers.label).CapitalizeFirst();
+                    Widgets.Label(labelRect, label.Truncate(labelWidth));
+                    TooltipHandler.TipRegion(labelRect, "OL_Editor_CoversTip".Translate(line.covers.label));
+                }
                 else
                 {
                     Widgets.Label(labelRect, line.stat.LabelCap.Resolve().Truncate(labelWidth));
@@ -190,10 +219,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             x += LayerWidth + UiStyle.IconGap;
 
             Rect direction = new Rect(x, row.y + UiStyle.IconGap / 2f, DirectionWidth, row.height - UiStyle.IconGap);
-            TooltipHandler.TipRegion(direction, "OL_Editor_DirectionTip".Translate());
+            TooltipHandler.TipRegion(direction, line.IsCoverage ? "OL_Editor_CoverageDirectionTip".Translate() : "OL_Editor_DirectionTip".Translate());
             if (Widgets.ButtonText(direction, DirectionButtonLabel(line).Truncate(DirectionWidth - 12f)))
             {
-                Find.WindowStack.Add(new Dialog_LineDirection(line, () => orders.ToggleDirection(policy, index),
+                Find.WindowStack.Add(new Dialog_LineDirection(line, policy, (lower, rulesOut) => orders.SetLineChoice(policy, index, lower, rulesOut),
                     value => orders.SetCountsFrom(policy, index, value)));
             }
             x += DirectionWidth + UiStyle.IconGap;
@@ -271,24 +300,33 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 return;
             }
-            string text = line.countsFrom > 0f
-                ? "OL_Editor_BaseLineFrom".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line),
-                    OrderLineText.CountsFromValue(line.stat, line.countsFrom)).Resolve()
-                : "OL_Editor_BaseLine".Translate(OrderLineText.StatOnLayerCap(line), DirectionLabel(line)).Resolve();
+            string subject = line.IsCoverage ? OrderLineText.CoverageOf(line, true) : OrderLineText.StatOnLayerCap(line);
+            string text = "OL_Editor_BaseLine".Translate(subject, DirectionButtonLabel(line)).Resolve();
             using (new TextBlock(TextAnchor.MiddleLeft))
             {
                 UiStyle.Note(new Rect(row.x + NumberWidth, row.y, row.width - NumberWidth, row.height), text);
             }
         }
 
-        /// <summary>"Higher first", or "Higher, from 3 mm" when the line counts from a value.</summary>
+        /// <summary>
+        /// "Higher first", "Higher, from 3 mm" when the line counts from a value, or "At least 3 mm" when it rules out what's
+        /// below. A body part line: "Required" or "Not allowed".
+        /// </summary>
         private static string DirectionButtonLabel(OrderLine line)
         {
+            if (line.IsCoverage)
+            {
+                return line.rulesOut ? "OL_Rule_NotAllowed".Translate() : "OL_Rule_Required".Translate();
+            }
+            string value = OrderLineText.CountsFromValue(line.stat, line.countsFrom);
+            if (line.rulesOut)
+            {
+                return line.lowerIsBetter ? "OL_Rule_AtMost".Translate(value) : "OL_Rule_AtLeast".Translate(value);
+            }
             if (line.countsFrom <= 0f)
             {
                 return DirectionLabel(line);
             }
-            string value = OrderLineText.CountsFromValue(line.stat, line.countsFrom);
             return line.lowerIsBetter ? "OL_Order_LowerFrom".Translate(value) : "OL_Order_HigherFrom".Translate(value);
         }
 

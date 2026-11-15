@@ -5,7 +5,7 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// Which material a policy's limits judge apparel in: its usual material, the best one for each limit, or one the
+    /// Which material a policy's cutoffs judge apparel in: its usual material, the best one for each cutoff, or one the
     /// player picked. Items that aren't made of a material are judged as they are.
     /// </summary>
     public sealed class LimitMaterial
@@ -13,7 +13,7 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>The game's default material for each item.</summary>
         public static readonly LimitMaterial Usual = new LimitMaterial(null, false);
 
-        /// <summary>For each limit, the material that does best on its stat: an item passes if any material it can be made of does.</summary>
+        /// <summary>For each cutoff, the material that does best on its stat: an item passes if any material it can be made of does.</summary>
         public static readonly LimitMaterial Best = new LimitMaterial(null, true);
 
         private static readonly Dictionary<ThingDef, LimitMaterial> specific = new Dictionary<ThingDef, LimitMaterial>();

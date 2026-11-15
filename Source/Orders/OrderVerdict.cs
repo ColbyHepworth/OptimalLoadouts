@@ -6,10 +6,10 @@ namespace OptimalLoadouts.Orders
     /// </summary>
     public readonly struct OrderVerdict
     {
-        public static readonly OrderVerdict Tie = new OrderVerdict(-1, 0f, false);
+        public static readonly OrderVerdict Tie = new OrderVerdict(-1, 0f, false, false);
 
         /// <summary>The game's own rules decide this choice, so its score stands untouched.</summary>
-        public static readonly OrderVerdict LeftToGame = new OrderVerdict(-1, 0f, true);
+        public static readonly OrderVerdict LeftToGame = new OrderVerdict(-1, 0f, true, false);
 
         /// <summary>Index of the first line that differs, or -1 when every line ties.</summary>
         public readonly int DecidingLine;
@@ -19,15 +19,22 @@ namespace OptimalLoadouts.Orders
 
         public readonly bool GameDecides;
 
-        public OrderVerdict(int decidingLine, float delta) : this(decidingLine, delta, false)
+        /// <summary>
+        /// An item or body part line decided it and no line under it told the pieces apart, so the game's own score
+        /// settles between pieces that won that line alike.
+        /// </summary>
+        public readonly bool RestTies;
+
+        public OrderVerdict(int decidingLine, float delta, bool restTies = false) : this(decidingLine, delta, false, restTies)
         {
         }
 
-        private OrderVerdict(int decidingLine, float delta, bool gameDecides)
+        private OrderVerdict(int decidingLine, float delta, bool gameDecides, bool restTies)
         {
             DecidingLine = decidingLine;
             Delta = delta;
             GameDecides = gameDecides;
+            RestTies = restTies;
         }
 
         public bool IsTie => DecidingLine < 0 && !GameDecides;

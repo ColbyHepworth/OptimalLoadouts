@@ -15,12 +15,28 @@ namespace OptimalLoadouts.ApparelOrders
         private const float WarmthMargin = 4f;
 
         /// <summary>
-        /// Whether the check skips this piece under "only add pieces that help": it ties on every line, replaces nothing
-        /// the pawn wears, and isn't needed for cover or warmth.
+        /// Whether the check skips this piece under "only add pieces that help": the policy has a line a piece can gain
+        /// on, the piece ties on every line, replaces nothing the pawn wears, and isn't needed for cover or warmth.
         /// </summary>
-        public static bool Skipped(Pawn pawn, Apparel candidate, OrderVerdict verdict)
+        public static bool Skipped(Pawn pawn, Apparel candidate, OrderVerdict verdict, IReadOnlyList<OrderLine> lines)
         {
-            return verdict.IsTie && !ApparelComparison.ReplacesAny(pawn, candidate) && !Needed(pawn, candidate);
+            return verdict.IsTie && HasLineToGainOn(lines) && !ApparelComparison.ReplacesAny(pawn, candidate) && !Needed(pawn, candidate);
+        }
+
+        /// <summary>
+        /// Whether any line ranks pieces. A Not allowed body part line only rules pieces out, so with nothing else every
+        /// piece ties and the setting would add no hats or armor.
+        /// </summary>
+        private static bool HasLineToGainOn(IReadOnlyList<OrderLine> lines)
+        {
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (!lines[i].IsCoverage || lines[i].IsRequiredCoverage)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>

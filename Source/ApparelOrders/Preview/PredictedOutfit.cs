@@ -57,9 +57,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         public OrderVerdict RunnerUpVerdict { get; }
 
+        /// <summary>The runner-up's score in the apparel check, to compare with <see cref="Score"/>.</summary>
+        public float RunnerUpScore { get; }
+
         public PredictedSwap(Apparel putOn, IReadOnlyList<Apparel> replaced, float score, OrderVerdict verdict,
-            IReadOnlyList<Apparel> partners, Apparel runnerUp, OrderVerdict runnerUpVerdict)
+            IReadOnlyList<Apparel> partners, Apparel runnerUp, OrderVerdict runnerUpVerdict, float runnerUpScore)
         {
+            RunnerUpScore = runnerUpScore;
             PutOn = putOn;
             Replaced = replaced;
             Score = score;

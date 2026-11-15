@@ -35,7 +35,7 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                     return;
                 }
                 OrderVerdict verdict = ApparelComparison.Compare(pawn, ap, lines);
-                __result = orders.OnlyWhatHelps(policy) && ExtraPieces.Skipped(pawn, ap, verdict)
+                __result = orders.OnlyWhatHelps(policy) && ExtraPieces.Skipped(pawn, ap, verdict, lines)
                     ? ApparelScoreBands.Worse
                     : ApparelScoreBands.ScoreGain(verdict, lines.Count, __result);
             }

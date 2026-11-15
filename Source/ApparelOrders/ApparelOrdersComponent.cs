@@ -7,7 +7,7 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// Every apparel policy's stat order and forbids in the current game: saved with it, resolved with bases, and edited
+    /// Every apparel policy's priorities in the current game: saved with it, resolved with bases, and edited
     /// only through these methods so the resolved orders and the policies' checklists stay current. Saves record this
     /// class's full name, so it keeps it.
     /// </summary>
@@ -85,8 +85,8 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// Notices a policy added or deleted since the last frame: resolves the orders again and reapplies every limit,
-        /// since a deleted base takes its lines and limits with it. The game's policy window pauses, so its changes are
+        /// Notices a policy added or deleted since the last frame: resolves the orders again and rewrites every checklist,
+        /// since a deleted base takes its lines, and what they rule out, with it. The game's policy window pauses, so its changes are
         /// noticed before the next tick. Another mod's change during ticks is noticed a frame later.
         /// </summary>
         public override void GameComponentUpdate()
@@ -130,8 +130,8 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// The locked items of the policy, then of its base and that base's, then the stat lines in the same order,
-        /// skipping a stat or item already listed. A base that was deleted or would loop back is ignored. Only reads: the
+        /// The locked items of the policy, then of its base and that base's, then the stat and body part lines in the same
+        /// order, skipping a stat, body part or item already listed. A base that was deleted or would loop back is ignored. Only reads: the
         /// game's apparel check calls it for every piece it scores.
         /// </summary>
         public IReadOnlyList<OrderLine> EffectiveLines(ApparelPolicy policy)
@@ -214,8 +214,23 @@ namespace OptimalLoadouts.ApparelOrders
             }
             // A stat the policy gets from its base keeps the base's layer and direction when it becomes the policy's own.
             OrderLine fromBase = EffectiveLines(policy).FirstOrDefault(line => line.stat == stat);
-            order.lines.Add(fromBase?.Copy() ?? new OrderLine(stat));
-            NotifyChanged();
+            OrderLine added = fromBase?.Copy() ?? new OrderLine(stat);
+            order.lines.Add(added);
+            LineChanged(added);
+        }
+
+        /// <summary>Adds a line requiring the outfit to cover the body part. A base's line keeps its layers and choice.</summary>
+        public void AddCoverageLine(ApparelPolicy policy, BodyPartGroupDef part)
+        {
+            ApparelOrder order = GetOrCreate(policy);
+            if (order.lines.Any(line => line.covers == part))
+            {
+                return;
+            }
+            OrderLine fromBase = EffectiveLines(policy).FirstOrDefault(line => line.covers == part);
+            OrderLine added = fromBase?.Copy() ?? OrderLine.ForCoverage(part);
+            order.lines.Add(added);
+            LineChanged(added);
         }
 
         /// <summary>
@@ -236,7 +251,7 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// Removes the policy's own lock on the item. It stays ticked, unless a limit catches it. A base's lock on it stays
+        /// Removes the policy's own lock on the item. It stays ticked, unless a line rules it out. A base's lock on it stays
         /// in the base.
         /// </summary>
         public void Unlock(ApparelPolicy policy, ThingDef item)
@@ -297,7 +312,10 @@ namespace OptimalLoadouts.ApparelOrders
             return ticked;
         }
 
-        /// <summary>Removes a line. Removing a locked item unlocks it, so a limit that catches it then unticks it.</summary>
+        /// <summary>
+        /// Removes a line. Removing a locked item unlocks it, so a line that rules it out then unticks it; removing a line
+        /// that rules pieces out ticks them back; and removing a line that replaced its base's brings the base's back.
+        /// </summary>
         public void RemoveLine(ApparelPolicy policy, int index)
         {
             ApparelOrder order = OrderFor(policy);
@@ -305,16 +323,8 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return;
             }
-            bool wasItem = order.lines[index].IsItem;
             order.lines.RemoveAt(index);
-            if (wasItem)
-            {
-                ForbidsChanged();
-            }
-            else
-            {
-                NotifyChanged();
-            }
+            ForbidsChanged();
         }
 
         /// <summary>Whether a line can move up (negative) or down (positive) by one place: not past the end, and never a stat past a locked item.</summary>
@@ -341,17 +351,6 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
-        public void ToggleDirection(ApparelPolicy policy, int index)
-        {
-            ApparelOrder order = OrderFor(policy);
-            if (order == null || index < 0 || index >= order.lines.Count)
-            {
-                return;
-            }
-            order.lines[index].lowerIsBetter = !order.lines[index].lowerIsBetter;
-            NotifyChanged();
-        }
-
         /// <summary>Sets the value a line counts from. 0 counts every amount.</summary>
         public void SetCountsFrom(ApparelPolicy policy, int index, float countsFrom)
         {
@@ -361,76 +360,47 @@ namespace OptimalLoadouts.ApparelOrders
                 return;
             }
             order.lines[index].countsFrom = countsFrom < 0f ? 0f : countsFrom;
-            NotifyChanged();
+            LineChanged(order.lines[index]);
         }
 
-        /// <summary>The policy's own forbids, then its base's, then that base's. A base that would loop back is ignored.</summary>
-        public List<ApparelForbid> EffectiveForbids(ApparelPolicy policy)
-        {
-            var forbids = new List<ApparelForbid>();
-            var visited = new HashSet<ApparelPolicy>();
-            for (ApparelPolicy current = policy; current != null && visited.Add(current); current = BaseOf(current))
-            {
-                ApparelOrder order = OrderFor(current);
-                if (order == null)
-                {
-                    break;
-                }
-                forbids.AddRange(order.forbids);
-            }
-            return forbids;
-        }
-
-        /// <summary>Adds a forbid on the stat at the lowest value any apparel has, so it catches nothing until it's moved.</summary>
-        public void AddForbid(ApparelPolicy policy, StatDef stat)
-        {
-            GetOrCreate(policy).forbids.Add(new ApparelForbid(stat, ApparelForbids.RangeOf(stat, LimitMaterialOf(policy)).min));
-            ForbidsChanged();
-        }
-
-        public void RemoveForbid(ApparelPolicy policy, int index)
+        /// <summary>
+        /// Sets which way a line points and whether it rules out what's past it, the one choice the direction popup makes:
+        /// higher or lower first, at least or at most on a stat; required (higher first, not ruling out) or not allowed
+        /// (lower first, ruling out) on a body part, which ignores any other pair.
+        /// </summary>
+        public void SetLineChoice(ApparelPolicy policy, int index, bool lowerIsBetter, bool rulesOut)
         {
             ApparelOrder order = OrderFor(policy);
-            if (order == null || index < 0 || index >= order.forbids.Count)
+            if (order == null || index < 0 || index >= order.lines.Count || order.lines[index].IsItem
+                || (order.lines[index].IsCoverage && lowerIsBetter != rulesOut))
             {
                 return;
             }
-            order.forbids.RemoveAt(index);
-            ForbidsChanged();
-        }
-
-        /// <summary>Sets whether a forbid rules out values above or below its threshold, and the threshold.</summary>
-        public void SetForbid(ApparelPolicy policy, int index, bool forbidAbove, float threshold)
-        {
-            ApparelOrder order = OrderFor(policy);
-            if (order == null || index < 0 || index >= order.forbids.Count)
+            OrderLine line = order.lines[index];
+            if (line.lowerIsBetter == lowerIsBetter && line.rulesOut == rulesOut)
             {
                 return;
             }
-            ApparelForbid forbid = order.forbids[index];
-            if (forbid.forbidAbove == forbidAbove && forbid.threshold == threshold)
+            bool ruledOutBefore = line.rulesOut;
+            line.lowerIsBetter = lowerIsBetter;
+            line.rulesOut = rulesOut;
+            if (ruledOutBefore || rulesOut)
             {
-                return;
+                ForbidsChanged();
             }
-            forbid.forbidAbove = forbidAbove;
-            forbid.threshold = threshold;
-            // A slider sends a new threshold each frame it's dragged. Only a changed checklist needs the preview redone.
-            if (ApparelForbids.ApplyAll())
+            else
             {
                 NotifyChanged();
             }
         }
 
-        /// <summary>Sets the layers a forbid covers. Every layer picked, or none, means every layer.</summary>
-        public void SetForbidLayers(ApparelPolicy policy, int index, IEnumerable<ApparelLayerDef> layers)
+        /// <summary>
+        /// The rules the policy's checklist follows: one for each of its effective lines that rules pieces out, a base's
+        /// included. The policy's own line on a stat or part replaces its base's, as it does for ranking.
+        /// </summary>
+        public List<ApparelForbid> EffectiveForbids(ApparelPolicy policy)
         {
-            ApparelOrder order = OrderFor(policy);
-            if (order == null || index < 0 || index >= order.forbids.Count)
-            {
-                return;
-            }
-            order.forbids[index].layers = LayerScope.Normalized(layers);
-            ForbidsChanged();
+            return EffectiveLines(policy).Where(line => line.rulesOut && !line.IsItem).Select(ApparelForbid.From).ToList();
         }
 
         /// <summary>Sets the layers a line counts on. Every layer picked, or none, means every layer.</summary>
@@ -442,16 +412,16 @@ namespace OptimalLoadouts.ApparelOrders
                 return;
             }
             order.lines[index].layers = LayerScope.Normalized(layers);
-            NotifyChanged();
+            LineChanged(order.lines[index]);
         }
 
-        /// <summary>The material the policy's limits judge apparel in, its base's limits included. Usual when it has none set.</summary>
+        /// <summary>The material the policy's cutoffs judge apparel in, its base's included. Usual when it has none set.</summary>
         public LimitMaterial LimitMaterialOf(ApparelPolicy policy)
         {
             return OrderFor(policy)?.LimitMaterial ?? LimitMaterial.Usual;
         }
 
-        /// <summary>Sets the material the policy's limits judge apparel in, and applies them again.</summary>
+        /// <summary>Sets the material the policy's cutoffs judge apparel in, and applies them again.</summary>
         public void SetLimitMaterial(ApparelPolicy policy, LimitMaterial material)
         {
             if (policy == null || material == null)
@@ -494,8 +464,7 @@ namespace OptimalLoadouts.ApparelOrders
             }
             ApparelOrder copy = GetOrCreate(to);
             copy.lines = source.lines.Select(line => line.Copy()).ToList();
-            copy.forbids = source.forbids.Select(forbid => forbid.Copy()).ToList();
-            // The game copies the checklist, so the copy's forbids unticked the same items.
+            // The game copies the checklist, so the copy's ruling-out lines unticked the same items.
             copy.unticked = new List<ThingDef>(source.unticked);
             copy.LimitMaterial = source.LimitMaterial;
             copy.onlyWhatHelps = source.onlyWhatHelps;
@@ -506,11 +475,24 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>Goes up whenever any order or base changes, so work done from the orders knows to start over.</summary>
         public int Version { get; private set; }
 
-        /// <summary>Resolves the orders again and writes every policy's forbids into its checklist.</summary>
+        /// <summary>Resolves the orders again and writes every policy's ruling-out lines into its checklist.</summary>
         private void ForbidsChanged()
         {
             NotifyChanged();
             ApparelForbids.ApplyAll();
+        }
+
+        /// <summary>A line changed: its checklist is written again when it rules pieces out, otherwise only the orders resolve again.</summary>
+        private void LineChanged(OrderLine line)
+        {
+            if (line.rulesOut)
+            {
+                ForbidsChanged();
+            }
+            else
+            {
+                NotifyChanged();
+            }
         }
 
         /// <summary>Forgets the resolved orders, so the next lookup reads the current lines and bases.</summary>

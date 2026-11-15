@@ -220,14 +220,33 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         {
             RowLayout layout = RowLayout.For(row, columns);
             DrawRankHeader(layout.Rank, session);
-            for (int i = 0; i < columns.Stats.Count; i++)
+            for (int i = 0; i < columns.Shown.Count; i++)
             {
-                StatDef stat = columns.Stats[i];
-                DrawStatHeader(layout.Value(i), stat, LineFor(lines, stat), removable: stat == session.AddedStat, session);
+                OrderLine column = columns.Shown[i];
+                if (column.IsCoverage)
+                {
+                    DrawCoverageHeader(layout.Value(i), column);
+                    continue;
+                }
+                DrawStatHeader(layout.Value(i), column.stat, LineFor(lines, column.stat), removable: column.stat == session.AddedStat, session);
             }
             if (session.AddedStat == null && Widgets.ButtonImage(layout.Checkbox, TexButton.Plus, true, "OL_Slot_AddColumn".Translate()))
             {
                 Find.WindowStack.Add(new Dialog_PickStat(session.ShowColumn, columns.Stats, "OL_Slot_AddColumnTitle".Translate()));
+            }
+        }
+
+        /// <summary>A coverage priority's header: the body part. It isn't sorted by, since every piece has 1 or 0.</summary>
+        private static void DrawCoverageHeader(Rect cell, OrderLine line)
+        {
+            using (new TextBlock(GameFont.Tiny, TextAnchor.LowerCenter, ColoredText.SubtleGrayColor))
+            {
+                Widgets.Label(cell, line.covers.LabelCap);
+            }
+            if (Mouse.IsOver(cell))
+            {
+                Widgets.DrawHighlight(cell);
+                TooltipHandler.TipRegion(cell, OrderLineText.CoverageOf(line, covers: true));
             }
         }
 
@@ -355,9 +374,15 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             using (new TextBlock(TextAnchor.MiddleCenter, textColor))
             {
                 Widgets.Label(layout.Rank, choice.PickRank > 0 ? choice.PickRank.ToString() : "OL_Slot_NoValue".Translate().ToString());
-                for (int i = 0; i < columns.Stats.Count; i++)
+                for (int i = 0; i < columns.Shown.Count; i++)
                 {
-                    StatDef stat = columns.Stats[i];
+                    if (columns.Shown[i].IsCoverage)
+                    {
+                        bool covers = ApparelComparison.ValueOnLine(piece, columns.Shown[i]) > 0f;
+                        Widgets.Label(layout.Value(i), covers ? "OL_Slot_Covers".Translate() : "OL_Slot_NoValue".Translate());
+                        continue;
+                    }
+                    StatDef stat = columns.Shown[i].stat;
                     OrderLine line = LineFor(lines, stat);
                     bool counts = line == null || line.CountsOn(piece.def);
                     // A value under what the line counts from is grey, since it counts as none.
@@ -372,7 +397,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 }
                 if (columns.Hidden.Count > 0)
                 {
-                    int more = columns.Hidden.Count(line => Math.Abs(ApparelComparison.ValueOnLine(piece, line)) >= Epsilon);
+                    // Every piece has a value on a body part line, 1 or 0, so only stat lines are counted.
+                    int more = columns.Hidden.Count(line => line.IsStat && Math.Abs(ApparelComparison.ValueOnLine(piece, line)) >= Epsilon);
                     if (more > 0)
                     {
                         Widgets.Label(layout.More, "OL_Slot_MorePriorities".Translate(more));
@@ -400,15 +426,23 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 // A line limited to a layer the piece isn't on doesn't count it, and one counting from more than the
                 // piece has counts it as none, so the piece has nothing for those lines.
-                if (Math.Abs(ApparelComparison.ValueOnLine(choice.Piece, line)) >= Epsilon)
+                if (line.IsCoverage)
                 {
-                    parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)));
+                    // Said by what the piece does. A piece off the line's layers isn't judged by it.
+                    if (line.CountsOn(choice.Piece.def))
+                    {
+                        parts.Add(OrderLineText.CoverageOf(line, ApparelComparison.ValueOnLine(choice.Piece, line) > 0f));
+                    }
+                }
+                else if (Math.Abs(ApparelComparison.ValueOnLine(choice.Piece, line)) >= Epsilon)
+                {
+                    parts.Add("OL_Slot_TipValue".Translate(OrderLineText.StatOnLayerCap(line), ValueText(choice.Piece, line.stat)).Resolve());
                 }
                 else
                 {
                     nothingFor.Add(OrderLineText.StatOnLayer(line));
                 }
-                if (line.CountsOn(choice.Piece.def))
+                if (line.IsStat && line.CountsOn(choice.Piece.def))
                 {
                     // A bonus under the line's threshold isn't listed again under "Also gives".
                     shown.Add(line.stat);
@@ -440,7 +474,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 ApparelForbid forbiddenBy = ApparelForbids.ForbiddenBy(policy, choice.Piece.def);
                 parts.Add(forbiddenBy != null
-                    ? "OL_Forbid_SlotTip".Translate(OrderLineText.ForbidCap(forbiddenBy).UncapitalizeFirst()).Resolve()
+                    ? "OL_Slot_RuledOut".Translate(OrderLineText.ForbidCap(forbiddenBy).UncapitalizeFirst()).Resolve()
                     : "OL_Preview_NotAllowed".Translate().Resolve());
             }
             else if (!choice.Allowed)
@@ -575,7 +609,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 Icon = new Rect(Rank.xMax + UiStyle.Gap / 2f, iconY, UiStyle.IconSize, UiStyle.IconSize);
                 float moreWidth = columns.Hidden.Count > 0 ? MoreWidth : 0f;
                 More = new Rect(Lock.x - UiStyle.Gap - moreWidth, row.y, moreWidth, row.height);
-                valuesX = More.x - columns.Stats.Count * ValueWidth;
+                valuesX = More.x - columns.Shown.Count * ValueWidth;
                 Name = new Rect(Icon.xMax + UiStyle.Gap, row.y, valuesX - Icon.xMax - 2f * UiStyle.Gap, row.height);
                 Body = new Rect(Rank.x, row.y, Lock.x - UiStyle.Gap - Rank.x, row.height);
             }
@@ -595,18 +629,22 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// The stat columns: every stat line of the order, a base's included (item lines aren't columns), then the stat
-        /// added by hand, as many as fit beside a readable name.
+        /// The columns: every stat and coverage line of the order, a base's included (item lines aren't columns), then the
+        /// stat added by hand, as many as fit beside a readable name.
         /// </summary>
         private sealed class Columns
         {
-            private Columns(List<StatDef> stats, List<OrderLine> hidden)
+            private Columns(List<OrderLine> shown, List<OrderLine> hidden)
             {
-                Stats = stats;
+                Shown = shown;
                 Hidden = hidden;
             }
 
-            public List<StatDef> Stats { get; }
+            /// <summary>The lines shown as columns. The stat added by hand is a line of its own, not one of the order's.</summary>
+            public List<OrderLine> Shown { get; }
+
+            /// <summary>The stats shown as columns, which the "+" picker leaves out.</summary>
+            public List<StatDef> Stats => Shown.Where(line => line.IsStat).Select(line => line.stat).ToList();
 
             /// <summary>The order's lines that didn't fit, so a row says how many of them the piece has a value on.</summary>
             public List<OrderLine> Hidden { get; }
@@ -631,14 +669,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     // Room for "+2" at the row's end, when there's room for it at all.
                     fit = Mathf.Max(0, Mathf.FloorToInt((room - MoreWidth) / ValueWidth) - added);
                 }
-                List<StatDef> stats = statLines.Take(fit).Select(line => line.stat).ToList();
+                List<OrderLine> shown = statLines.Take(fit).ToList();
                 if (added > 0)
                 {
-                    stats.Add(session.AddedStat);
+                    shown.Add(new OrderLine(session.AddedStat));
                 }
                 bool roomForMore = room - (fit + added) * ValueWidth >= MoreWidth;
                 List<OrderLine> hidden = roomForMore ? statLines.Skip(fit).ToList() : new List<OrderLine>();
-                return new Columns(stats, hidden);
+                return new Columns(shown, hidden);
             }
         }
     }

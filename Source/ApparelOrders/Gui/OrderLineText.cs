@@ -28,14 +28,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return "OL_Layer_Count".Translate(layers.Count).Resolve();
         }
 
-        /// <summary>The material a policy's limits judge apparel in: "Usual material", "Best material for each limit" or the material's name.</summary>
+        /// <summary>The material a policy's cutoffs judge apparel in: "Usual material", "Best material for each cutoff" or the material's name.</summary>
         public static string MaterialLabel(LimitMaterial material)
         {
             if (material.IsBest)
             {
-                return "OL_Forbid_MaterialBest".Translate();
+                return "OL_Editor_MaterialBest".Translate();
             }
-            return material.Stuff != null ? material.Stuff.LabelCap.Resolve() : "OL_Forbid_MaterialUsual".Translate().Resolve();
+            return material.Stuff != null ? material.Stuff.LabelCap.Resolve() : "OL_Editor_MaterialUsual".Translate().Resolve();
         }
 
         /// <summary>A layer button's tooltip: what it does, then the layers picked when there are any.</summary>
@@ -50,13 +50,24 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return layers.Select(layer => layer.label).ToCommaList(useAnd: true);
         }
 
-        /// <summary>A forbid as the limit it sets, on a line of its own: "Mass at most 5 kg on outer and middle".</summary>
+        /// <summary>
+        /// What a priority line rules out, as a rule on a line of its own: "Mass at most 5 kg on outer and middle", or
+        /// "Must not cover eyes".
+        /// </summary>
         public static string ForbidCap(ApparelForbid forbid)
         {
-            string value = ValueText(forbid.stat, forbid.threshold);
-            string rule = forbid.forbidAbove
-                ? "OL_Forbid_RuleAtMost".Translate(forbid.stat.label, value)
-                : "OL_Forbid_RuleAtLeast".Translate(forbid.stat.label, value);
+            string rule;
+            if (forbid.IsCoverage)
+            {
+                rule = "OL_Rule_MustNotCover".Translate(forbid.covers.label);
+            }
+            else
+            {
+                string value = ValueText(forbid.stat, forbid.threshold);
+                rule = forbid.forbidAbove
+                    ? "OL_Rule_StatAtMost".Translate(forbid.stat.label, value)
+                    : "OL_Rule_StatAtLeast".Translate(forbid.stat.label, value);
+            }
             if (forbid.layers.Count > 0)
             {
                 rule = "OL_Layer_StatOn".Translate(rule, LayerNames(forbid.layers));
@@ -79,7 +90,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// The line's stat with its layers, lower case for use inside a sentence: "sharp armor on headgear and outer". An
-        /// item line is its item: "cowboy hat".
+        /// item line is its item: "cowboy hat". A body part line is what it asks for: "leaves neck free".
         /// </summary>
         public static string StatOnLayer(OrderLine line)
         {
@@ -87,11 +98,27 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return line.item.label;
             }
-            if (line.layers.Count == 0)
-            {
-                return line.stat.label;
-            }
-            return "OL_Layer_StatOn".Translate(line.stat.label, LayerNames(line.layers));
+            string subject = line.IsCoverage ? Coverage(line.covers, line.IsRequiredCoverage) : line.stat.label;
+            return OnLayers(subject, line);
+        }
+
+        /// <summary>
+        /// Whether a piece covers the line's part, with the line's layers: "covers neck on outer" or "leaves neck free".
+        /// </summary>
+        public static string CoverageOf(OrderLine line, bool covers)
+        {
+            return OnLayers(Coverage(line.covers, covers), line).CapitalizeFirst();
+        }
+
+        /// <summary>"covers neck", or "leaves neck free".</summary>
+        private static string Coverage(BodyPartGroupDef part, bool covers)
+        {
+            return covers ? "OL_Editor_CoversPart".Translate(part.label).Resolve() : "OL_Editor_LeavesFree".Translate(part.label).Resolve();
+        }
+
+        private static string OnLayers(string subject, OrderLine line)
+        {
+            return line.layers.Count == 0 ? subject : "OL_Layer_StatOn".Translate(subject, LayerNames(line.layers)).Resolve();
         }
 
         /// <summary>The line's stat with its layers, capitalized, for a line of its own.</summary>

@@ -7,20 +7,19 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// An apparel policy's own stat order and forbids, the base policy whose order and forbids go under them, and the
-    /// items its forbids unticked in the policy's checklist.
+    /// An apparel policy's own priorities, the base policy whose priorities go under them, and the items its priorities
+    /// that rule pieces out unticked in the policy's checklist.
     /// </summary>
     public class ApparelOrder : IExposable
     {
         public ApparelPolicy policy;
         public ApparelPolicy basePolicy;
         public List<OrderLine> lines = new List<OrderLine>();
-        public List<ApparelForbid> forbids = new List<ApparelForbid>();
 
-        /// <summary>The items this policy's forbids unticked, so they tick back when no forbid catches them.</summary>
+        /// <summary>The items this policy's ruling-out priorities unticked, so they tick back when none catches them.</summary>
         public List<ThingDef> unticked = new List<ThingDef>();
 
-        /// <summary>The material picked for the policy's limits, or null for the usual one (or the best, with <see cref="limitBest"/>).</summary>
+        /// <summary>The material the policy's cutoffs judge in, or null for the usual one (or the best, with <see cref="limitBest"/>).</summary>
         public ThingDef limitStuff;
 
         public bool limitBest;
@@ -28,7 +27,7 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>Whether pawns on the policy add a piece to an empty slot only when it helps the priorities.</summary>
         public bool onlyWhatHelps;
 
-        /// <summary>Which material the policy's limits judge apparel in.</summary>
+        /// <summary>Which material the policy's cutoffs judge apparel in.</summary>
         public LimitMaterial LimitMaterial
         {
             get => limitBest ? LimitMaterial.Best : LimitMaterial.Of(limitStuff);
@@ -44,7 +43,6 @@ namespace OptimalLoadouts.ApparelOrders
             Scribe_References.Look(ref policy, "policy");
             Scribe_References.Look(ref basePolicy, "base");
             Scribe_Collections.Look(ref lines, "lines", LookMode.Deep);
-            Scribe_Collections.Look(ref forbids, "forbids", LookMode.Deep);
             Scribe_Collections.Look(ref unticked, "unticked", LookMode.Def);
             Scribe_Defs.Look(ref limitStuff, "limitStuff");
             Scribe_Values.Look(ref limitBest, "limitBest", false);
@@ -58,11 +56,6 @@ namespace OptimalLoadouts.ApparelOrders
                 lines.RemoveAll(line => line == null || line.Subject == null);
                 // Locked items rank above every stat, so they're kept first, as moving lines keeps them.
                 lines = lines.Where(line => line.IsItem).Concat(lines.Where(line => !line.IsItem)).ToList();
-                if (forbids == null)
-                {
-                    forbids = new List<ApparelForbid>();
-                }
-                forbids.RemoveAll(forbid => forbid == null || forbid.stat == null);
                 if (unticked == null)
                 {
                     unticked = new List<ThingDef>();

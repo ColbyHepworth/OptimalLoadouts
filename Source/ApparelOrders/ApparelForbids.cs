@@ -6,8 +6,8 @@ using Verse;
 namespace OptimalLoadouts.ApparelOrders
 {
     /// <summary>
-    /// Writes each policy's forbids into its checklist. Only what a forbid catches is unticked, and each policy remembers
-    /// what its forbids unticked, so an item ticks back when no forbid catches it any more and an item the player
+    /// Writes what each policy's priorities rule out into its checklist. Only what they catch is unticked, and each policy
+    /// remembers what they unticked, so an item ticks back when nothing catches it any more and an item the player
     /// unticked stays unticked.
     /// </summary>
     public static class ApparelForbids
@@ -17,8 +17,6 @@ namespace OptimalLoadouts.ApparelOrders
         private static readonly Dictionary<(ThingDef def, StatDef stat, bool forbidAbove), float?> bestValues =
             new Dictionary<(ThingDef, StatDef, bool), float?>();
 
-        private static readonly Dictionary<(StatDef stat, LimitMaterial material), FloatRange> ranges =
-            new Dictionary<(StatDef, LimitMaterial), FloatRange>();
         private static List<ThingDef> apparel;
 
         /// <summary>Every item an apparel policy's checklist lists.</summary>
@@ -123,34 +121,6 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
-        /// The lowest and highest value any apparel has on the stat in the material a policy judges in, for a forbid's
-        /// slider. With the best material, every material each item can be made of counts.
-        /// </summary>
-        public static FloatRange RangeOf(StatDef stat, LimitMaterial material)
-        {
-            if (ranges.TryGetValue((stat, material), out FloatRange known))
-            {
-                return known;
-            }
-            float lowest = float.MaxValue;
-            float highest = float.MinValue;
-            foreach (ThingDef def in Apparel)
-            {
-                if (TryValueOf(def, stat, material, false, out float most))
-                {
-                    highest = System.Math.Max(highest, most);
-                }
-                if (TryValueOf(def, stat, material, true, out float least))
-                {
-                    lowest = System.Math.Min(lowest, least);
-                }
-            }
-            FloatRange range = lowest > highest ? new FloatRange(0f, 0f) : new FloatRange(lowest, highest);
-            ranges[(stat, material)] = range;
-            return range;
-        }
-
-        /// <summary>
         /// An item's value on a stat, the way a forbid judges it: a piece in the material at normal quality, read as the
         /// order reads it. With <see cref="LimitMaterial.Best"/>, the best value any material gives for the forbid's
         /// direction: the lowest for an "at most" (<paramref name="forbidAbove"/>), the highest otherwise. False when the
@@ -162,7 +132,7 @@ namespace OptimalLoadouts.ApparelOrders
             {
                 return TryValueIn(def, stat, material.StuffFor(def), out value);
             }
-            // The Limits tab asks every frame, and trying every material is slow, so the answer is kept.
+            // The direction popup asks every frame, and trying every material is slow, so the answer is kept.
             if (!bestValues.TryGetValue((def, stat, forbidAbove), out float? best))
             {
                 foreach (ThingDef stuff in GenStuff.AllowedStuffsFor(def))
@@ -190,7 +160,7 @@ namespace OptimalLoadouts.ApparelOrders
                 catch (System.Exception e)
                 {
                     // An item no installed material fits, or a mod's stat worker that can't read it, is never caught.
-                    Log.WarningOnce($"[Optimal Loadouts] Couldn't read {stat.defName} on {def.defName}, so forbids leave it alone: {e.Message}",
+                    Log.WarningOnce($"[Optimal Loadouts] Couldn't read {stat.defName} on {def.defName}, so priorities that rule out leave it alone: {e.Message}",
                         ("OptimalLoadouts.ForbidValue" + def.defName + stat.defName).GetHashCode());
                     known = null;
                 }
@@ -205,7 +175,6 @@ namespace OptimalLoadouts.ApparelOrders
         {
             values.Clear();
             bestValues.Clear();
-            ranges.Clear();
             apparel = null;
         }
     }

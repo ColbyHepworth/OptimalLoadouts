@@ -353,7 +353,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         /// <summary>
         /// The list's title, on a band like the layers' that sets it apart from the drawing above. While there are change
-        /// marks, a button on the right clears them.
+        /// marks, a button on the right clears them. While the outfit has pieces, a button makes the policy allow only them.
         /// </summary>
         private static void DrawOutfitBand(Rect band, PreviewSession session)
         {
@@ -372,10 +372,56 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 TooltipHandler.TipRegion(clear, "OL_Preview_ClearMarksTip".Translate());
                 inner.xMax = clear.x - UiStyle.Gap;
             }
+            if (session.Drawn.Count > 0)
+            {
+                inner.xMax = DrawAllowOnly(inner, band, session) - UiStyle.Gap;
+            }
             using (new TextBlock(GameFont.Small, TextAnchor.MiddleLeft))
             {
                 Widgets.Label(inner, "OL_Preview_OutfitHeader".Translate());
             }
+        }
+
+        /// <summary>
+        /// The button that makes the policy allow only the outfit as drawn, after the game's confirmation. Returns where it
+        /// starts, so the title stops short of it.
+        /// </summary>
+        private static float DrawAllowOnly(Rect inner, Rect band, PreviewSession session)
+        {
+            string label = "OL_Preview_AllowOnly".Translate();
+            float width;
+            using (new TextBlock(GameFont.Tiny))
+            {
+                width = Text.CalcSize(label).x + 2f * UiStyle.Gap;
+            }
+            Rect button = new Rect(inner.xMax - width, band.y + 2f, width, band.height - 4f);
+            using (new TextBlock(GameFont.Tiny))
+            {
+                if (Widgets.ButtonText(button, label))
+                {
+                    ConfirmAllowOnly(session);
+                }
+            }
+            TooltipHandler.TipRegion(button, "OL_Preview_AllowOnlyTip".Translate());
+            return button.x;
+        }
+
+        private static void ConfirmAllowOnly(PreviewSession session)
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            ApparelPolicy policy = session.Policy;
+            if (orders == null || policy == null)
+            {
+                return;
+            }
+            List<ThingDef> items = session.Drawn.Select(piece => piece.def).Distinct().ToList();
+            int unticking = orders.UntickedByAllowOnly(policy, items).Count;
+            string text = "OL_Preview_AllowOnlyConfirm".Translate(items.Count, policy.label, unticking, session.Pawn.LabelShort);
+            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(text, () =>
+            {
+                orders.AllowOnly(policy, items);
+                session.FilterChanged();
+            }, destructive: true));
         }
 
         private static void DrawOutfitRows(Rect rows, List<OutfitLayer> layers, PreviewSession session, OutfitChanges marks,

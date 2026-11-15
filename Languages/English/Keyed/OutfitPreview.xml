@@ -46,6 +46,9 @@
   <OL_Preview_ChangesTookOff>Your changes took off:</OL_Preview_ChangesTookOff>
   <OL_Preview_ClearMarks>Clear</OL_Preview_ClearMarks>
   <OL_Preview_ClearMarksTip>Clear the marks. Changes from here on are marked against the outfit as it is now.</OL_Preview_ClearMarksTip>
+  <OL_Preview_AllowOnly>Allow only this</OL_Preview_AllowOnly>
+  <OL_Preview_AllowOnlyTip>Make this policy allow only the items in this outfit, and its locked items. Everything else is unticked in Allowed items, so colonists on this policy wear these and nothing else, and leave a slot empty while its piece doesn't exist. Any material and quality of these items is allowed. Tick items again by hand to undo it.</OL_Preview_AllowOnlyTip>
+  <OL_Preview_AllowOnlyConfirm>Allow only the {0} items in {3}'s outfit in {1}?\n\n{2} items will be unticked in Allowed items, for every colonist on this policy. Locked items stay allowed. Check that colonists of another age or race on it can wear these.</OL_Preview_AllowOnlyConfirm>
 
   <!-- Trying a piece on from the slot browser -->
   <OL_Preview_TriedOnTip>Trying it on. Click its row in the slot list again to stop.</OL_Preview_TriedOnTip>

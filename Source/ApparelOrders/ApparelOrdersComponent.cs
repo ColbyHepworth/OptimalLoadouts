@@ -313,6 +313,49 @@ namespace OptimalLoadouts.ApparelOrders
         }
 
         /// <summary>
+        /// Makes the policy allow exactly these items and its locked items, unticking every other item its checklist lists.
+        /// What its priorities had unticked counts as unticked by hand from then on, so removing a line later doesn't tick
+        /// it back, and a line that rules out one of the items still unticks it.
+        /// </summary>
+        public void AllowOnly(ApparelPolicy policy, IEnumerable<ThingDef> items)
+        {
+            if (policy == null)
+            {
+                return;
+            }
+            HashSet<ThingDef> kept = KeptByAllowOnly(policy, items);
+            foreach (ThingDef def in ApparelForbids.Apparel)
+            {
+                policy.filter.SetAllow(def, kept.Contains(def));
+            }
+            // An item a mod files outside the apparel category isn't in that list, but is still worn when allowed.
+            foreach (ThingDef def in kept)
+            {
+                policy.filter.SetAllow(def, true);
+            }
+            OrderFor(policy)?.unticked.Clear();
+            ForbidsChanged();
+        }
+
+        /// <summary>The items <see cref="AllowOnly"/> would untick: every allowed item but these and the policy's locked items.</summary>
+        public List<ThingDef> UntickedByAllowOnly(ApparelPolicy policy, IEnumerable<ThingDef> items)
+        {
+            if (policy == null)
+            {
+                return new List<ThingDef>();
+            }
+            HashSet<ThingDef> kept = KeptByAllowOnly(policy, items);
+            return ApparelForbids.Apparel.Where(def => !kept.Contains(def) && policy.filter.Allows(def)).ToList();
+        }
+
+        private HashSet<ThingDef> KeptByAllowOnly(ApparelPolicy policy, IEnumerable<ThingDef> items)
+        {
+            var kept = new HashSet<ThingDef>(items);
+            kept.UnionWith(LockedItems(policy));
+            return kept;
+        }
+
+        /// <summary>
         /// Removes a line. Removing a locked item unlocks it, so a line that rules it out then unticks it; removing a line
         /// that rules pieces out ticks them back; and removing a line that replaced its base's brings the base's back.
         /// </summary>

@@ -20,7 +20,7 @@ namespace OptimalLoadouts.ApparelOrders
         private static List<ThingDef> apparel;
 
         /// <summary>Every item an apparel policy's checklist lists.</summary>
-        private static IReadOnlyList<ThingDef> Apparel
+        internal static IReadOnlyList<ThingDef> Apparel
         {
             get
             {

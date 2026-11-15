@@ -10,8 +10,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 {
     /// <summary>
     /// What the outfit preview and slot browser show in the current game: the colonist, where pieces come from, the
-    /// material, the predicted outfit with what your changes did, and the open slot. Kept while the game runs, not
-    /// saved, so the choices survive closing the window and a loaded game starts fresh.
+    /// predicted outfit with what your changes did, and the open slot. Kept while the game runs, not saved, so the
+    /// choices survive closing the window and a loaded game starts fresh. The material is the shown policy's, saved with it.
     /// </summary>
     public class PreviewSession
     {
@@ -161,7 +161,25 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         }
 
 
-        public MaterialChoice Material { get; set; } = MaterialChoice.BestForOrder;
+        /// <summary>
+        /// What imagined pieces are made of: the shown policy's material, which its cutoffs judge apparel in too. Setting it
+        /// changes the policy's.
+        /// </summary>
+        public MaterialChoice Material
+        {
+            get
+            {
+                ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+                return MaterialChoice.For(orders == null || Policy == null ? LimitMaterial.Best : orders.LimitMaterialOf(Policy));
+            }
+            set
+            {
+                if (Policy != null)
+                {
+                    ApparelOrdersComponent.Current?.SetLimitMaterial(Policy, value.Limit);
+                }
+            }
+        }
 
         public Rot4 Rotation { get; set; } = Rot4.South;
 

@@ -142,22 +142,19 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             DrawFilters(new Rect(area.x, y, area.width, UiStyle.RowHeight), session);
             y += UiStyle.RowHeight;
-            if (!session.InStorage)
+            Rect button = new Rect(area.x, y, area.width, UiStyle.RowHeight);
+            if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(session.Material.Label).ToString().Truncate(button.width)))
             {
-                Rect button = new Rect(area.x, y, area.width, UiStyle.RowHeight);
-                if (Widgets.ButtonText(button, "OL_Preview_Material".Translate(session.Material.Label).ToString().Truncate(button.width)))
+                var general = new List<(string, Action)>
                 {
-                    var general = new List<(string, Action)>
-                    {
-                        (MaterialChoice.BestForOrder.Label, () => session.Material = MaterialChoice.BestForOrder),
-                        (MaterialChoice.Typical.Label, () => session.Material = MaterialChoice.Typical),
-                    };
-                    Find.WindowStack.Add(new Dialog_PickMaterial("OL_MaterialPicker_Title".Translate(), general,
-                        stuff => session.Material = MaterialChoice.Specific(stuff)));
-                }
-                TooltipHandler.TipRegion(button, "OL_Preview_MaterialTip".Translate());
-                y += UiStyle.RowHeight;
+                    (MaterialChoice.BestForOrder.Label, () => session.Material = MaterialChoice.BestForOrder),
+                    (MaterialChoice.Typical.Label, () => session.Material = MaterialChoice.Typical),
+                };
+                Find.WindowStack.Add(new Dialog_PickMaterial("OL_MaterialPicker_Title".Translate(), general,
+                    stuff => session.Material = MaterialChoice.Specific(stuff)));
             }
+            TooltipHandler.TipRegion(button, "OL_Preview_MaterialTip".Translate());
+            y += UiStyle.RowHeight;
             y += UiStyle.Gap;
             DrawPortrait(new Rect(area.x, y, area.width, PortraitSize), session);
             y += PortraitSize + UiStyle.Gap;

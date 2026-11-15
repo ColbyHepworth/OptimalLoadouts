@@ -20,7 +20,7 @@
   <OL_Preview_FilterOffInStorage>Off while In storage is ticked: stored items are worn whatever's researched.</OL_Preview_FilterOffInStorage>
   <OL_Preview_AsIfOnPolicy>Shown as if this colonist were on this policy.</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
-  <OL_Preview_MaterialTip>What the pieces are imagined in. A piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (when picking from what's craftable), uses the best material for this policy's priorities instead.</OL_Preview_MaterialTip>
+  <OL_Preview_MaterialTip>This policy's material. Pieces are imagined in it, and priorities that rule pieces out judge them in it. With the best material, an item passes if any material it can be made of passes.\n\nA piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (when picking from what's craftable) is imagined in the best material for this policy's priorities instead. Pieces in storage keep their own material.</OL_Preview_MaterialTip>
   <OL_Preview_MaterialBest>Best for its priorities</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 
@@ -138,7 +138,7 @@
   <OL_Stats_PriorityHeaderTip>A number is the stat's place in this policy's priorities, grey when it comes from the policy this one builds on. + adds a stat as the last priority, and − removes it.</OL_Stats_PriorityHeaderTip>
 
   <!-- Material picker for imagined pieces -->
-  <OL_MaterialPicker_Title>Imagine pieces in</OL_MaterialPicker_Title>
+  <OL_MaterialPicker_Title>This policy's material</OL_MaterialPicker_Title>
   <OL_MaterialPicker_NoMatches>No material matches.</OL_MaterialPicker_NoMatches>
 
 </LanguageData>

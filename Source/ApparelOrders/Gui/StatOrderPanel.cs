@@ -11,9 +11,9 @@ using Verse.Sound;
 namespace OptimalLoadouts.ApparelOrders.Gui
 {
     /// <summary>
-    /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, the
-    /// material its cutoffs are judged in, its own lines to edit (any of which can also rule pieces out), the lines it
-    /// gets from its base, and a button to add a priority.
+    /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, its
+    /// own lines to edit (any of which can also rule pieces out), the lines it gets from its base, and a button to add a
+    /// priority.
     /// </summary>
     public static class StatOrderPanel
     {
@@ -33,8 +33,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             float y = rect.y;
             BasePicker.Draw(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
-            y += UiStyle.RowHeight + UiStyle.Gap / 2f;
-            DrawMaterial(new Rect(rect.x, y, rect.width, UiStyle.RowHeight), orders, policy);
             y += UiStyle.RowHeight + UiStyle.Gap / 2f;
 
             string noteText = "OL_Editor_Note".Translate();
@@ -68,7 +66,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 using (new TextBlock(TextAnchor.MiddleLeft))
                 {
-                    UiStyle.Note(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), "OL_Editor_Empty".Translate());
+                    string empty = orders.OnlyWhatHelps(policy) ? "OL_Editor_EmptyNothingNew" : "OL_Editor_Empty";
+                    UiStyle.Note(new Rect(0f, y, viewRect.width, UiStyle.RowHeight), empty.Translate());
                 }
                 y += UiStyle.RowHeight;
             }
@@ -128,23 +127,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             DrawOnlyWhatHelps(new Rect(AddButtonWidth + UiStyle.Gap, y, viewRect.width - AddButtonWidth - UiStyle.Gap, UiStyle.RowHeight),
                 orders, policy);
             Widgets.EndScrollView();
-        }
-
-        /// <summary>Which material the policy's cutoffs judge apparel in, as a button opening the material list.</summary>
-        private static void DrawMaterial(Rect row, ApparelOrdersComponent orders, ApparelPolicy policy)
-        {
-            string label = "OL_Editor_Material".Translate(OrderLineText.MaterialLabel(orders.LimitMaterialOf(policy)));
-            if (Widgets.ButtonText(row, label.Truncate(row.width)))
-            {
-                var general = new List<(string, Action)>
-                {
-                    ("OL_Editor_MaterialUsual".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Usual)),
-                    ("OL_Editor_MaterialBest".Translate(), () => orders.SetLimitMaterial(policy, LimitMaterial.Best)),
-                };
-                Find.WindowStack.Add(new Dialog_PickMaterial("OL_Editor_MaterialTitle".Translate(), general,
-                    stuff => orders.SetLimitMaterial(policy, LimitMaterial.Of(stuff))));
-            }
-            TooltipHandler.TipRegion(row, "OL_Editor_MaterialTip".Translate());
         }
 
         /// <summary>The "only add pieces that help" box with its words right after it, so the two read as one. Either toggles it.</summary>

@@ -98,13 +98,13 @@ namespace OptimalLoadouts.ApparelOrders
 
         /// <summary>
         /// The items a forbid catches in the policy, for its count and tooltip: all but its locked items, judged in the
-        /// policy's material. With no policy, nothing is locked and the usual material is used.
+        /// policy's material. With no policy, nothing is locked and the best material is used.
         /// </summary>
         public static List<ThingDef> Caught(ApparelPolicy policy, ApparelForbid forbid)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
             var locked = new HashSet<ThingDef>(orders?.LockedItems(policy) ?? Enumerable.Empty<ThingDef>());
-            LimitMaterial material = orders?.LimitMaterialOf(policy) ?? LimitMaterial.Usual;
+            LimitMaterial material = orders?.LimitMaterialOf(policy) ?? LimitMaterial.Best;
             return Apparel.Where(def => !locked.Contains(def) && forbid.Forbids(def, material)).ToList();
         }
 

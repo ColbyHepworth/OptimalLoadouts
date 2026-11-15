@@ -21,7 +21,7 @@
   <OL_Editor_CoversTip>A piece covers what its info card lists under "Covers". A helmet that covers the full head covers the eyes too, and a cowboy hat covers the full head, since the head is one part. To get a helmet over a hat, pick the eyes, or armor on a line below.</OL_Editor_CoversTip>
   <OL_Editor_CoverageDirectionTip>Click to choose: required or not allowed.</OL_Editor_CoverageDirectionTip>
   <OL_Editor_OnlyWhatHelps>Only add pieces that help</OL_Editor_OnlyWhatHelps>
-  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities. They still cover their torso and legs, and add warm clothing (1 °C of insulation or more) while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. It does nothing until the policy has a priority, and a body part that's not allowed doesn't count as one. A required body part does: a piece that covers it while it's bare is put on.</OL_Editor_OnlyWhatHelpsTip>
+  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities, so with no priorities they put nothing new on. With priorities they still cover their torso and legs, and add warm clothing (1 °C of insulation or more) while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. A required body part counts as a priority: a piece that covers it while it's bare is put on.</OL_Editor_OnlyWhatHelpsTip>
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
   <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>
@@ -50,13 +50,8 @@
   <OL_Editor_LocksFirst>Locked items stay above the stats.</OL_Editor_LocksFirst>
   <OL_Lock_KeptAllowed>{0} is locked, so it stays allowed. Unlock it first.</OL_Lock_KeptAllowed>
   <OL_Editor_Empty>No priorities yet. Pawns pick clothes the usual way.</OL_Editor_Empty>
+  <OL_Editor_EmptyNothingNew>No priorities yet. Pawns put nothing new on.</OL_Editor_EmptyNothingNew>
 
-  <!-- The material cutoffs judge apparel in, under "Builds on" -->
-  <OL_Editor_Material>Judged in: {0}</OL_Editor_Material>
-  <OL_Editor_MaterialTip>The material this policy's cutoffs judge apparel in, for priorities that rule pieces out. The usual material is the game's default for each item. With the best material, an item passes a cutoff if any material it can be made of passes. A specific material judges items that can be made of it in that material and the rest in their usual one. Items not made of a material are judged as they are.</OL_Editor_MaterialTip>
-  <OL_Editor_MaterialTitle>Judge cutoffs in</OL_Editor_MaterialTitle>
-  <OL_Editor_MaterialUsual>Usual material</OL_Editor_MaterialUsual>
-  <OL_Editor_MaterialBest>Best material for each cutoff</OL_Editor_MaterialBest>
 
   <!-- A priority line that rules pieces out -->
   <OL_Rule_AtLeast>At least {0}</OL_Rule_AtLeast>

@@ -30,14 +30,20 @@ namespace OptimalLoadouts.ApparelOrders.Patches
                 }
                 ApparelPolicy policy = PreviewPolicy.PolicyOf(pawn);
                 IReadOnlyList<OrderLine> lines = orders.EffectiveLines(policy);
-                if (lines.Count == 0)
+                bool onlyWhatHelps = orders.OnlyWhatHelps(policy);
+                if (lines.Count == 0 && !onlyWhatHelps)
                 {
                     return;
                 }
                 OrderVerdict verdict = ApparelComparison.Compare(pawn, ap, lines);
-                __result = orders.OnlyWhatHelps(policy) && ExtraPieces.Skipped(pawn, ap, verdict, lines)
-                    ? ApparelScoreBands.Worse
-                    : ApparelScoreBands.ScoreGain(verdict, lines.Count, __result);
+                if (onlyWhatHelps && ExtraPieces.Skipped(pawn, ap, verdict, lines))
+                {
+                    __result = ApparelScoreBands.Worse;
+                }
+                else if (lines.Count > 0)
+                {
+                    __result = ApparelScoreBands.ScoreGain(verdict, lines.Count, __result);
+                }
             }
             catch (Exception e)
             {

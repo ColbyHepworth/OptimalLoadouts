@@ -22,12 +22,12 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>The material the policy's cutoffs judge in, or null for the usual one (or the best, with <see cref="limitBest"/>).</summary>
         public ThingDef limitStuff;
 
-        public bool limitBest;
+        public bool limitBest = true;
 
         /// <summary>Whether pawns on the policy add a piece to an empty slot only when it helps the priorities.</summary>
         public bool onlyWhatHelps;
 
-        /// <summary>Which material the policy's cutoffs judge apparel in.</summary>
+        /// <summary>Which material the policy's cutoffs judge apparel in and its preview imagines pieces in.</summary>
         public LimitMaterial LimitMaterial
         {
             get => limitBest ? LimitMaterial.Best : LimitMaterial.Of(limitStuff);
@@ -45,7 +45,7 @@ namespace OptimalLoadouts.ApparelOrders
             Scribe_Collections.Look(ref lines, "lines", LookMode.Deep);
             Scribe_Collections.Look(ref unticked, "unticked", LookMode.Def);
             Scribe_Defs.Look(ref limitStuff, "limitStuff");
-            Scribe_Values.Look(ref limitBest, "limitBest", false);
+            Scribe_Values.Look(ref limitBest, "limitBest", true);
             Scribe_Values.Look(ref onlyWhatHelps, "onlyWhatHelps", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {

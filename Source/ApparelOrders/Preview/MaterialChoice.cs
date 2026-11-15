@@ -39,7 +39,20 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return choice;
         }
 
+        /// <summary>The choice that imagines pieces in the material a policy's cutoffs judge in.</summary>
+        public static MaterialChoice For(LimitMaterial material)
+        {
+            if (material.IsBest)
+            {
+                return BestForOrder;
+            }
+            return material.Stuff != null ? Specific(material.Stuff) : Typical;
+        }
+
         public abstract string Label { get; }
+
+        /// <summary>The material a policy's cutoffs judge in under this choice.</summary>
+        public abstract LimitMaterial Limit { get; }
 
         /// <summary>Every material the piece can be made of, in the order to try them.</summary>
         public abstract List<ThingDef> InOrderOfPreference(ThingDef def, IReadOnlyList<OrderLine> lines);
@@ -95,6 +108,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         {
             public override string Label => "OL_Preview_MaterialBest".Translate();
 
+            public override LimitMaterial Limit => LimitMaterial.Best;
+
             public override List<ThingDef> InOrderOfPreference(ThingDef def, IReadOnlyList<OrderLine> lines)
             {
                 return RankedForOrder(def, lines);
@@ -104,6 +119,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         private sealed class Default : MaterialChoice
         {
             public override string Label => "OL_Preview_MaterialTypical".Translate();
+
+            public override LimitMaterial Limit => LimitMaterial.Usual;
 
             public override List<ThingDef> InOrderOfPreference(ThingDef def, IReadOnlyList<OrderLine> lines)
             {
@@ -121,6 +138,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             }
 
             public override string Label => stuff.LabelCap;
+
+            public override LimitMaterial Limit => LimitMaterial.Of(stuff);
 
             public override List<ThingDef> InOrderOfPreference(ThingDef def, IReadOnlyList<OrderLine> lines)
             {

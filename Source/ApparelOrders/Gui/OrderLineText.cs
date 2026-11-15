@@ -28,16 +28,6 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             return "OL_Layer_Count".Translate(layers.Count).Resolve();
         }
 
-        /// <summary>The material a policy's cutoffs judge apparel in: "Usual material", "Best material for each cutoff" or the material's name.</summary>
-        public static string MaterialLabel(LimitMaterial material)
-        {
-            if (material.IsBest)
-            {
-                return "OL_Editor_MaterialBest".Translate();
-            }
-            return material.Stuff != null ? material.Stuff.LabelCap.Resolve() : "OL_Editor_MaterialUsual".Translate().Resolve();
-        }
-
         /// <summary>A layer button's tooltip: what it does, then the layers picked when there are any.</summary>
         public static string LayerTip(string what, List<ApparelLayerDef> layers)
         {

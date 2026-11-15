@@ -77,7 +77,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         private static string WhySkippedAsExtra(Pawn pawn, ApparelPolicy policy, Apparel piece, IReadOnlyList<OrderLine> lines, float score)
         {
             ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
-            if (score >= OutfitPredictor.MinimumGain || lines.Count == 0 || orders == null || !orders.OnlyWhatHelps(policy))
+            if (score >= OutfitPredictor.MinimumGain || orders == null || !orders.OnlyWhatHelps(policy))
             {
                 return null;
             }

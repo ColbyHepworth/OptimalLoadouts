@@ -19,7 +19,8 @@ namespace OptimalLoadouts.ApparelOrders
 
     /// <summary>
     /// The rule behind a policy's "only add pieces that help": a piece for an empty slot that gains on no priority line is
-    /// skipped, unless the colonist needs it for cover or warmth. Swaps of one piece for another stay with the game.
+    /// skipped, unless the colonist needs it for cover or warmth. With no priorities nothing helps, so nothing is added.
+    /// Swaps of one piece for another stay with the game.
     /// </summary>
     public static class ExtraPieces
     {
@@ -32,12 +33,12 @@ namespace OptimalLoadouts.ApparelOrders
         private const float MinimumWarmth = 1f;
 
         /// <summary>
-        /// Whether the check skips this piece under "only add pieces that help": the policy has a line a piece can gain
-        /// on, the piece ties on every line, replaces nothing the pawn wears, and isn't needed for cover or warmth.
+        /// Whether the check skips this piece under "only add pieces that help": it ties on every line and replaces nothing
+        /// the pawn wears, and the policy has no priority or the colonist doesn't need it for cover or warmth.
         /// </summary>
         public static bool Skipped(Pawn pawn, Apparel candidate, OrderVerdict verdict, IReadOnlyList<OrderLine> lines)
         {
-            return IsExtra(pawn, candidate, verdict, lines) && NeededFor(pawn, candidate) == ExtraNeed.None;
+            return IsExtra(pawn, candidate, verdict) && (!HasPriority(lines) || NeededFor(pawn, candidate) == ExtraNeed.None);
         }
 
         /// <summary>
@@ -46,20 +47,14 @@ namespace OptimalLoadouts.ApparelOrders
         /// </summary>
         public static ExtraNeed LetThroughFor(Pawn pawn, Apparel candidate, OrderVerdict verdict, IReadOnlyList<OrderLine> lines)
         {
-            return IsExtra(pawn, candidate, verdict, lines) ? NeededFor(pawn, candidate) : ExtraNeed.None;
-        }
-
-        /// <summary>A piece for an empty slot that ties on every line, under a policy with a line a piece can gain on.</summary>
-        private static bool IsExtra(Pawn pawn, Apparel candidate, OrderVerdict verdict, IReadOnlyList<OrderLine> lines)
-        {
-            return verdict.IsTie && HasLineToGainOn(lines) && !ApparelComparison.ReplacesAny(pawn, candidate);
+            return IsExtra(pawn, candidate, verdict) && HasPriority(lines) ? NeededFor(pawn, candidate) : ExtraNeed.None;
         }
 
         /// <summary>
-        /// Whether any line ranks pieces. A Not allowed body part line only rules pieces out, so with nothing else every
-        /// piece ties and the setting would add no hats or armor.
+        /// Whether any line ranks pieces. A Not allowed body part line only rules pieces out, so with nothing else no piece
+        /// can help.
         /// </summary>
-        private static bool HasLineToGainOn(IReadOnlyList<OrderLine> lines)
+        private static bool HasPriority(IReadOnlyList<OrderLine> lines)
         {
             for (int i = 0; i < lines.Count; i++)
             {
@@ -69,6 +64,12 @@ namespace OptimalLoadouts.ApparelOrders
                 }
             }
             return false;
+        }
+
+        /// <summary>A piece for an empty slot that ties on every line.</summary>
+        private static bool IsExtra(Pawn pawn, Apparel candidate, OrderVerdict verdict)
+        {
+            return verdict.IsTie && !ApparelComparison.ReplacesAny(pawn, candidate);
         }
 
         /// <summary>

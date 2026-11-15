@@ -458,13 +458,13 @@ namespace OptimalLoadouts.ApparelOrders
             LineChanged(order.lines[index]);
         }
 
-        /// <summary>The material the policy's cutoffs judge apparel in, its base's included. Usual when it has none set.</summary>
+        /// <summary>The material the policy's cutoffs judge apparel in and its preview imagines pieces in. Best when it has none set.</summary>
         public LimitMaterial LimitMaterialOf(ApparelPolicy policy)
         {
-            return OrderFor(policy)?.LimitMaterial ?? LimitMaterial.Usual;
+            return OrderFor(policy)?.LimitMaterial ?? LimitMaterial.Best;
         }
 
-        /// <summary>Sets the material the policy's cutoffs judge apparel in, and applies them again.</summary>
+        /// <summary>Sets the policy's material, and applies its cutoffs again.</summary>
         public void SetLimitMaterial(ApparelPolicy policy, LimitMaterial material)
         {
             if (policy == null || material == null)

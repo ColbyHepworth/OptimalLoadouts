@@ -116,7 +116,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines, List<Apparel> partners)
         {
-            return lines.Count == 0 ? OrderVerdict.Tie : ApparelComparison.Compare(pawn, piece, lines, partners);
+            return ApparelComparison.Compare(pawn, piece, lines, partners);
         }
 
         /// <summary>A worn piece the check takes off first: not allowed, not locked or forced, and not keeping them alive in vacuum.</summary>

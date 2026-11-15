@@ -14,13 +14,13 @@
   <OL_Preview_CanMakeNow>Craftable</OL_Preview_CanMakeNow>
   <OL_Preview_InStorage>In storage</OL_Preview_InStorage>
   <OL_Preview_FilterCount>{0} pieces this colonist could wear.</OL_Preview_FilterCount>
-  <OL_Preview_FromResearched>Only what a recipe the colony has unlocked makes, at a researched bench, whether or not the bench is built or the material is in stock. With nothing ticked, the preview picks from everything this policy allows, made new.</OL_Preview_FromResearched>
-  <OL_Preview_FromCraftable>Only what the colony can make now: researched, with the bench built and the material in stock. Ticks Researched too.</OL_Preview_FromCraftable>
-  <OL_Preview_FromStorage>The real items in storage now, played out the way the colonist will from what they wear. Researched and Craftable don't apply to them.</OL_Preview_FromStorage>
-  <OL_Preview_FilterOffInStorage>Off while In storage is ticked: stored items are worn whatever's researched.</OL_Preview_FilterOffInStorage>
+  <OL_Preview_FromResearched>Only what the colony has researched.</OL_Preview_FromResearched>
+  <OL_Preview_FromCraftable>Only what the colony can make right now. Ticks Researched too.</OL_Preview_FromCraftable>
+  <OL_Preview_FromStorage>Only real items in storage.</OL_Preview_FromStorage>
+  <OL_Preview_FilterOffInStorage>Off while In storage is ticked.</OL_Preview_FilterOffInStorage>
   <OL_Preview_AsIfOnPolicy>Shown as if this colonist were on this policy.</OL_Preview_AsIfOnPolicy>
   <OL_Preview_Material>Material: {0}</OL_Preview_Material>
-  <OL_Preview_MaterialTip>This policy's material. Pieces are imagined in it, and priorities that rule pieces out judge them in it. With the best material, an item passes if any material it can be made of passes.\n\nA piece that can't be made of this material, that the policy doesn't allow in it, or that the colony can't afford in it (when picking from what's craftable) is imagined in the best material for this policy's priorities instead. Pieces in storage keep their own material.</OL_Preview_MaterialTip>
+  <OL_Preview_MaterialTip>This policy's material. Pieces are imagined and judged in it.</OL_Preview_MaterialTip>
   <OL_Preview_MaterialBest>Best for its priorities</OL_Preview_MaterialBest>
   <OL_Preview_MaterialTypical>Typical</OL_Preview_MaterialTypical>
 
@@ -39,9 +39,9 @@
   <OL_Preview_NotAllowed>Not allowed by this policy.</OL_Preview_NotAllowed>
   <OL_Preview_ReplacedBy>Replaced by {0}.</OL_Preview_ReplacedBy>
   <OL_Preview_LayerNothing>nothing</OL_Preview_LayerNothing>
-  <OL_Preview_LayerEmptyTip>Nothing is worn on this layer. Click to see what could go here.</OL_Preview_LayerEmptyTip>
+  <OL_Preview_LayerEmptyTip>Nothing worn here. Click to see options.</OL_Preview_LayerEmptyTip>
   <OL_Preview_LayerTip>Click to see everything that could go on this layer.</OL_Preview_LayerTip>
-  <OL_Preview_LayerCoveredTip>{0} is worn on this layer too. Click to see everything that could go on it.</OL_Preview_LayerCoveredTip>
+  <OL_Preview_LayerCoveredTip>{0} is worn on this layer too. Click to see options.</OL_Preview_LayerCoveredTip>
 
   <!-- What your changes to the outfit did, since you started on it or cleared the marks -->
   <OL_Preview_New>New with your changes.</OL_Preview_New>
@@ -49,17 +49,17 @@
   <OL_Preview_ChangesTookOff>Your changes took off:</OL_Preview_ChangesTookOff>
   <OL_Preview_ChangesPutOn>Your changes put on the pieces marked green.</OL_Preview_ChangesPutOn>
   <OL_Preview_ClearMarks>Clear</OL_Preview_ClearMarks>
-  <OL_Preview_ClearMarksTip>Clear the marks. Changes from here on are marked against the outfit as it is now.</OL_Preview_ClearMarksTip>
+  <OL_Preview_ClearMarksTip>Clear the change marks.</OL_Preview_ClearMarksTip>
   <OL_Preview_Reset>Reset</OL_Preview_Reset>
-  <OL_Preview_ResetTip>Take this policy back to what its priorities pick: remove its locks and tick every item in Allowed items. Priorities that rule pieces out still untick what they catch. The priorities, the material and the policy's settings stay.</OL_Preview_ResetTip>
-  <OL_Preview_ResetConfirm>Reset {0} to what its priorities pick?\n\n{1} locks will be removed and {2} items ticked in Allowed items, for every colonist on this policy. Policies built on it lose its locks too.</OL_Preview_ResetConfirm>
-  <OL_Preview_ResetNothing>{0} has no locks, and every item its priorities allow is ticked.</OL_Preview_ResetNothing>
+  <OL_Preview_ResetTip>Remove this policy's locks and allow everything its priorities don't rule out.</OL_Preview_ResetTip>
+  <OL_Preview_ResetConfirm>Reset {0}?\n\nRemoves {1} locks and allows {2} items. Policies built on it lose these locks too.</OL_Preview_ResetConfirm>
+  <OL_Preview_ResetNothing>Nothing to reset in {0}.</OL_Preview_ResetNothing>
   <OL_Preview_Remove>Remove: forbid it in this policy.</OL_Preview_Remove>
   <OL_Preview_RemoveLocked>Locked. Unlock it to remove it.</OL_Preview_RemoveLocked>
   <OL_Preview_GoneForbidden>Removed: {0} no longer allows it.</OL_Preview_GoneForbidden>
   <OL_Preview_AllowOnly>Allow only this</OL_Preview_AllowOnly>
-  <OL_Preview_AllowOnlyTip>Make this policy allow only the items in this outfit, and its locked items. Everything else is unticked in Allowed items, so colonists on this policy wear these and nothing else, and leave a slot empty while its piece doesn't exist. Any material and quality of these items is allowed. Tick items again by hand to undo it.</OL_Preview_AllowOnlyTip>
-  <OL_Preview_AllowOnlyConfirm>Allow only the {0} items in {3}'s outfit in {1}?\n\n{2} items will be unticked in Allowed items, for every colonist on this policy. Locked items stay allowed. Check that colonists of another age or race on it can wear these.</OL_Preview_AllowOnlyConfirm>
+  <OL_Preview_AllowOnlyTip>Allow only the items in this outfit, plus locked items.</OL_Preview_AllowOnlyTip>
+  <OL_Preview_AllowOnlyConfirm>Allow only these {0} items in {1}?\n\n{2} items will be forbidden for everyone on this policy. Children or other races on it may be left with nothing to wear.</OL_Preview_AllowOnlyConfirm>
 
   <!-- Trying a piece on from the slot browser -->
   <OL_Preview_TriedOnTip>Trying it on. Click its row in the slot list again to stop.</OL_Preview_TriedOnTip>
@@ -81,19 +81,19 @@
 
   <!-- Slot browser: every piece that could go in place of one -->
   <OL_Slot_ClickToOpen>Click to see what else could go here.</OL_Slot_ClickToOpen>
-  <OL_Slot_Hint>Click a piece or a layer in the outfit to see what could go there.</OL_Slot_Hint>
+  <OL_Slot_Hint>Click a piece or layer to see what could go there.</OL_Slot_Hint>
   <OL_Slot_Header>In place of {0} ({1})</OL_Slot_Header>
   <OL_Slot_HeaderLayer>{0}: nothing worn ({1})</OL_Slot_HeaderLayer>
   <OL_Slot_HeaderLayerWorn>{0}: {1} ({2})</OL_Slot_HeaderLayerWorn>
   <OL_Slot_Back>Back to the outfit</OL_Slot_Back>
   <OL_Slot_RankHeader>#</OL_Slot_RankHeader>
-  <OL_Slot_RankTip>The order the colonist would choose these in, 1 being their pick. Click to sort by it.</OL_Slot_RankTip>
-  <OL_Slot_SortHint>Click to sort by this column, highest first, then lowest first, then back to the colonist's choice. Right-click goes the other way.</OL_Slot_SortHint>
+  <OL_Slot_RankTip>The colonist's order of choice. Click to sort.</OL_Slot_RankTip>
+  <OL_Slot_SortHint>Click to sort. Right-click sorts the other way.</OL_Slot_SortHint>
   <OL_Slot_AddColumn>Add a stat as a column.</OL_Slot_AddColumn>
   <OL_Slot_AddColumnTitle>Add a column</OL_Slot_AddColumnTitle>
   <OL_Slot_RemoveColumn>Remove this column.</OL_Slot_RemoveColumn>
   <OL_Slot_AllowAllTip>Allow every item listed in this policy.</OL_Slot_AllowAllTip>
-  <OL_Slot_ClearAllTip>Forbid every item listed in this policy. Locked items stay allowed.</OL_Slot_ClearAllTip>
+  <OL_Slot_ClearAllTip>Forbid everything listed. Locked items stay.</OL_Slot_ClearAllTip>
   <OL_Slot_IsPick>The colonist's pick for this slot.</OL_Slot_IsPick>
   <OL_Slot_NoValue>–</OL_Slot_NoValue>
   <OL_Slot_RuledOut>Ruled out by a priority: {0}.</OL_Slot_RuledOut>
@@ -106,21 +106,21 @@
   <OL_Slot_MorePriorities>+{0}</OL_Slot_MorePriorities>
   <OL_Slot_None>none</OL_Slot_None>
   <OL_Slot_AlsoGives>Also gives:</OL_Slot_AlsoGives>
-  <OL_Slot_PieceNotAllowed>This policy allows the item, but not this piece (its quality, condition or another filter).</OL_Slot_PieceNotAllowed>
-  <OL_Slot_CantReach>The colonist can't reach it, or its outfit stand is switched off.</OL_Slot_CantReach>
+  <OL_Slot_PieceNotAllowed>This policy doesn't allow this piece.</OL_Slot_PieceNotAllowed>
+  <OL_Slot_CantReach>Out of reach, or its outfit stand is off.</OL_Slot_CantReach>
   <OL_Slot_WontWearLowScore>Scores too low to be put on.</OL_Slot_WontWearLowScore>
-  <OL_Slot_WontWearExtra>It adds nothing for this policy's priorities, and this policy only adds pieces that help.</OL_Slot_WontWearExtra>
+  <OL_Slot_WontWearExtra>Helps no priority.</OL_Slot_WontWearExtra>
   <OL_Slot_WontWearPawn>This colonist can't wear it.</OL_Slot_WontWearPawn>
   <OL_Slot_WontWearBlocksVision>The game never puts on apparel that blocks vision by itself.</OL_Slot_WontWearBlocksVision>
   <OL_Slot_WontWearSlaves>The game only puts slave apparel on slaves.</OL_Slot_WontWearSlaves>
   <OL_Slot_WontWearMechanitors>The game only puts mechanitor apparel on mechanitors.</OL_Slot_WontWearMechanitors>
   <OL_Slot_WontWearModRule>The game or another mod rules it out for this colonist.</OL_Slot_WontWearModRule>
-  <OL_Slot_WontWearCEShield>Combat Extended only lets a colonist use a shield with a one-handed weapon or none.</OL_Slot_WontWearCEShield>
+  <OL_Slot_WontWearCEShield>CE allows a shield only with a one-handed weapon or none.</OL_Slot_WontWearCEShield>
   <OL_Slot_LockWontWear>{0} Locking it won't change what {1} wears.</OL_Slot_LockWontWear>
   <OL_Slot_Lock>Lock: always wear this, and keep it allowed.</OL_Slot_Lock>
   <OL_Slot_Unlock>Locked. Click to unlock.</OL_Slot_Unlock>
-  <OL_Slot_AllowedCheckbox>Whether this policy allows the item, in any material and quality. Untick to forbid it.</OL_Slot_AllowedCheckbox>
-  <OL_Slot_LockedInBase>Locked in {0}, the policy this one builds on. Unlock it there.</OL_Slot_LockedInBase>
+  <OL_Slot_AllowedCheckbox>Tick to allow in this policy, untick to forbid.</OL_Slot_AllowedCheckbox>
+  <OL_Slot_LockedInBase>Locked in {0}. Unlock it there.</OL_Slot_LockedInBase>
   <OL_Slot_IsLocked>Locked.</OL_Slot_IsLocked>
   <OL_Slot_LockedCheckbox>Locked, so it stays allowed. Unlock it to forbid it.</OL_Slot_LockedCheckbox>
   <OL_Slot_ClickToTry>Click to try it on.</OL_Slot_ClickToTry>
@@ -129,11 +129,11 @@
 
   <!-- A piece's stats beside or under the slot browser -->
   <OL_Stats_NoPiece>Click a piece to see its stats.</OL_Stats_NoPiece>
-  <OL_Stats_SortHint>Click to sort the list by this, highest first, then lowest first, then back to the colonist's choice.</OL_Stats_SortHint>
+  <OL_Stats_SortHint>Click to sort the list by this.</OL_Stats_SortHint>
   <OL_Stats_AddPriority>Add this stat as a priority of this policy.</OL_Stats_AddPriority>
   <OL_Stats_RemovePriority>Remove this priority from this policy.</OL_Stats_RemovePriority>
   <OL_Stats_PriorityHeader>Priority</OL_Stats_PriorityHeader>
-  <OL_Stats_PriorityHeaderTip>A number is the stat's place in this policy's priorities, grey when it comes from the policy this one builds on. + adds a stat as the last priority, and − removes it.</OL_Stats_PriorityHeaderTip>
+  <OL_Stats_PriorityHeaderTip>The stat's place in the priorities. + adds it, − removes it.</OL_Stats_PriorityHeaderTip>
 
   <!-- Material picker for imagined pieces -->
   <OL_MaterialPicker_Title>This policy's material</OL_MaterialPicker_Title>

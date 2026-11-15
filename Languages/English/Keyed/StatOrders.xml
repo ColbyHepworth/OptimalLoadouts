@@ -10,26 +10,26 @@
   <OL_Policy_AllowedItemsTab>Allowed items</OL_Policy_AllowedItemsTab>
 
   <!-- Stat order editor, the Priorities tab -->
-  <OL_Editor_Note>Pawns wear the best allowed piece, judged stat by stat from the top.</OL_Editor_Note>
-  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. A line can also rule pieces out, which unticks them in Allowed items. Lock items in the slot browser to keep them over the stats. What's allowed by hand is set on the Allowed items tab.</OL_Editor_Help>
+  <OL_Editor_Note>Pawns wear the best allowed piece, top line first.</OL_Editor_Note>
+  <OL_Editor_Help>Pawns compare clothes on the first line, then the next. Lines can also rule pieces out.</OL_Editor_Help>
   <OL_Editor_Base>Builds on:</OL_Editor_Base>
   <OL_Editor_NoBase>None</OL_Editor_NoBase>
-  <OL_Editor_BaseTip>Another policy this one builds on. Its locked items and priorities apply here too, under this policy's own, and so does what its priorities rule out. A line of this policy's own on the same stat replaces its base's. Other allowed items aren't shared.</OL_Editor_BaseTip>
+  <OL_Editor_BaseTip>Use another policy's priorities and locks under this one's.</OL_Editor_BaseTip>
   <OL_Editor_AddStat>Add priority</OL_Editor_AddStat>
   <OL_Editor_CoversPart>covers {0}</OL_Editor_CoversPart>
   <OL_Editor_LeavesFree>leaves {0} free</OL_Editor_LeavesFree>
-  <OL_Editor_CoversTip>A piece covers what its info card lists under "Covers". A helmet that covers the full head covers the eyes too, and a cowboy hat covers the full head, since the head is one part. To get a helmet over a hat, pick the eyes, or armor on a line below.</OL_Editor_CoversTip>
+  <OL_Editor_CoversTip>As the info card's "Covers" lists it. The head is one part, so a hat covers the full head.</OL_Editor_CoversTip>
   <OL_Editor_CoverageDirectionTip>Click to choose: required or not allowed.</OL_Editor_CoverageDirectionTip>
   <OL_Editor_OnlyWhatHelps>Only add pieces that help</OL_Editor_OnlyWhatHelps>
-  <OL_Editor_OnlyWhatHelpsTip>Colonists put on a piece for an empty slot only when it does better on one of these priorities, so with no priorities they put nothing new on. With priorities they still cover their torso and legs, and add warm clothing (1 °C of insulation or more) while what they wear leaves them short of warmth for the month. Swapping one piece for a better one is unchanged, and pieces already worn stay until something replaces them or they're forbidden.\n\nThis policy's own setting. Policies built on it don't take it. A required body part counts as a priority: a piece that covers it while it's bare is put on.</OL_Editor_OnlyWhatHelpsTip>
+  <OL_Editor_OnlyWhatHelpsTip>Only put on pieces that help a priority, plus cover and warmth. With no priorities, nothing new.</OL_Editor_OnlyWhatHelpsTip>
   <OL_Editor_LineNumber>{0}.</OL_Editor_LineNumber>
   <OL_Editor_FromBase>From {0}:</OL_Editor_FromBase>
   <OL_Editor_BaseLine>{0} ({1})</OL_Editor_BaseLine>
-  <OL_Editor_DirectionTip>Click to choose: higher or lower first, or at least or at most a value, which also rules out what's past it.</OL_Editor_DirectionTip>
+  <OL_Editor_DirectionTip>Higher or lower first, or at least / at most a value.</OL_Editor_DirectionTip>
   <OL_Order_HigherFrom>Higher, from {0}</OL_Order_HigherFrom>
   <OL_Order_LowerFrom>Lower, from {0}</OL_Order_LowerFrom>
   <OL_LineDirection_CountsFrom>Counts from</OL_LineDirection_CountsFrom>
-  <OL_CountsFrom_Tip>On this line, a piece with less than this counts as having none, so a token amount doesn't win the line and the next line decides. A penalty smaller than this counts as none too. Leave it empty to count every amount.</OL_CountsFrom_Tip>
+  <OL_CountsFrom_Tip>Amounts below this count as none.</OL_CountsFrom_Tip>
   <OL_CountsFrom_Highest>The most any apparel has is {0}.</OL_CountsFrom_Highest>
   <OL_CountsFrom_Count>{0} items count as none.</OL_CountsFrom_Count>
   <OL_CountsFrom_CountOne>1 item counts as none.</OL_CountsFrom_CountOne>
@@ -42,10 +42,10 @@
   <OL_Layer_Head>Head</OL_Layer_Head>
   <OL_Layer_Body>Body</OL_Layer_Body>
   <OL_LayerPicker_Title>Layers</OL_LayerPicker_Title>
-  <OL_LayerPicker_LastTip>It needs at least one layer. Tick another first, or tick All layers.</OL_LayerPicker_LastTip>
-  <OL_Layer_Tip>Which layers this line counts on. A piece only counts on it, and is only ruled out by it, when it's on one of them, and so does anything it would replace.</OL_Layer_Tip>
+  <OL_LayerPicker_LastTip>Keep at least one layer ticked.</OL_LayerPicker_LastTip>
+  <OL_Layer_Tip>The layers this line counts on.</OL_Layer_Tip>
   <OL_Editor_LockedItem>locked</OL_Editor_LockedItem>
-  <OL_Editor_LockedItemTip>Pawns wear {0} over anything not locked, in any material and quality, and it stays allowed. Lock or unlock items in the slot browser, or remove this line to unlock it. Click for its info card.</OL_Editor_LockedItemTip>
+  <OL_Editor_LockedItemTip>Preferred over anything not locked. Remove the line to unlock.</OL_Editor_LockedItemTip>
   <OL_Editor_BaseItemLine>{0} (locked in {1})</OL_Editor_BaseItemLine>
   <OL_Editor_LocksFirst>Locked items stay above the stats.</OL_Editor_LocksFirst>
   <OL_Lock_KeptAllowed>{0} is locked, so it stays allowed. Unlock it first.</OL_Lock_KeptAllowed>
@@ -57,13 +57,13 @@
   <OL_Rule_AtLeast>At least {0}</OL_Rule_AtLeast>
   <OL_Rule_AtMost>At most {0}</OL_Rule_AtMost>
   <OL_Rule_Required>Required</OL_Rule_Required>
-  <OL_Rule_RequiredTip>While nothing a colonist wears covers {0}, a piece that covers it wins this line, and a swap that would leave it bare loses. Once it's covered, the lines under this one pick the best cover. It's a priority like any other, so it only wins over the lines under it, and it can't cover {0} when no allowed piece that covers it is there.</OL_Rule_RequiredTip>
+  <OL_Rule_RequiredTip>Prefer pieces that cover {0} while it's bare.</OL_Rule_RequiredTip>
   <OL_Rule_NotAllowed>Not allowed</OL_Rule_NotAllowed>
-  <OL_Rule_NotAllowedTip>Pieces that cover {0} are unticked in Allowed items, so colonists take them off and never put them on. They tick back once nothing rules them out. Locked items stay allowed, and rank below pieces that leave {0} free.</OL_Rule_NotAllowedTip>
+  <OL_Rule_NotAllowedTip>Forbid pieces that cover {0}.</OL_Rule_NotAllowedTip>
   <OL_Rule_AtLeastChoice>At least</OL_Rule_AtLeastChoice>
   <OL_Rule_AtMostChoice>At most</OL_Rule_AtMostChoice>
-  <OL_Rule_ValueTip>Pieces past this are ruled out. The rest still rank by it, higher or lower first.</OL_Rule_ValueTip>
-  <OL_Rule_Tip>Ranks the same way as higher or lower first, and also rules pieces out. Pieces it rules out are unticked in Allowed items, so colonists take them off and never put them on, even when nothing better is there. They tick back once nothing rules them out. Items unticked by hand stay unticked, and locked items are never unticked. A policy built on this one follows it too.</OL_Rule_Tip>
+  <OL_Rule_ValueTip>Pieces past this are ruled out.</OL_Rule_ValueTip>
+  <OL_Rule_Tip>Ranks like higher or lower first, and forbids pieces past the value. Locked items are never forbidden.</OL_Rule_Tip>
   <OL_Rule_Count>{0} items ruled out.</OL_Rule_Count>
   <OL_Rule_CountOne>1 item ruled out.</OL_Rule_CountOne>
   <OL_Rule_AndMore>and {0} more</OL_Rule_AndMore>

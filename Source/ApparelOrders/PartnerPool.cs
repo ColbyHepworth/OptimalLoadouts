@@ -337,9 +337,11 @@ namespace OptimalLoadouts.ApparelOrders
             if (!values.TryGetValue(piece, out float[] onLines))
             {
                 onLines = new float[lines.Count];
+                BodyDef body = Pawn.RaceProps.body;
                 for (int i = 0; i < lines.Count; i++)
                 {
-                    onLines[i] = ApparelComparison.ValueOnLine(piece, lines[i]);
+                    // Its share of what the colonist ends up with, so gloves don't outrank a suit on armor.
+                    onLines[i] = OutfitTotals.ShareOf(body, piece, lines[i]);
                 }
                 values[piece] = onLines;
             }

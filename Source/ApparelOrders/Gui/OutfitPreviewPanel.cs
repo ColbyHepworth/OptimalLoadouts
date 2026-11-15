@@ -773,7 +773,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return "OL_Preview_WhyCoverage".Translate(OrderLineText.StatOnLayerCap(line));
             }
-            return "OL_Preview_WhyBetter".Translate(OrderLineText.StatOnLayer(line), Amount(line.stat, verdict.Delta));
+            return "OL_Preview_WhyBetter".Translate(AmountSubject(line), Amount(line.stat, verdict.Delta));
         }
 
         private static string ReasonRunnerUpLost(PredictedSwap swap, IReadOnlyList<OrderLine> lines, bool hasOrder)
@@ -804,7 +804,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return line.IsCoverage
                     ? "OL_Preview_RunnerUpWorseOn".Translate(name, onLine)
-                    : "OL_Preview_RunnerUpWorse".Translate(name, onLine, Amount(line.stat, runnerUp.Delta));
+                    : "OL_Preview_RunnerUpWorse".Translate(name, AmountSubject(line), Amount(line.stat, runnerUp.Delta));
             }
             if (runnerUp.DecidingLine == swap.Verdict.DecidingLine)
             {
@@ -845,6 +845,16 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             PredictedSwap swap = outfit.Swaps.FirstOrDefault(s => s.Replaced.Contains(piece));
             return swap == null ? null : "OL_Preview_ReplacedBy".Translate(swap.PutOn.LabelCap).ToString();
+        }
+
+        /// <summary>
+        /// What an amount on the line is of: the stat with its layers, "over the body" when it's totalled body part by body
+        /// part or by the body each piece covers, so the amount reads as an average over the body, not a piece's own value.
+        /// </summary>
+        private static string AmountSubject(OrderLine line)
+        {
+            string subject = OrderLineText.StatOnLayer(line);
+            return OutfitTotals.KindOf(line.stat) == StatTotal.Summed ? subject : "OL_Preview_OverBody".Translate(subject).Resolve();
         }
 
         private static string Amount(StatDef stat, float delta)

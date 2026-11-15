@@ -19,10 +19,34 @@ namespace OptimalLoadouts.ApparelOrders
         /// <summary>Gear bonuses come in steps of 0.01 or more, so anything smaller is a tie.</summary>
         private const float Epsilon = 0.0001f;
 
-        private static readonly List<Apparel> replaced = new List<Apparel>();
-        private static readonly List<Apparel> candidateSide = new List<Apparel>();
-        private static readonly List<Apparel> otherSide = new List<Apparel>();
-        private static readonly List<Apparel> rest = new List<Apparel>();
+        /// <summary>One comparison's working lists, reused, so the comparison doesn't make garbage for every piece scored.</summary>
+        private sealed class Frame
+        {
+            public readonly List<Apparel> Replaced = new List<Apparel>();
+            public readonly List<Apparel> CandidateSide = new List<Apparel>();
+            public readonly List<Apparel> OtherSide = new List<Apparel>();
+            public readonly List<Apparel> Rest = new List<Apparel>();
+
+            /// <summary>The body of the pawn being compared, for the totals worked out body part by body part.</summary>
+            public BodyDef Body;
+
+            /// <summary>What the pawn wears, for the totals worked out body part by body part.</summary>
+            public List<Apparel> Worn;
+        }
+
+        /// <summary>
+        /// A frame for each comparison under way. Choosing partners scores each one alone, which runs a comparison inside
+        /// the one choosing them, so each gets its own lists.
+        /// </summary>
+        private static readonly List<Frame> frames = new List<Frame>();
+
+        private static int depth;
+
+        private static Frame Current => frames[depth - 1];
+        private static List<Apparel> replaced => Current.Replaced;
+        private static List<Apparel> candidateSide => Current.CandidateSide;
+        private static List<Apparel> otherSide => Current.OtherSide;
+        private static List<Apparel> rest => Current.Rest;
 
         public static OrderVerdict Compare(Pawn pawn, Apparel candidate, IReadOnlyList<OrderLine> lines)
         {
@@ -35,6 +59,23 @@ namespace OptimalLoadouts.ApparelOrders
         /// </summary>
         public static OrderVerdict Compare(Pawn pawn, Apparel candidate, IReadOnlyList<OrderLine> lines, List<Apparel> partners)
         {
+            if (frames.Count == depth)
+            {
+                frames.Add(new Frame());
+            }
+            depth++;
+            try
+            {
+                return CompareInFrame(pawn, candidate, lines, partners);
+            }
+            finally
+            {
+                depth--;
+            }
+        }
+
+        private static OrderVerdict CompareInFrame(Pawn pawn, Apparel candidate, IReadOnlyList<OrderLine> lines, List<Apparel> partners)
+        {
             partners?.Clear();
             FindReplaced(pawn, candidate);
             if (GameApparelRules.Decides(pawn, candidate, replaced))
@@ -42,6 +83,8 @@ namespace OptimalLoadouts.ApparelOrders
                 return OrderVerdict.LeftToGame;
             }
             FindRest(pawn, candidate);
+            Current.Body = pawn.RaceProps.body;
+            Current.Worn = pawn.apparel.WornApparel;
             candidateSide.Clear();
             candidateSide.Add(candidate);
             otherSide.Clear();
@@ -99,7 +142,10 @@ namespace OptimalLoadouts.ApparelOrders
             }
         }
 
-        /// <summary>How much better the candidate's side is on the line, with the line's direction applied.</summary>
+        /// <summary>
+        /// How much better the colonist's outfit is on the line with the candidate's side than with the other, with the
+        /// line's direction applied. A stat is totalled as the colonist ends up with it (<see cref="OutfitTotals"/>).
+        /// </summary>
         private static float Difference(OrderLine line)
         {
             if (line.IsRequiredCoverage)
@@ -115,14 +161,23 @@ namespace OptimalLoadouts.ApparelOrders
                 float covered = Covers(candidateSide, line) - Covers(otherSide, line);
                 return line.lowerIsBetter ? -covered : covered;
             }
-            float delta = 0f;
-            for (int j = 0; j < candidateSide.Count; j++)
+            float delta;
+            if (line.IsItem)
             {
-                delta += ValueOnLine(candidateSide[j], line);
+                delta = 0f;
+                for (int j = 0; j < candidateSide.Count; j++)
+                {
+                    delta += ValueOnLine(candidateSide[j], line);
+                }
+                for (int j = 0; j < otherSide.Count; j++)
+                {
+                    delta -= ValueOnLine(otherSide[j], line);
+                }
             }
-            for (int j = 0; j < otherSide.Count; j++)
+            else
             {
-                delta -= ValueOnLine(otherSide[j], line);
+                // What the colonist ends up with, so more pieces don't win by adding up armor on parts they barely cover.
+                delta = OutfitTotals.Change(Current.Body, Current.Worn, rest, candidateSide, otherSide, line);
             }
             return line.lowerIsBetter ? -delta : delta;
         }

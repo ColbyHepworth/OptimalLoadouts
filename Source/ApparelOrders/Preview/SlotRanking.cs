@@ -64,13 +64,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 }
             }
 
-            List<SlotChoice> byPick = Ordered(scored, null, false, lines);
+            List<SlotChoice> byPick = Ordered(scored, null, false, lines, body);
             int rank = 0;
             foreach (SlotChoice choice in byPick)
             {
                 choice.PickRank = choice.Pickable ? ++rank : 0;
             }
-            return byStat == null ? byPick : Ordered(scored, byStat, lowestFirst, lines);
+            return byStat == null ? byPick : Ordered(scored, byStat, lowestFirst, lines, body);
         }
 
         /// <summary>Why a piece the policy's "only add pieces that help" skips isn't put on, or null when it isn't skipped.</summary>
@@ -88,9 +88,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         /// <summary>Pickable pieces first, then by the stat when one is given, then the way the pawn would pick.</summary>
         private static List<SlotChoice> Ordered(List<(SlotChoice choice, float raw)> scored, StatDef byStat, bool lowestFirst,
-            IReadOnlyList<OrderLine> lines)
+            IReadOnlyList<OrderLine> lines, BodyDef body)
         {
-            IComparer<SlotChoice> byOrder = Comparer<SlotChoice>.Create((a, b) => CompareByOrder(a, b, lines));
+            IComparer<SlotChoice> byOrder = Comparer<SlotChoice>.Create((a, b) => CompareByOrder(a, b, lines, body));
             IOrderedEnumerable<(SlotChoice choice, float raw)> ordered = scored.OrderBy(entry => entry.choice.Pickable ? 0 : 1);
             if (byStat != null)
             {
@@ -127,8 +127,11 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return listed;
         }
 
-        /// <summary>The apparel check's score first, then the pieces' own values down the order, so ties never shuffle.</summary>
-        private static int CompareByOrder(SlotChoice a, SlotChoice b, IReadOnlyList<OrderLine> lines)
+        /// <summary>
+        /// The apparel check's score first, then each piece's share of what the colonist would end up with down the order,
+        /// so ties never shuffle.
+        /// </summary>
+        private static int CompareByOrder(SlotChoice a, SlotChoice b, IReadOnlyList<OrderLine> lines, BodyDef body)
         {
             int byScore = b.Score.CompareTo(a.Score);
             if (byScore != 0)
@@ -137,7 +140,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             }
             foreach (OrderLine line in lines)
             {
-                float delta = ApparelComparison.ValueOnLine(a.Piece, line) - ApparelComparison.ValueOnLine(b.Piece, line);
+                float delta = OutfitTotals.ShareOf(body, a.Piece, line) - OutfitTotals.ShareOf(body, b.Piece, line);
                 if (line.lowerIsBetter)
                 {
                     delta = -delta;

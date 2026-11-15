@@ -665,6 +665,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(session.Policy);
             bool hasOrder = lines != null && lines.Count > 0;
             string why = ReasonWon(swap.Verdict, lines, hasOrder);
+            bool wonOnOrder = !swap.Verdict.GameDecides && !swap.Verdict.IsTie && swap.Verdict.Delta > 0f;
+            if (swap.Partners.Count > 0 && wonOnOrder)
+            {
+                // It won as a set, so the reason names the pieces it counted on for the rest. A tie goes to the game's
+                // own score, which weighs the piece alone.
+                string partners = swap.Partners.Select(partner => partner.LabelNoParenthesis).ToCommaList(useAnd: true);
+                why += " " + "OL_Preview_WithPartners".Translate(partners);
+            }
             string runnerUp = swap.RunnerUp == null ? null : ReasonRunnerUpLost(swap, lines, hasOrder);
             return runnerUp == null ? why : why + "\n\n" + runnerUp;
         }

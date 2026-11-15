@@ -51,9 +51,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// </summary>
         public bool TakesOffMore => Pickable && AlsoReplaces.Count > 0;
 
+        /// <summary>The pieces its rank counts it together with, covering the rest of the slot. Empty when ranked alone.</summary>
+        public IReadOnlyList<Apparel> Partners { get; }
+
         public SlotChoice(Apparel piece, int copies, bool typeAllowed, bool allowed, bool reachable, float score,
-            string cantWearReason, string skippedReason, IReadOnlyList<Apparel> alsoReplaces)
+            string cantWearReason, string skippedReason, IReadOnlyList<Apparel> alsoReplaces, IReadOnlyList<Apparel> partners)
         {
+            Partners = partners;
             Piece = piece;
             Copies = copies;
             TypeAllowed = typeAllowed;

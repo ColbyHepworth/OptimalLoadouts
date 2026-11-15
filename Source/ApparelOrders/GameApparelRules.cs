@@ -63,7 +63,8 @@ namespace OptimalLoadouts.ApparelOrders
             return false;
         }
 
-        private static bool CantWear(Pawn pawn, Apparel piece)
+        /// <summary>Whether the game never puts the piece on this pawn by itself, as far as the piece itself goes.</summary>
+        internal static bool CantWear(Pawn pawn, Apparel piece)
         {
             return CantWearKey(pawn, piece) != null;
         }

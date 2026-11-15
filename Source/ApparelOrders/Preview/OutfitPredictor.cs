@@ -49,6 +49,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 PredictedSwap swap;
                 using (new PreviewPolicy(pawn, policy))
                 using (new ImaginedOutfit(pawn, outfit))
+                using (PartnerPool.Use(pawn, candidates))
                 {
                     swap = BestSwap(pawn, outfit, candidates, lines, fromStorage);
                 }
@@ -105,13 +106,15 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             }
             BodyDef body = pawn.RaceProps.body;
             List<Apparel> replaced = outfit.Where(worn => !ApparelUtility.CanWearTogether(worn.def, best.def, body)).ToList();
-            return new PredictedSwap(best, replaced, bestScore, VerdictFor(pawn, best, lines), runnerUp,
-                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines));
+            var partners = new List<Apparel>();
+            OrderVerdict verdict = VerdictFor(pawn, best, lines, partners);
+            return new PredictedSwap(best, replaced, bestScore, verdict, partners, runnerUp,
+                runnerUp == null ? OrderVerdict.Tie : VerdictFor(pawn, runnerUp, lines, null));
         }
 
-        private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines)
+        private static OrderVerdict VerdictFor(Pawn pawn, Apparel piece, IReadOnlyList<OrderLine> lines, List<Apparel> partners)
         {
-            return lines.Count == 0 ? OrderVerdict.Tie : ApparelComparison.Compare(pawn, piece, lines);
+            return lines.Count == 0 ? OrderVerdict.Tie : ApparelComparison.Compare(pawn, piece, lines, partners);
         }
 
         /// <summary>A worn piece the check takes off first: not allowed, not locked or forced, and not keeping them alive in vacuum.</summary>

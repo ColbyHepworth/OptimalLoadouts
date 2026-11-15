@@ -39,6 +39,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             OutfitPredictor.SetNeededWarmth(pawn);
             using (new PreviewPolicy(pawn, policy))
             using (new ImaginedOutfit(pawn, rest))
+            using (PartnerPool.Use(pawn, pieces.ToList(), slot))
             {
                 // The check reads the scores by the pawn's worn list, which the imagined outfit keeps in draw order.
                 List<float> wornScores = pawn.apparel.WornApparel.Select(worn => JobGiver_OptimizeApparel.ApparelScoreRaw(pawn, worn)).ToList();
@@ -52,8 +53,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                     bool reachable = !stored || OutfitPredictor.CanPutOn(pawn, piece, fromStorage: true);
                     string cantWear = GameApparelRules.WhyCantWear(pawn, piece) ?? GameApparelRules.WhyModRulesOut(piece, score);
                     string skipped = cantWear == null ? WhySkippedAsExtra(pawn, policy, piece, lines, score) : null;
+                    var partners = new List<Apparel>();
+                    if (lines.Count > 0)
+                    {
+                        ApparelComparison.Compare(pawn, piece, lines, partners);
+                    }
                     var choice = new SlotChoice(piece, copies, policy.filter.Allows(piece.def), policy.filter.Allows(piece), reachable,
-                        score, cantWear, skipped, alsoReplaces);
+                        score, cantWear, skipped, alsoReplaces, partners);
                     scored.Add((choice, raw));
                 }
             }

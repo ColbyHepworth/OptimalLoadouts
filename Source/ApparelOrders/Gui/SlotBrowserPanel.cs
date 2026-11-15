@@ -423,6 +423,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 parts.Add("OL_Slot_AlsoGives".Translate(PieceBonusText.List(alsoGives)));
             }
+            if (choice.Partners.Count > 0)
+            {
+                parts.Add("OL_Slot_WithPartners".Translate(choice.Partners.Select(partner => partner.LabelNoParenthesis).ToCommaList(useAnd: true)));
+            }
             if (choice.AlsoReplaces.Count > 0)
             {
                 parts.Add("OL_Slot_AlsoReplaces".Translate(string.Join(", ", choice.AlsoReplaces.Select(worn => worn.LabelCap.ToString()))));

@@ -58,6 +58,7 @@
   <OL_Preview_WhyTie>Ties on every stat, so it's the game's usual pick.</OL_Preview_WhyTie>
   <OL_Preview_WhyNoOrder>This policy has no priorities, so it's the game's usual pick.</OL_Preview_WhyNoOrder>
   <OL_Preview_WhyGame>Left to the game's own rules.</OL_Preview_WhyGame>
+  <OL_Preview_WithPartners>Counted together with {0} for the rest of what it takes off.</OL_Preview_WithPartners>
 
   <!-- Why the runner-up lost -->
   <OL_Preview_RunnerUpWorse>Runner-up: {0}, worse on {1} by {2}.</OL_Preview_RunnerUpWorse>
@@ -88,6 +89,7 @@
   <OL_Slot_Copies>{0} ×{1}</OL_Slot_Copies>
   <OL_Slot_TipValue>{0}: {1}</OL_Slot_TipValue>
   <OL_Slot_AlsoReplaces>Also replaces {0}.</OL_Slot_AlsoReplaces>
+  <OL_Slot_WithPartners>Ranked together with {0} for the rest of the slot.</OL_Slot_WithPartners>
   <OL_Slot_GivesEntry>{0} {1}</OL_Slot_GivesEntry>
   <OL_Slot_MorePriorities>+{0}</OL_Slot_MorePriorities>
   <OL_Slot_NothingFor>Nothing for {0}.</OL_Slot_NothingFor>

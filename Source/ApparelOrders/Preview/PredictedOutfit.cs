@@ -49,18 +49,22 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         public float Score { get; }
         public OrderVerdict Verdict { get; }
 
+        /// <summary>The pieces it won together with, covering the rest of what it took off. Empty when it won alone.</summary>
+        public IReadOnlyList<Apparel> Partners { get; }
+
         /// <summary>The next best piece the pawn could have put on at this swap, or null when there was none.</summary>
         public Apparel RunnerUp { get; }
 
         public OrderVerdict RunnerUpVerdict { get; }
 
-        public PredictedSwap(Apparel putOn, IReadOnlyList<Apparel> replaced, float score, OrderVerdict verdict, Apparel runnerUp,
-            OrderVerdict runnerUpVerdict)
+        public PredictedSwap(Apparel putOn, IReadOnlyList<Apparel> replaced, float score, OrderVerdict verdict,
+            IReadOnlyList<Apparel> partners, Apparel runnerUp, OrderVerdict runnerUpVerdict)
         {
             PutOn = putOn;
             Replaced = replaced;
             Score = score;
             Verdict = verdict;
+            Partners = partners;
             RunnerUp = runnerUp;
             RunnerUpVerdict = runnerUpVerdict;
         }

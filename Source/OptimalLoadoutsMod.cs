@@ -12,6 +12,7 @@ namespace OptimalLoadouts
         {
             var harmony = new Harmony("groovy.optimalloadouts");
             TryPatch(harmony, typeof(ApparelScoreGainPatch), "pawns pick apparel the usual way, ignoring stat orders");
+            TryPatch(harmony, typeof(ApparelCheckPoolPatch), "colonists judge each piece alone, not as part of a set");
             TryPatch(harmony, typeof(ApparelPolicyCopyFromPatch), "duplicated apparel policies start without a stat order");
             TryPatch(harmony, typeof(ManageApparelPoliciesPatch), "Manage apparel policies has no outfit preview");
         }

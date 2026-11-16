@@ -31,7 +31,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             layer = WindowLayer.SubSuper;
         }
 
-        public override Vector2 InitialSize => new Vector2(480f, 560f);
+        /// <summary>The needs list's width, beside the preview it follows.</summary>
+        private const float NeedsWidth = 480f;
+
+        /// <summary>Wide enough for the bills plan's bill, material and bench columns beside the item's name.</summary>
+        private const float PlanWidth = 940f;
+
+        public override Vector2 InitialSize => new Vector2(Mathf.Min(NeedsWidth, UI.screenWidth), 560f);
 
         protected override void SetInitialSizeAndPosition()
         {
@@ -48,6 +54,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         public override void WindowUpdate()
         {
             base.WindowUpdate();
+            // Wide only while it shows the bills plan, kept on the screen.
+            float width = Mathf.Min(OutfitNeedsPanel.ShowsPlan(PreviewSession.Current) ? PlanWidth : NeedsWidth, UI.screenWidth);
+            if (windowRect.width != width)
+            {
+                windowRect.width = width;
+                windowRect.x = Mathf.Clamp(windowRect.x, 0f, UI.screenWidth - width);
+            }
             // The policy window's pickers and boxes open under this one's layer, so it steps aside for them.
             Window policies = Find.WindowStack.WindowOfType<Dialog_ManageApparelPolicies>();
             if (policies == null || Find.WindowStack.Windows.Any(window => window != policies && window != this

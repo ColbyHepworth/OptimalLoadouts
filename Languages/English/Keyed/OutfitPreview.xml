@@ -144,7 +144,6 @@
   <!-- Bills for what a policy's colonists are missing -->
   <OL_Bills_Button>Add bills</OL_Bills_Button>
   <OL_Bills_ButtonTip>Add bills for what this policy's colonists are missing.</OL_Bills_ButtonTip>
-  <OL_Bills_NoColonists>No colonist is on {0}.</OL_Bills_NoColonists>
   <OL_Bills_NothingResearched>Nothing the colony has researched fits the outfits of {0}'s colonists.</OL_Bills_NothingResearched>
   <OL_Bills_NoBench>no bench for it</OL_Bills_NoBench>
   <OL_Bills_Back>Back</OL_Bills_Back>
@@ -154,12 +153,46 @@
   <OL_Bills_Group_AlreadyEnough>Already made</OL_Bills_Group_AlreadyEnough>
   <OL_Bills_Group_NoRoom>Every bench full</OL_Bills_Group_NoRoom>
   <OL_Bills_Group_CantMake>Can't make yet</OL_Bills_Group_CantMake>
+  <OL_Bills_Reset>Reset</OL_Bills_Reset>
+  <OL_Bills_ResetTip>Put every row back to what was planned.</OL_Bills_ResetTip>
+  <OL_Bills_NothingToReset>Nothing has been changed yet.</OL_Bills_NothingToReset>
+  <OL_Bills_PolicyMaterialTip>Bills start in this policy's material, shared with the outfit preview.</OL_Bills_PolicyMaterialTip>
+  <OL_Bills_PolicyMaterialReplanTip>Changing it plans the bills again.</OL_Bills_PolicyMaterialReplanTip>
+  <OL_Bills_CountTip>How many to keep, worn ones included: one for each colonist on this policy who wears it.</OL_Bills_CountTip>
+  <OL_Bills_CountOthersTip>Copies worn by other policies' colonists count too, so it can stop short.</OL_Bills_CountOthersTip>
+  <OL_Bills_TimesTip>Makes this many once: one for each colonist on this policy without one, less spares and other bills.</OL_Bills_TimesTip>
+  <OL_Bills_RepeatModeTip>Make what's missing once, keep a count as pieces wear out, or keep making.</OL_Bills_RepeatModeTip>
+  <OL_Bills_ModeUntil>Until you have</OL_Bills_ModeUntil>
+  <OL_Bills_ModeTimes>Times</OL_Bills_ModeTimes>
+  <OL_Bills_HintWear>{0} wear it</OL_Bills_HintWear>
+  <OL_Bills_HintLacking>{0} lack it</OL_Bills_HintLacking>
+  <OL_Bills_HintLackingOnHand>{0} lack it, {1} on hand</OL_Bills_HintLackingOnHand>
+  <OL_Bills_NoneInStockTip>The colony has no {0}.</OL_Bills_NoneInStockTip>
+  <OL_Bills_WearersTip>Wear it on this policy:</OL_Bills_WearersTip>
+  <OL_Bills_HintWas>was {0}</OL_Bills_HintWas>
+  <OL_Bills_HintPreview>one set</OL_Bills_HintPreview>
+  <OL_Bills_NoOneOnPolicyTip>No one is on this policy yet, so this is one set of the outfit the preview shows.</OL_Bills_NoOneOnPolicyTip>
+  <OL_Bills_ModeMixed>Mixed</OL_Bills_ModeMixed>
+  <OL_Bills_EveryBillModeTip>Set every new bill to Times, Until you have or Forever.</OL_Bills_EveryBillModeTip>
+  <OL_Bills_EveryBillCountTip>Set every new bill's count at once.</OL_Bills_EveryBillCountTip>
+  <OL_Bills_ModeForever>Forever</OL_Bills_ModeForever>
+  <OL_Bills_HintForever>keeps making</OL_Bills_HintForever>
+  <OL_Bills_ChoiceOption>{0} ({1})</OL_Bills_ChoiceOption>
+  <OL_Bills_Column_Bill>Bill</OL_Bills_Column_Bill>
+  <OL_Bills_Column_Material>Material</OL_Bills_Column_Material>
+  <OL_Bills_Column_Bench>Bench</OL_Bills_Column_Bench>
   <OL_Bills_Count>×{0}</OL_Bills_Count>
-  <OL_Bills_RaiseCount>×{0} → ×{1}</OL_Bills_RaiseCount>
+  <OL_Bills_AlreadyAt>already at {0}</OL_Bills_AlreadyAt>
+  <OL_Bills_ChangedFrom>Changed from {0}.</OL_Bills_ChangedFrom>
+  <OL_Bills_AnyMaterial>Any</OL_Bills_AnyMaterial>
+  <OL_Bills_MaterialOption>{0} · {1} in stock</OL_Bills_MaterialOption>
+  <OL_Bills_PolicysChoice>{0} (policy)</OL_Bills_PolicysChoice>
+  <OL_Bills_BenchOption>{0} · {1}/{2} bills</OL_Bills_BenchOption>
+  <OL_Bills_BenchNoPower>{0} · {1}/{2} bills · no power</OL_Bills_BenchNoPower>
+  <OL_Bills_BenchFull>{0} · full</OL_Bills_BenchFull>
+  <OL_Bills_ShowOnMap>Show this bench on the map.</OL_Bills_ShowOnMap>
   <OL_Bills_Enough>a bill makes it</OL_Bills_Enough>
   <OL_Bills_NoRoom>no room</OL_Bills_NoRoom>
-  <OL_Bills_ForTip>{0} for:\n{1}</OL_Bills_ForTip>
-  <OL_Bills_ForPawn>{0} ({1})</OL_Bills_ForPawn>
   <OL_Bills_Done>Added {0} bills and raised {1}.</OL_Bills_Done>
   <OL_Missing_Piece>{0}: {1}</OL_Missing_Piece>
   <OL_Missing_NoRecipe>No recipe makes it.</OL_Missing_NoRecipe>

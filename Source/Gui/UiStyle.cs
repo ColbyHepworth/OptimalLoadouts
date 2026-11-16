@@ -59,6 +59,9 @@ namespace OptimalLoadouts.Gui
         /// <summary>A faint amber for a slot browser row that would take off more than the slot's own piece.</summary>
         public static readonly Color TakesOffMoreColor = Faint(ColorLibrary.Gold);
 
+        /// <summary>The same faint amber behind a value the player changed from what was planned.</summary>
+        public static readonly Color EditedColor = Faint(ColorLibrary.Gold);
+
         /// <summary>The outline's thickness on the slot browser row being tried on.</summary>
         public const int TriedOnOutline = 2;
 

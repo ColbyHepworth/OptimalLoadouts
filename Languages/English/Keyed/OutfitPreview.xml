@@ -125,6 +125,32 @@
   <OL_Slot_LockedCheckbox>Locked, so it stays allowed. Unlock it to forbid it.</OL_Slot_LockedCheckbox>
   <OL_Slot_ClickToTry>Click to try it on.</OL_Slot_ClickToTry>
   <OL_Slot_ClickToGoBack>Click to go back to the outfit.</OL_Slot_ClickToGoBack>
+
+  <!-- What the colony lacks to make a piece -->
+  <OL_Preview_CantMakeYet>Can't make yet:</OL_Preview_CantMakeYet>
+  <OL_Preview_CanMakeAll>Can make all {0} pieces</OL_Preview_CanMakeAll>
+  <OL_Preview_CanMakeSome>Can make {0} of {1} pieces</OL_Preview_CanMakeSome>
+  <OL_Preview_CanMakeEach>Short of materials for all {0} pieces</OL_Preview_CanMakeEach>
+  <OL_Preview_NeedsShow>Show what the whole outfit needs.</OL_Preview_NeedsShow>
+  <OL_Needs_NotMadeNew>Untick In storage to see what this outfit needs to be made.</OL_Needs_NotMadeNew>
+  <OL_Needs_NothingMissing>This outfit can be made now.</OL_Needs_NothingMissing>
+  <OL_Needs_For>for {0}</OL_Needs_For>
+  <OL_Needs_ForMore>for {0} and {1} more</OL_Needs_ForMore>
+  <OL_Needs_Group_Research>Research</OL_Needs_Group_Research>
+  <OL_Needs_Group_Bench>Benches</OL_Needs_Group_Bench>
+  <OL_Needs_Group_Skill>Skills</OL_Needs_Group_Skill>
+  <OL_Needs_Group_Materials>Materials</OL_Needs_Group_Materials>
+  <OL_Needs_Group_NoRecipe>Can't be made</OL_Needs_Group_NoRecipe>
+  <OL_Missing_Piece>{0}: {1}</OL_Missing_Piece>
+  <OL_Missing_NoRecipe>No recipe makes it.</OL_Missing_NoRecipe>
+  <OL_Missing_Research>Research: {0}</OL_Missing_Research>
+  <OL_Missing_Unavailable>Not available to this colony.</OL_Missing_Unavailable>
+  <OL_Missing_Bench>Bench: {0}</OL_Missing_Bench>
+  <OL_Missing_SkillsTogether>No one has every skill it needs.</OL_Missing_SkillsTogether>
+  <OL_Missing_Skill>{0} {1}, best is {2}</OL_Missing_Skill>
+  <OL_Missing_SkillNumbers>{0} / {1}</OL_Missing_SkillNumbers>
+  <OL_Missing_SkillBest>Best: {0}, {1} {2}. Needs {3}.</OL_Missing_SkillBest>
+  <OL_Missing_Materials>{0} more {1}</OL_Missing_Materials>
   <OL_Slot_TryingOn>Trying on {0}.</OL_Slot_TryingOn>
 
   <!-- A piece's stats beside or under the slot browser -->

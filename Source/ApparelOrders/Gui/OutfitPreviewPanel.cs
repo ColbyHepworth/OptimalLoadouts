@@ -323,6 +323,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         private static void DrawOutfitList(Rect rect, PreviewSession session)
         {
             PredictedOutfit outfit = session.Outfit;
+            Map madeOn = MadeNewOn(session);
+            if (madeOn != null && outfit.Worn.Count > 0)
+            {
+                rect.yMin += DrawNeeds(rect, CraftableApparel.NeedsFor(outfit.Worn, madeOn));
+            }
             DrawOutfitBand(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight), session);
             rect.yMin += UiStyle.RowHeight;
             List<OutfitLayer> layers = OutfitLayers.For(session.Pawn, session.Drawn);
@@ -359,6 +364,50 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.EndScrollView();
             }
+        }
+
+        /// <summary>
+        /// How many of the outfit's pieces the colony can make now. When something's missing, it's a button that opens
+        /// the window listing what. Returns the height used.
+        /// </summary>
+        private static float DrawNeeds(Rect area, OutfitNeeds needs)
+        {
+            Rect line = new Rect(area.x, area.y, area.width, UiStyle.RowHeight);
+            string text = CanMakeText(needs);
+            if (needs.Needs.Count == 0)
+            {
+                UiStyle.Note(line, text);
+                return UiStyle.RowHeight;
+            }
+            Rect button = new Rect(line.x, line.y + 2f, line.width, line.height - 4f);
+            using (new TextBlock(GameFont.Tiny))
+            {
+                if (Widgets.ButtonText(button, text))
+                {
+                    Window_OutfitNeeds open = Find.WindowStack.WindowOfType<Window_OutfitNeeds>();
+                    if (open == null)
+                    {
+                        Find.WindowStack.Add(new Window_OutfitNeeds(UI.GUIToScreenRect(button)));
+                    }
+                    else
+                    {
+                        Find.WindowStack.Notify_ClickedInsideWindow(open);
+                    }
+                }
+            }
+            TooltipHandler.TipRegion(button, "OL_Preview_NeedsShow".Translate());
+            return UiStyle.RowHeight;
+        }
+
+        /// <summary>"Can make 5 of 8 pieces", or all of them, or all of them one at a time but short of materials for all.</summary>
+        internal static string CanMakeText(OutfitNeeds needs)
+        {
+            if (needs.Ready < needs.Total)
+            {
+                return "OL_Preview_CanMakeSome".Translate(needs.Ready, needs.Total);
+            }
+            // Each piece can be made, but their materials together may be more than the stock.
+            return needs.Needs.Count == 0 ? "OL_Preview_CanMakeAll".Translate(needs.Total) : "OL_Preview_CanMakeEach".Translate(needs.Total);
         }
 
         /// <summary>
@@ -617,6 +666,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 parts.Add(why);
             }
+            string cantMake = CraftableApparel.CantMakeText(piece, MadeNewOn(session));
+            if (cantMake != null)
+            {
+                parts.Add(cantMake);
+            }
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(session.Policy) ?? NoLines;
             IReadOnlyList<(StatDef stat, float value)> bonuses = PieceBonuses.Of(piece, lines);
             if (bonuses.Count > 0)
@@ -634,6 +688,12 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 tint = UiStyle.AddedColor;
             }
             DrawPieceRow(row, piece, !putOn, string.Join("\n\n", parts), opensSlot: true, session, tint, withControls: true);
+        }
+
+        /// <summary>The map whose colony would make the pieces, or null when they're the real ones in storage.</summary>
+        internal static Map MadeNewOn(PreviewSession session)
+        {
+            return session.InStorage ? null : session.Pawn?.Map;
         }
 
         /// <summary>Whether the slot browser row under the mouse would take this piece off too, besides the slot's own.</summary>

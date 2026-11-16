@@ -357,7 +357,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             // Imagined pieces may share an ID, so each row's place in the list keeps its tooltip apart.
             bool triedOn = piece == open.TriedOn;
-            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, triedOn, lines, policy), Gen.HashCombineInt(open.Slot.GetHashCode(), (int)row.y));
+            Map madeOn = OutfitPreviewPanel.MadeNewOn(session);
+            TooltipHandler.TipRegion(body, () => Tooltip(choice, isPick, triedOn, lines, policy, madeOn), Gen.HashCombineInt(open.Slot.GetHashCode(), (int)row.y));
 
             bool dimmed = !choice.Pickable;
             Color textColor = dimmed ? ColoredText.SubtleGrayColor : Color.white;
@@ -404,15 +405,17 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// A row's tooltip in groups: its name, then why it is or isn't picked, then its value on each priority and what
-        /// else it gives, then what else it takes off, then how to try it on.
+        /// A row's tooltip in groups: its name, then why it is or isn't picked, then what the colony lacks to make it, then
+        /// its value on each priority and what else it gives, then what else it takes off, then how to try it on.
         /// </summary>
-        private static string Tooltip(SlotChoice choice, bool isPick, bool triedOn, IReadOnlyList<OrderLine> lines, ApparelPolicy policy)
+        private static string Tooltip(SlotChoice choice, bool isPick, bool triedOn, IReadOnlyList<OrderLine> lines, ApparelPolicy policy,
+            Map madeOn)
         {
             var groups = new List<string>
             {
                 PieceLabel.Of(choice.Piece),
                 Joined(Status(choice, isPick, lines, policy)),
+                CraftableApparel.CantMakeText(choice.Piece, madeOn),
                 Joined(Priorities(choice, lines)),
                 Joined(TakesOff(choice)),
                 (triedOn ? "OL_Slot_ClickToGoBack" : "OL_Slot_ClickToTry").Translate().Resolve().Colorize(ColoredText.SubtleGrayColor),

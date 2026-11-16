@@ -39,6 +39,9 @@ namespace OptimalLoadouts.Gui
         /// <summary>Vanilla's lock, as the ideoligion and gene screens mark what's locked. Drawn faint when unlocked.</summary>
         public static readonly Texture2D LockIcon = ContentFinder<Texture2D>.Get("UI/Overlays/Locked");
 
+        /// <summary>The techprint, the game's own mark for research.</summary>
+        public static readonly Texture2D ResearchIcon = ContentFinder<Texture2D>.Get("UI/Icons/Research/Techprint");
+
         /// <summary>How faint a lock is drawn on a row that isn't locked.</summary>
         public const float UnlockedAlpha = 0.25f;
 

@@ -23,6 +23,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         {
             ranked.Clear();
             rankedForVersion = -1;
+            CraftableApparel.Forget();
         }
 
         /// <summary>

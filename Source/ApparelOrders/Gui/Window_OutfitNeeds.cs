@@ -31,7 +31,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             layer = WindowLayer.SubSuper;
         }
 
-        public override Vector2 InitialSize => new Vector2(360f, 560f);
+        public override Vector2 InitialSize => new Vector2(480f, 560f);
 
         protected override void SetInitialSizeAndPosition()
         {
@@ -59,7 +59,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
 
         public override void DoWindowContents(Rect inRect)
         {
-            OutfitNeedsPanel.Draw(new Rect(inRect.x, inRect.y, inRect.width - Widgets.CloseButtonSize, inRect.height), PreviewSession.Current);
+            OutfitNeedsPanel.Draw(inRect, PreviewSession.Current);
         }
     }
 }

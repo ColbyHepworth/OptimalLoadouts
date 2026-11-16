@@ -48,6 +48,9 @@ namespace OptimalLoadouts.Gui
         /// <summary>A band's fill: the window's darker background, against the lighter section the list sits on.</summary>
         public static readonly Color BandColor = Widgets.WindowBGFillColor;
 
+        /// <summary>A section's band in a window of its own, whose background is <see cref="BandColor"/>: the game's lighter section grey.</summary>
+        public static readonly Color SectionBandColor = Widgets.MenuSectionBGFillColor;
+
         /// <summary>Faint backgrounds for a row that was just added or just taken away.</summary>
         public static readonly Color AddedColor = Faint(ColorLibrary.Green);
 

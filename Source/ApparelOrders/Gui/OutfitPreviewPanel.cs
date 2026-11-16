@@ -367,18 +367,13 @@ namespace OptimalLoadouts.ApparelOrders.Gui
         }
 
         /// <summary>
-        /// How many of the outfit's pieces the colony can make now. When something's missing, it's a button that opens
-        /// the window listing what. Returns the height used.
+        /// How many of the outfit's pieces the colony can make now, as a button that opens the window listing what's
+        /// missing and adding the bills. Returns the height used.
         /// </summary>
         private static float DrawNeeds(Rect area, OutfitNeeds needs)
         {
             Rect line = new Rect(area.x, area.y, area.width, UiStyle.RowHeight);
             string text = CanMakeText(needs);
-            if (needs.Needs.Count == 0)
-            {
-                UiStyle.Note(line, text);
-                return UiStyle.RowHeight;
-            }
             Rect button = new Rect(line.x, line.y + 2f, line.width, line.height - 4f);
             using (new TextBlock(GameFont.Tiny))
             {

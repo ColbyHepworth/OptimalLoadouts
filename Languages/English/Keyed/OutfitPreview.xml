@@ -134,13 +134,33 @@
   <OL_Preview_NeedsShow>Show what the whole outfit needs.</OL_Preview_NeedsShow>
   <OL_Needs_NotMadeNew>Untick In storage to see what this outfit needs to be made.</OL_Needs_NotMadeNew>
   <OL_Needs_NothingMissing>This outfit can be made now.</OL_Needs_NothingMissing>
-  <OL_Needs_For>for {0}</OL_Needs_For>
-  <OL_Needs_ForMore>for {0} and {1} more</OL_Needs_ForMore>
+  <OL_Needs_For>For:</OL_Needs_For>
   <OL_Needs_Group_Research>Research</OL_Needs_Group_Research>
   <OL_Needs_Group_Bench>Benches</OL_Needs_Group_Bench>
   <OL_Needs_Group_Skill>Skills</OL_Needs_Group_Skill>
   <OL_Needs_Group_Materials>Materials</OL_Needs_Group_Materials>
   <OL_Needs_Group_NoRecipe>Can't be made</OL_Needs_Group_NoRecipe>
+
+  <!-- Bills for what a policy's colonists are missing -->
+  <OL_Bills_Button>Add bills</OL_Bills_Button>
+  <OL_Bills_ButtonTip>Add bills for what this policy's colonists are missing.</OL_Bills_ButtonTip>
+  <OL_Bills_NoColonists>No colonist is on {0}.</OL_Bills_NoColonists>
+  <OL_Bills_NothingResearched>Nothing the colony has researched fits the outfits of {0}'s colonists.</OL_Bills_NothingResearched>
+  <OL_Bills_NoBench>no bench for it</OL_Bills_NoBench>
+  <OL_Bills_Back>Back</OL_Bills_Back>
+  <OL_Bills_Confirm>Add {0} bills</OL_Bills_Confirm>
+  <OL_Bills_Group_Add>To add</OL_Bills_Group_Add>
+  <OL_Bills_Group_Raise>To raise</OL_Bills_Group_Raise>
+  <OL_Bills_Group_AlreadyEnough>Already made</OL_Bills_Group_AlreadyEnough>
+  <OL_Bills_Group_NoRoom>Every bench full</OL_Bills_Group_NoRoom>
+  <OL_Bills_Group_CantMake>Can't make yet</OL_Bills_Group_CantMake>
+  <OL_Bills_Count>×{0}</OL_Bills_Count>
+  <OL_Bills_RaiseCount>×{0} → ×{1}</OL_Bills_RaiseCount>
+  <OL_Bills_Enough>a bill makes it</OL_Bills_Enough>
+  <OL_Bills_NoRoom>no room</OL_Bills_NoRoom>
+  <OL_Bills_ForTip>{0} for:\n{1}</OL_Bills_ForTip>
+  <OL_Bills_ForPawn>{0} ({1})</OL_Bills_ForPawn>
+  <OL_Bills_Done>Added {0} bills and raised {1}.</OL_Bills_Done>
   <OL_Missing_Piece>{0}: {1}</OL_Missing_Piece>
   <OL_Missing_NoRecipe>No recipe makes it.</OL_Missing_NoRecipe>
   <OL_Missing_Research>Research: {0}</OL_Missing_Research>

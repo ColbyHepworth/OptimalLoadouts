@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Orders;
+using OptimalLoadouts.WeaponOrders;
 using RimWorld;
 using Verse;
 
@@ -14,9 +15,12 @@ namespace OptimalLoadouts.ApparelOrders
     public class ApparelOrdersComponent : GameComponent
     {
         private static readonly List<OrderLine> NoLines = new List<OrderLine>();
+        private static readonly List<WeaponLine> NoWeaponLines = new List<WeaponLine>();
+        private static readonly List<ThingDef> NoWeapons = new List<ThingDef>();
 
         private List<ApparelOrder> orders = new List<ApparelOrder>();
         private readonly Dictionary<ApparelPolicy, List<OrderLine>> resolved = new Dictionary<ApparelPolicy, List<OrderLine>>();
+        private readonly Dictionary<ApparelPolicy, List<WeaponLine>> resolvedWeapons = new Dictionary<ApparelPolicy, List<WeaponLine>>();
         private readonly List<ApparelPolicy> resolvedForPolicies = new List<ApparelPolicy>();
 
         /// <summary>The last game's component, so scoring a piece doesn't search the game's components each time.</summary>
@@ -78,6 +82,8 @@ namespace OptimalLoadouts.ApparelOrders
             PieceStats.ClearCache();
             ApparelForbids.ClearCache();
             ImaginedPieces.ClearCache();
+            WeaponRanking.ClearCache();
+            ImaginedWeapons.ClearCache();
             NotifyChanged();
             // Items from a mod added since the last save are caught too.
             ApparelForbids.ApplyAll();
@@ -534,6 +540,195 @@ namespace OptimalLoadouts.ApparelOrders
             NotifyChanged();
         }
 
+        /// <summary>
+        /// The policy's weapon priorities, then its base's and that base's, skipping a number already listed, as
+        /// <see cref="EffectiveLines"/> combines apparel lines.
+        /// </summary>
+        public IReadOnlyList<WeaponLine> EffectiveWeaponLines(ApparelPolicy policy)
+        {
+            if (policy == null)
+            {
+                return NoWeaponLines;
+            }
+            if (resolvedWeapons.TryGetValue(policy, out List<WeaponLine> lines))
+            {
+                return lines;
+            }
+            lines = new List<WeaponLine>();
+            var listed = new HashSet<WeaponNumberDef>();
+            foreach (ApparelOrder order in OrderAndBases(policy))
+            {
+                lines.AddRange(order.weaponLines.Where(line => line.number != null && listed.Add(line.number)));
+            }
+            resolvedWeapons[policy] = lines;
+            return lines;
+        }
+
+        /// <summary>What the policy's colonists carry: its own choice, or its base's when it says Any.</summary>
+        public WeaponKind WeaponKindOf(ApparelPolicy policy)
+        {
+            foreach (ApparelOrder order in OrderAndBases(policy))
+            {
+                if (order.weaponKind != WeaponKind.Any)
+                {
+                    return order.weaponKind;
+                }
+            }
+            return WeaponKind.Any;
+        }
+
+        public void SetWeaponKind(ApparelPolicy policy, WeaponKind kind)
+        {
+            if (policy == null || OrderFor(policy)?.weaponKind == kind)
+            {
+                return;
+            }
+            GetOrCreate(policy).weaponKind = kind;
+            NotifyChanged();
+        }
+
+        /// <summary>The ammo pinned on a gun for the policy, or null when it's judged on its best.</summary>
+        public ThingDef PinnedAmmoOf(ApparelPolicy policy, ThingDef weapon)
+        {
+            return weapon != null && OrderFor(policy)?.pinnedAmmo.TryGetValue(weapon, out ThingDef ammo) == true ? ammo : null;
+        }
+
+        /// <summary>Pins the ammo a gun is judged on for the policy, or unpins it with null.</summary>
+        public void SetPinnedAmmo(ApparelPolicy policy, ThingDef weapon, ThingDef ammo)
+        {
+            if (policy == null || weapon == null || PinnedAmmoOf(policy, weapon) == ammo)
+            {
+                return;
+            }
+            Dictionary<ThingDef, ThingDef> pins = GetOrCreate(policy).pinnedAmmo;
+            if (ammo == null)
+            {
+                pins.Remove(weapon);
+            }
+            else
+            {
+                pins[weapon] = ammo;
+            }
+            NotifyChanged();
+        }
+
+        /// <summary>The weapons the policy forbids, its own list only.</summary>
+        public IReadOnlyCollection<ThingDef> ForbiddenWeaponsOf(ApparelPolicy policy)
+        {
+            return OrderFor(policy)?.forbiddenWeapons ?? NoWeapons;
+        }
+
+        /// <summary>Allows or forbids a weapon for the policy's colonists.</summary>
+        public void SetWeaponAllowed(ApparelPolicy policy, ThingDef weapon, bool allowed)
+        {
+            if (policy == null || weapon == null || ForbiddenWeaponsOf(policy).Contains(weapon) != allowed)
+            {
+                return;
+            }
+            List<ThingDef> forbidden = GetOrCreate(policy).forbiddenWeapons;
+            if (allowed)
+            {
+                forbidden.Remove(weapon);
+            }
+            else
+            {
+                forbidden.Add(weapon);
+            }
+            NotifyChanged();
+        }
+
+        /// <summary>Adds a weapon priority. A number the policy gets from its base keeps the base's direction.</summary>
+        public void AddWeaponLine(ApparelPolicy policy, WeaponNumberDef number)
+        {
+            ApparelOrder order = GetOrCreate(policy);
+            if (number == null || order.weaponLines.Any(line => line.number == number))
+            {
+                return;
+            }
+            WeaponLine fromBase = EffectiveWeaponLines(policy).FirstOrDefault(line => line.number == number);
+            order.weaponLines.Add(fromBase?.Copy() ?? new WeaponLine(number, number.lowerIsBetter));
+            NotifyChanged();
+        }
+
+        public void RemoveWeaponLine(ApparelPolicy policy, int index)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.weaponLines.Count)
+            {
+                return;
+            }
+            order.weaponLines.RemoveAt(index);
+            NotifyChanged();
+        }
+
+        public bool CanMoveWeaponLine(ApparelPolicy policy, int index, int direction)
+        {
+            ApparelOrder order = OrderFor(policy);
+            int target = index + direction;
+            return order != null && index >= 0 && index < order.weaponLines.Count && target >= 0 && target < order.weaponLines.Count;
+        }
+
+        /// <summary>Moves a weapon priority up (negative) or down (positive) by one place.</summary>
+        public void MoveWeaponLine(ApparelPolicy policy, int index, int direction)
+        {
+            if (!CanMoveWeaponLine(policy, index, direction))
+            {
+                return;
+            }
+            List<WeaponLine> lines = OrderFor(policy).weaponLines;
+            int target = index + direction;
+            (lines[index], lines[target]) = (lines[target], lines[index]);
+            NotifyChanged();
+        }
+
+        /// <summary>
+        /// Sets which way a weapon line points and whether it rules out weapons past its value: higher or lower first, at
+        /// least or at most, the four choices an apparel stat line has.
+        /// </summary>
+        public void SetWeaponLineChoice(ApparelPolicy policy, int index, bool lowerIsBetter, bool rulesOut)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.weaponLines.Count)
+            {
+                return;
+            }
+            WeaponLine line = order.weaponLines[index];
+            if (line.lowerIsBetter == lowerIsBetter && line.rulesOut == rulesOut)
+            {
+                return;
+            }
+            line.lowerIsBetter = lowerIsBetter;
+            line.rulesOut = rulesOut;
+            NotifyChanged();
+        }
+
+        /// <summary>Sets the value a weapon line counts from, or its cutoff while it rules out. 0 counts every amount.</summary>
+        public void SetWeaponLineCountsFrom(ApparelPolicy policy, int index, float countsFrom)
+        {
+            ApparelOrder order = OrderFor(policy);
+            if (order == null || index < 0 || index >= order.weaponLines.Count || order.weaponLines[index].countsFrom == countsFrom)
+            {
+                return;
+            }
+            order.weaponLines[index].countsFrom = countsFrom < 0f ? 0f : countsFrom;
+            NotifyChanged();
+        }
+
+        /// <summary>The policy's order, then its base's and so on, stopping at a missing order or a loop.</summary>
+        private IEnumerable<ApparelOrder> OrderAndBases(ApparelPolicy policy)
+        {
+            var visited = new HashSet<ApparelPolicy>();
+            for (ApparelPolicy current = policy; current != null && visited.Add(current); current = BaseOf(current))
+            {
+                ApparelOrder order = OrderFor(current);
+                if (order == null)
+                {
+                    yield break;
+                }
+                yield return order;
+            }
+        }
+
         /// <summary>Gives a duplicated policy the same order and base as the policy it was copied from.</summary>
         public void CopyOrder(ApparelPolicy from, ApparelPolicy to)
         {
@@ -554,6 +749,10 @@ namespace OptimalLoadouts.ApparelOrders
             copy.unticked = new List<ThingDef>(source.unticked);
             copy.LimitMaterial = source.LimitMaterial;
             copy.onlyWhatHelps = source.onlyWhatHelps;
+            copy.weaponLines = source.weaponLines.Select(line => line.Copy()).ToList();
+            copy.weaponKind = source.weaponKind;
+            copy.forbiddenWeapons = new List<ThingDef>(source.forbiddenWeapons);
+            copy.pinnedAmmo = new Dictionary<ThingDef, ThingDef>(source.pinnedAmmo);
             copy.basePolicy = source.basePolicy != to ? source.basePolicy : null;
             ForbidsChanged();
         }
@@ -585,6 +784,7 @@ namespace OptimalLoadouts.ApparelOrders
         public void NotifyChanged()
         {
             resolved.Clear();
+            resolvedWeapons.Clear();
             Version++;
         }
 

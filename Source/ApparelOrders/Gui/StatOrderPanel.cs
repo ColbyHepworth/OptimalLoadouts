@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Gui;
 using OptimalLoadouts.Orders;
+using OptimalLoadouts.WeaponOrders.Gui;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -13,14 +14,14 @@ namespace OptimalLoadouts.ApparelOrders.Gui
     /// <summary>
     /// A policy's priorities (its stat order), the Priorities tab of its column in Manage apparel policies: its base, its
     /// own lines to edit (any of which can also rule pieces out), the lines it gets from its base, and a button to add a
-    /// priority.
+    /// priority. The weapon section follows, in the same scroll.
     /// </summary>
     public static class StatOrderPanel
     {
-        private const float NumberWidth = 28f;
-        private const float DirectionWidth = 110f;
+        internal const float NumberWidth = 28f;
+        internal const float DirectionWidth = 110f;
         private const float LayerWidth = 120f;
-        private const float AddButtonWidth = 160f;
+        internal const float AddButtonWidth = 160f;
 
         private static Vector2 linesScroll;
 
@@ -57,7 +58,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             List<(ApparelPolicy from, OrderLine line)> baseStats = fromBase.Where(entry => !entry.line.IsItem).ToList();
             int baseHeadings = baseStats.Select(entry => entry.from).Distinct().Count();
             int rows = ownLines.Count == 0 && fromBase.Count == 0 ? 1 : ownLines.Count + fromBase.Count + baseHeadings;
-            float viewHeight = rows * UiStyle.RowHeight + UiStyle.Gap + UiStyle.RowHeight;
+            float apparelHeight = rows * UiStyle.RowHeight + UiStyle.Gap + UiStyle.RowHeight;
+            float viewHeight = apparelHeight + WeaponOrderSection.Height(orders, policy);
             bool scrolls = viewHeight > listRect.height;
             Rect viewRect = new Rect(0f, 0f, listRect.width - (scrolls ? UiStyle.ScrollbarWidth : 0f), viewHeight);
             Widgets.BeginScrollView(listRect, ref linesScroll, viewRect, showScrollbars: scrolls);
@@ -126,6 +128,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             DrawOnlyWhatHelps(new Rect(AddButtonWidth + UiStyle.Gap, y, viewRect.width - AddButtonWidth - UiStyle.Gap, UiStyle.RowHeight),
                 orders, policy);
+            y += UiStyle.RowHeight;
+            WeaponOrderSection.Draw(y, viewRect.width, orders, policy);
             Widgets.EndScrollView();
         }
 

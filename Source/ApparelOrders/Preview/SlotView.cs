@@ -110,6 +110,13 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             return ranked;
         }
 
+        /// <summary>Lets the rows line up afresh in the next ranking, as after the policy's priorities change.</summary>
+        internal void ForgetRowOrder()
+        {
+            rowOrder = new List<object>();
+            rankedFor = default;
+        }
+
         /// <summary>
         /// What makes a row the same row from one gathering to the next. Imagined pieces stand for their item type (the
         /// material can change when it's allowed or forbidden). Real pieces stand for their item, material, quality and

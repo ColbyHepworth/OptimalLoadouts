@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Ranged -->
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_DamagePerShot</defName>
+    <label>damage per shot</label>
+    <description>The damage one shot does, all pellets counted. Under Combat Extended, with the ammo the gun is judged on.</description>
+    <group>Ranged</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.DamagePerShot</workerClass>
+    <decimals>0</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_ArmorPenetration</defName>
+    <label>armor penetration</label>
+    <description>How well a shot gets through armor. Under Combat Extended, the sharp penetration in mm of the ammo the gun is judged on.</description>
+    <group>Ranged</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.ArmorPenetration</workerClass>
+    <percentWithoutCombatExtended>true</percentWithoutCombatExtended>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_BluntPenetration</defName>
+    <label>blunt penetration</label>
+    <description>The blunt penetration in MPa of the ammo the gun is judged on.</description>
+    <group>Ranged</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.BluntPenetration</workerClass>
+    <decimals>1</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_Range</defName>
+    <label>range</label>
+    <description>How far the gun shoots, in cells.</description>
+    <group>Ranged</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.FiringRange</workerClass>
+    <decimals>1</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_AimTime</defName>
+    <label>aim time</label>
+    <description>Seconds spent aiming before each shot or burst.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <workerClass>OptimalLoadouts.WeaponOrders.AimTime</workerClass>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_ShotsPerBurst</defName>
+    <label>shots per burst</label>
+    <description>How many shots the gun fires each time it fires.</description>
+    <group>Ranged</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.ShotsPerBurst</workerClass>
+    <decimals>0</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_RangedCooldown</defName>
+    <label>cooldown</label>
+    <description>Seconds the gun waits after each shot or burst.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>RangedWeapon_Cooldown</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_AccuracyShort</defName>
+    <label>accuracy (short)</label>
+    <description>The chance to hit at short range.</description>
+    <group>Ranged</group>
+    <withCombatExtended>false</withCombatExtended>
+    <stat>AccuracyShort</stat>
+    <percentWithoutCombatExtended>true</percentWithoutCombatExtended>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_AccuracyMedium</defName>
+    <label>accuracy (medium)</label>
+    <description>The chance to hit at medium range.</description>
+    <group>Ranged</group>
+    <withCombatExtended>false</withCombatExtended>
+    <stat>AccuracyMedium</stat>
+    <percentWithoutCombatExtended>true</percentWithoutCombatExtended>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_AccuracyLong</defName>
+    <label>accuracy (long)</label>
+    <description>The chance to hit at long range.</description>
+    <group>Ranged</group>
+    <withCombatExtended>false</withCombatExtended>
+    <stat>AccuracyLong</stat>
+    <percentWithoutCombatExtended>true</percentWithoutCombatExtended>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_SightsEfficiency</defName>
+    <label>sights efficiency</label>
+    <description>How much the gun's sights help aim.</description>
+    <group>Ranged</group>
+    <stat>SightsEfficiency</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_ShotSpread</defName>
+    <label>shot spread</label>
+    <description>How far shots stray from where the gun aims.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>ShotSpread</stat>
+    <decimals>3</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_Sway</defName>
+    <label>sway</label>
+    <description>How much the gun moves while aiming.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>SwayFactor</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_Recoil</defName>
+    <label>recoil</label>
+    <description>How much each shot in a burst throws the next one off.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>Recoil</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_Magazine</defName>
+    <label>magazine</label>
+    <description>Shots before the gun has to reload.</description>
+    <group>Ranged</group>
+    <stat>MagazineCapacity</stat>
+    <decimals>0</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_ReloadTime</defName>
+    <label>reload time</label>
+    <description>Seconds to reload the gun.</description>
+    <group>Ranged</group>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>ReloadTime</stat>
+    <decimals>1</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <!-- Melee -->
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_MeleeDamagePerSecond</defName>
+    <label>melee damage per second</label>
+    <description>The weapon's average melee damage per second, as its info card gives it.</description>
+    <group>Melee</group>
+    <stat>MeleeWeapon_AverageDPS</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_MeleeArmorPenetration</defName>
+    <label>melee armor penetration</label>
+    <description>How well the weapon's attacks get through armor. Under Combat Extended, the attacks' sharp penetration in mm, by how often each is used, times the material's factor.</description>
+    <group>Melee</group>
+    <workerClass>OptimalLoadouts.WeaponOrders.MeleeArmorPenetration</workerClass>
+    <percentWithoutCombatExtended>true</percentWithoutCombatExtended>
+    <stat>MeleeWeapon_AverageArmorPenetration</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <!-- General -->
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+    <defName>OL_WeaponMass</defName>
+    <label>mass</label>
+    <description>The weapon's mass in kg.</description>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>Mass</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_WeaponBulk</defName>
+    <label>bulk</label>
+    <description>How much room the weapon takes in Combat Extended's inventory.</description>
+    <lowerIsBetter>true</lowerIsBetter>
+    <stat>Bulk</stat>
+    <decimals>2</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+  <OptimalLoadouts.WeaponOrders.WeaponNumberDef MayRequire="CETeam.CombatExtended">
+    <defName>OL_OneHanded</defName>
+    <label>one-handed</label>
+    <description>1 for a weapon that leaves a hand free for a shield, 0 for one that doesn't.</description>
+    <stat>OneHandedness</stat>
+    <decimals>0</decimals>
+  </OptimalLoadouts.WeaponOrders.WeaponNumberDef>
+
+</Defs>

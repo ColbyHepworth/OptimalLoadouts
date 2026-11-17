@@ -4,6 +4,8 @@ using System.Linq;
 using OptimalLoadouts.ApparelOrders.Preview;
 using OptimalLoadouts.Gui;
 using OptimalLoadouts.Orders;
+using OptimalLoadouts.WeaponOrders;
+using OptimalLoadouts.WeaponOrders.Gui;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -81,7 +83,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 DrawOutfitList(list, session);
                 Widgets.DrawMenuSection(slotSection);
                 Rect slotArea = slotSection.ContractedBy(UiStyle.Gap);
-                if (session.Slot == null)
+                if (session.WeaponBrowserOpen)
+                {
+                    WeaponBrowserPanel.Draw(slotArea, session, showBack: false, statsBelow: !statsHaveOwnPanel);
+                }
+                else if (session.Slot == null)
                 {
                     using (new TextBlock(TextAnchor.MiddleCenter))
                     {
@@ -92,6 +98,10 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                 {
                     SlotBrowserPanel.Draw(slotArea, session, showBack: false, statsBelow: !statsHaveOwnPanel);
                 }
+            }
+            else if (session.WeaponBrowserOpen)
+            {
+                WeaponBrowserPanel.Draw(list, session, showBack: true, statsBelow: !statsHaveOwnPanel);
             }
             else if (session.Slot != null && session.Slot.Pieces != null)
             {
@@ -106,7 +116,11 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.DrawMenuSection(statsSection);
                 Rect statsArea = statsSection.ContractedBy(UiStyle.Gap);
-                if (session.Slot == null)
+                if (session.WeaponBrowserOpen)
+                {
+                    WeaponStatsPanel.Draw(statsArea, session);
+                }
+                else if (session.Slot == null)
                 {
                     using (new TextBlock(TextAnchor.MiddleCenter))
                     {
@@ -330,6 +344,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             }
             DrawOutfitBand(new Rect(rect.x, rect.y, rect.width, UiStyle.RowHeight), session);
             rect.yMin += UiStyle.RowHeight;
+            rect.yMin += DrawWeapon(new Rect(rect.x, rect.y, rect.width - GenUI.ScrollBarWidth, 0f), session);
             List<OutfitLayer> layers = OutfitLayers.For(session.Pawn, session.Drawn);
             OutfitChanges marks = session.Changes;
             IReadOnlyList<Apparel> triedOff = session.TriedOnTakesOff;
@@ -364,6 +379,54 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 Widgets.EndScrollView();
             }
+        }
+
+        /// <summary>
+        /// The weapon the role picks (or the one tried in the weapon browser) on a band of its own above the layers, which
+        /// opens the weapon browser. "None" when the role carries none or nothing is on offer. Returns the height used.
+        /// </summary>
+        private static float DrawWeapon(Rect area, PreviewSession session)
+        {
+            Rect band = new Rect(area.x, area.y, area.width, UiStyle.BandHeight);
+            Rect row = new Rect(area.x, band.yMax, area.width, UiStyle.RowHeight);
+            Rect whole = new Rect(area.x, area.y, area.width, band.height + row.height);
+            Widgets.DrawBoxSolid(band, UiStyle.BandColor);
+            if (session.WeaponBrowserOpen)
+            {
+                Widgets.DrawHighlightSelected(whole);
+            }
+            if (UiStyle.ClickableRow(whole))
+            {
+                session.OpenWeapons();
+            }
+            Rect bandText = band.ContractedBy(UiStyle.Gap / 2f, 0f);
+            using (new TextBlock(GameFont.Tiny, TextAnchor.MiddleLeft))
+            {
+                Widgets.Label(bandText, "OL_Weapon_Band".Translate());
+            }
+            ThingWithComps weapon = session.Weapon;
+            if (weapon == null)
+            {
+                bool hasLines = (ApparelOrdersComponent.Current?.EffectiveWeaponLines(session.Policy).Count ?? 0) > 0;
+                bool carriesNone = ApparelOrdersComponent.Current?.WeaponKindOf(session.Policy) == WeaponKind.None;
+                string none = hasLines || carriesNone ? "OL_Weapon_None".Translate() : "OL_Weapon_NoLinesBand".Translate();
+                using (new TextBlock(TextAnchor.MiddleLeft, ColoredText.SubtleGrayColor))
+                {
+                    Widgets.Label(row.ContractedBy(UiStyle.Gap / 2f, 0f), none);
+                }
+                TooltipHandler.TipRegion(whole, "OL_Weapon_BandTip".Translate());
+                return whole.height;
+            }
+            Rect icon = new Rect(row.x, row.y + (row.height - UiStyle.IconSize) / 2f, UiStyle.IconSize, UiStyle.IconSize);
+            Widgets.ThingIcon(icon, weapon);
+            Rect label = new Rect(icon.xMax + UiStyle.Gap, row.y, row.xMax - icon.xMax - UiStyle.Gap, row.height);
+            using (new TextBlock(TextAnchor.MiddleLeft))
+            {
+                Widgets.Label(label, WeaponLabel.Of(weapon, session.ChoiceFor(weapon)?.Ammo).Truncate(label.width));
+            }
+            string tried = session.TriedWeapon != null ? "OL_Weapon_TriedTip".Translate().Resolve() + "\n\n" : "";
+            TooltipHandler.TipRegion(whole, tried + "OL_Weapon_BandTip".Translate());
+            return whole.height;
         }
 
         /// <summary>

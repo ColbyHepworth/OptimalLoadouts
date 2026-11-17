@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- The Weapon section of a policy's priorities -->
+  <OL_Weapon_Band>Weapon</OL_Weapon_Band>
+  <OL_Weapon_KindTip>What this policy's colonists carry. Any uses the base policy's choice.</OL_Weapon_KindTip>
+  <OL_Weapon_Kind_Any>Any weapon</OL_Weapon_Kind_Any>
+  <OL_Weapon_Kind_Ranged>Ranged</OL_Weapon_Kind_Ranged>
+  <OL_Weapon_Kind_Melee>Melee</OL_Weapon_Kind_Melee>
+  <OL_Weapon_Kind_None>No weapon</OL_Weapon_Kind_None>
+  <OL_Weapon_KindFromBase>{0} (base)</OL_Weapon_KindFromBase>
+  <OL_Weapon_WithAmmo>{0} ({1})</OL_Weapon_WithAmmo>
+  <OL_Weapon_AmmoBand>Ammo</OL_Weapon_AmmoBand>
+  <OL_Weapon_AmmoDamage>Damage</OL_Weapon_AmmoDamage>
+  <OL_Weapon_AmmoSharp>Sharp</OL_Weapon_AmmoSharp>
+  <OL_Weapon_AmmoBlunt>Blunt</OL_Weapon_AmmoBlunt>
+  <OL_Weapon_AmmoPinTip>Click to judge this gun on this ammo for this policy.</OL_Weapon_AmmoPinTip>
+  <OL_Weapon_AmmoUnpinTip>Click to go back to the best ammo for this policy's priorities.</OL_Weapon_AmmoUnpinTip>
+  <OL_Weapon_NoLines>No weapon priorities yet.</OL_Weapon_NoLines>
+  <OL_Weapon_AddLine>Add weapon priority</OL_Weapon_AddLine>
+  <OL_Weapon_DirectionTip>How this priority ranks weapons, and whether it rules some out.</OL_Weapon_DirectionTip>
+  <OL_Weapon_RuleTip>Ranks like higher or lower first, and leaves out weapons past the value.</OL_Weapon_RuleTip>
+  <OL_Weapon_RuleValueTip>Weapons past this are left out.</OL_Weapon_RuleValueTip>
+  <OL_Weapon_CountsFromTip>Amounts below this count as none.</OL_Weapon_CountsFromTip>
+  <OL_Weapon_Highest>The most any weapon has is {0}.</OL_Weapon_Highest>
+  <OL_Weapon_CountsAsNone>{0} weapons count as none.</OL_Weapon_CountsAsNone>
+  <OL_Weapon_CountsAsNoneOne>1 weapon counts as none.</OL_Weapon_CountsAsNoneOne>
+  <OL_Weapon_RuledOut>{0} weapons ruled out.</OL_Weapon_RuledOut>
+  <OL_Weapon_RuledOutOne>1 weapon ruled out.</OL_Weapon_RuledOutOne>
+  <OL_Weapon_PickerTitle>Add a weapon priority</OL_Weapon_PickerTitle>
+  <OL_Weapon_PickerNoMatches>No weapon priority matches.</OL_Weapon_PickerNoMatches>
+  <OL_Weapon_NoLinesBand>Add weapon priorities to pick one</OL_Weapon_NoLinesBand>
+  <OL_Weapon_Group_Ranged>Ranged</OL_Weapon_Group_Ranged>
+  <OL_Weapon_Group_Melee>Melee</OL_Weapon_Group_Melee>
+  <OL_Weapon_Group_General>General</OL_Weapon_Group_General>
+
+  <!-- The outfit preview's weapon band and the weapon browser -->
+  <OL_Weapon_None>None</OL_Weapon_None>
+  <OL_Weapon_BandTip>Click to see every weapon, ranked by this policy's weapon priorities.</OL_Weapon_BandTip>
+  <OL_Weapon_TriedTip>Tried in the weapon browser.</OL_Weapon_TriedTip>
+  <OL_Weapon_BrowserHeader>Weapons ({0})</OL_Weapon_BrowserHeader>
+  <OL_Weapon_KindNoneNote>This policy's colonists carry no weapon.</OL_Weapon_KindNoneNote>
+  <OL_Weapon_NoLinesNote>Add weapon priorities to rank these.</OL_Weapon_NoLinesNote>
+  <OL_Weapon_RankTip>Sort by this policy's ranking.</OL_Weapon_RankTip>
+  <OL_Weapon_NumberLine>{0}: {1}</OL_Weapon_NumberLine>
+  <OL_Weapon_ClickToTry>Click to try it in the preview.</OL_Weapon_ClickToTry>
+  <OL_Weapon_ClickToUntry>Click to go back to the policy's pick.</OL_Weapon_ClickToUntry>
+  <OL_Weapon_AllowTip>Allow or forbid this weapon for the policy.</OL_Weapon_AllowTip>
+  <OL_Weapon_ClearAllTip>Forbid every weapon listed.</OL_Weapon_ClearAllTip>
+  <OL_Weapon_AllowAllTip>Allow every weapon listed.</OL_Weapon_AllowAllTip>
+  <OL_Weapon_StatsNoWeapon>Click a weapon to see its numbers.</OL_Weapon_StatsNoWeapon>
+  <OL_Weapon_StatsAddTip>Make this a weapon priority.</OL_Weapon_StatsAddTip>
+  <OL_Weapon_StatsRemoveTip>Remove this weapon priority.</OL_Weapon_StatsRemoveTip>
+
+</LanguageData>

@@ -444,7 +444,8 @@ namespace OptimalLoadouts.ApparelOrders.Gui
             {
                 return "OL_Bills_NoOneOnPolicyTip".Translate();
             }
-            return "OL_Bills_WearersTip".Translate() + "\n" + planned.For.Select(pawn => pawn.LabelShort).ToLineList("  ");
+            string heading = (planned.Item.apparel == null ? "OL_Bills_CarriersTip" : "OL_Bills_WearersTip").Translate();
+            return heading + "\n" + planned.For.Select(pawn => pawn.LabelShort).ToLineList("  ");
         }
 
         /// <summary>
@@ -546,7 +547,7 @@ namespace OptimalLoadouts.ApparelOrders.Gui
                     ? "OL_Bills_HintLackingOnHand".Translate(planned.Lacking, onHand)
                     : "OL_Bills_HintLacking".Translate(planned.Lacking);
             }
-            return "OL_Bills_HintWear".Translate(planned.PlannedTarget);
+            return (planned.Item.apparel == null ? "OL_Bills_HintCarry" : "OL_Bills_HintWear").Translate(planned.PlannedTarget);
         }
 
         /// <summary>

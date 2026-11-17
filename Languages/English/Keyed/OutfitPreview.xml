@@ -169,6 +169,8 @@
   <OL_Bills_HintLackingOnHand>{0} lack it, {1} on hand</OL_Bills_HintLackingOnHand>
   <OL_Bills_NoneInStockTip>The colony has no {0}.</OL_Bills_NoneInStockTip>
   <OL_Bills_WearersTip>Wear it on this policy:</OL_Bills_WearersTip>
+  <OL_Bills_CarriersTip>For these colonists on this policy:</OL_Bills_CarriersTip>
+  <OL_Bills_HintCarry>{0} carry it</OL_Bills_HintCarry>
   <OL_Bills_HintWas>was {0}</OL_Bills_HintWas>
   <OL_Bills_HintPreview>one set</OL_Bills_HintPreview>
   <OL_Bills_NoOneOnPolicyTip>No one is on this policy yet, so this is one set of the outfit the preview shows.</OL_Bills_NoOneOnPolicyTip>

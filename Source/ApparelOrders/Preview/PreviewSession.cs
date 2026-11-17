@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Orders;
+using OptimalLoadouts.WeaponOrders;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -48,6 +49,21 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         /// <summary>The outfit the change marks start from.</summary>
         private PredictedOutfit markedFrom;
+
+        private List<WeaponChoice> rankedWeapons = new List<WeaponChoice>();
+        private List<object> weaponRowOrder = new List<object>();
+        private List<WeaponChoice> weaponRowsFrom;
+        private (ApparelPolicy policy, PieceSource source, MaterialChoice material, string lines, WeaponNumberDef sort, bool lowestFirst) weaponRowOrderFor;
+
+        /// <summary>The shown policy's weapon priorities and kind as text, and the policy they're for, so a change to them is noticed.</summary>
+        private string weaponLinesSignature;
+
+        private ApparelPolicy weaponLinesSeenFor;
+
+        /// <summary>The shown policy's apparel priorities as text, and the policy they're for, so a change to them is noticed.</summary>
+        private (ApparelPolicy policy, string lines) apparelLinesSeen;
+        private (ApparelPolicy policy, PieceSource source, MaterialChoice material, int version) weaponsRankedFor;
+        private float weaponsRankedAt = float.MinValue;
 
         /// <summary>Where the outfit list is scrolled to.</summary>
         public Vector2 OutfitScroll;
@@ -252,6 +268,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             {
                 Policy = policy;
                 OutfitScroll = Vector2.zero;
+                TriedWeapon = null;
             }
             if (Slot != null && slotOpenedFor != (Pawn, Policy, source, Material))
             {
@@ -260,7 +277,76 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             GatherPieces();
             Predict();
             FollowFilledLayer();
+            SortAfreshOnNewPriorities();
             DropStaleSort();
+            RankWeapons();
+        }
+
+        /// <summary>
+        /// When the shown policy's apparel priorities change, the slot browser goes back to the colonist's pick, whatever
+        /// column it was sorted by, and its rows line up afresh.
+        /// </summary>
+        private void SortAfreshOnNewPriorities()
+        {
+            IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(Policy);
+            if (lines == null)
+            {
+                return;
+            }
+            string signature = string.Join(";", lines.Select(line =>
+                $"{line.stat?.defName},{line.item?.defName},{line.covers?.defName},{line.lowerIsBetter},{line.rulesOut},{line.countsFrom},{string.Join("+", line.layers.Select(layer => layer.defName))}"));
+            if (apparelLinesSeen.policy == Policy && apparelLinesSeen.lines != signature)
+            {
+                SortStat = null;
+                Slot?.ForgetRowOrder();
+            }
+            apparelLinesSeen = (Policy, signature);
+        }
+
+        /// <summary>
+        /// Gathers and ranks the weapons from the current source again when the policy, source, material or any order
+        /// changed, and at most once a second otherwise, so storage and stock changes show. A tried weapon that's no
+        /// longer on offer stops being tried.
+        /// </summary>
+        private void RankWeapons()
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            int version = orders?.Version ?? 0;
+            var key = (Policy, source, Material, version);
+            if (key == weaponsRankedFor && Time.realtimeSinceStartup - weaponsRankedAt < RefreshSeconds)
+            {
+                return;
+            }
+            weaponsRankedFor = key;
+            weaponsRankedAt = Time.realtimeSinceStartup;
+            try
+            {
+                IReadOnlyList<WeaponLine> lines = orders?.EffectiveWeaponLines(Policy) ?? new List<WeaponLine>();
+                WeaponKind kind = orders?.WeaponKindOf(Policy) ?? WeaponKind.Any;
+                string signature = kind + ";" + string.Join(";", lines.Select(line => $"{line.number.defName},{line.lowerIsBetter},{line.rulesOut},{line.countsFrom}"));
+                // A changed priority goes back to the policy's ranking, whatever column the browser was sorted by.
+                if (weaponLinesSeenFor == Policy && signature != weaponLinesSignature)
+                {
+                    WeaponSortNumber = null;
+                }
+                weaponLinesSignature = signature;
+                weaponLinesSeenFor = Policy;
+                Map map = Pawn?.MapHeld ?? Find.CurrentMap;
+                List<ThingWithComps> offered = kind == WeaponKind.None || map == null
+                    ? new List<ThingWithComps>()
+                    : WeaponSources.For(map, source, Material, lines);
+                rankedWeapons = WeaponRanking.Rank(offered, lines, kind, orders?.ForbiddenWeaponsOf(Policy),
+                    map == null ? null : WeaponSources.AmmoFrom(source, map, weapon => orders?.PinnedAmmoOf(Policy, weapon)));
+            }
+            catch (Exception e)
+            {
+                Log.ErrorOnce("[Optimal Loadouts] Couldn't rank weapons for the preview: " + e, "OptimalLoadouts.RankWeapons".GetHashCode());
+                rankedWeapons = new List<WeaponChoice>();
+            }
+            if (TriedWeapon != null && !rankedWeapons.Any(choice => choice.Weapon == TriedWeapon))
+            {
+                TriedWeapon = null;
+            }
         }
 
         public void ChoosePawn(Pawn pawn)
@@ -324,9 +410,148 @@ namespace OptimalLoadouts.ApparelOrders.Preview
             Changes = null;
         }
 
+        /// <summary>The weapons on offer from the current source, ranked by the policy's weapon priorities, best first.</summary>
+        public IReadOnlyList<WeaponChoice> Weapons => rankedWeapons;
+
+        /// <summary>The weapon picked in the weapon browser to try, or null to show the role's own pick.</summary>
+        public ThingWithComps TriedWeapon { get; set; }
+
+        /// <summary>
+        /// The weapon the preview shows: the one tried, else the best ranked. Null when there's none, or when the policy has
+        /// no weapon priorities, since without them nothing picks one.
+        /// </summary>
+        public ThingWithComps Weapon
+        {
+            get
+            {
+                if (TriedWeapon != null)
+                {
+                    return TriedWeapon;
+                }
+                bool hasLines = (ApparelOrdersComponent.Current?.EffectiveWeaponLines(Policy).Count ?? 0) > 0;
+                return hasLines ? rankedWeapons.FirstOrDefault(choice => choice.Allowed)?.Weapon : null;
+            }
+        }
+
+        /// <summary>Whether the weapon browser shows in the slot browser's place.</summary>
+        public bool WeaponBrowserOpen { get; private set; }
+
+        /// <summary>The weapon browser's search box.</summary>
+        public QuickSearchWidget WeaponSearch { get; } = new QuickSearchWidget();
+
+        /// <summary>Where the weapon browser is scrolled to.</summary>
+        public Vector2 WeaponScroll;
+
+        /// <summary>Where the shown weapon's numbers are scrolled to.</summary>
+        public Vector2 WeaponStatsScroll;
+
+        /// <summary>The weapon number the browser is sorted by, or null for the role's ranking.</summary>
+        public WeaponNumberDef WeaponSortNumber { get; set; }
+
+        public bool WeaponLowestFirst { get; set; }
+
+        /// <summary>Shows the weapon browser in place of the open slot.</summary>
+        public void OpenWeapons()
+        {
+            Slot = null;
+            WeaponBrowserOpen = true;
+        }
+
+        public void CloseWeapons()
+        {
+            WeaponBrowserOpen = false;
+            TriedWeapon = null;
+        }
+
+        /// <summary>
+        /// The weapon browser's rows: the role's ranking, or by the sorted column with weapons lacking the number last. Rows
+        /// keep their place while weapons are allowed or forbidden, as the slot browser's do, so the rank numbers move
+        /// instead. They line up afresh when the sort or the policy's weapon priorities change.
+        /// </summary>
+        public List<WeaponChoice> WeaponRows()
+        {
+            WeaponNumberDef number = WeaponSortNumber;
+            List<WeaponChoice> sorted;
+            if (number == null)
+            {
+                sorted = rankedWeapons;
+            }
+            else
+            {
+                float? Value(WeaponChoice choice) => WeaponRanking.ValueOf(choice.Weapon.def, choice.Weapon.Stuff, number, choice.Bullet);
+                List<WeaponChoice> known = rankedWeapons.Where(choice => Value(choice) != null).ToList();
+                IOrderedEnumerable<WeaponChoice> byNumber = WeaponLowestFirst
+                    ? known.OrderBy(choice => Value(choice).Value)
+                    : known.OrderByDescending(choice => Value(choice).Value);
+                sorted = byNumber.ThenBy(choice => choice.Rank).Concat(rankedWeapons.Where(choice => Value(choice) == null)).ToList();
+            }
+            var key = (Policy, source, Material, weaponLinesSignature, number, WeaponLowestFirst);
+            if (key != weaponRowOrderFor)
+            {
+                weaponRowOrderFor = key;
+                weaponRowOrder = new List<object>();
+            }
+            else if (rankedWeapons != weaponRowsFrom && !SameWeapons(sorted, weaponRowOrder))
+            {
+                // A new source's weapons can arrive a frame after the source changed: the rows line up afresh for them.
+                weaponRowOrder = new List<object>();
+            }
+            weaponRowsFrom = rankedWeapons;
+            var place = new Dictionary<object, int>();
+            for (int i = 0; i < weaponRowOrder.Count; i++)
+            {
+                place[weaponRowOrder[i]] = i;
+            }
+            List<WeaponChoice> rows = sorted
+                .Select((choice, at) => (choice, at: place.TryGetValue(WeaponRowKey(choice.Weapon), out int kept) ? kept : weaponRowOrder.Count + at))
+                .OrderBy(entry => entry.at)
+                .Select(entry => entry.choice)
+                .ToList();
+            weaponRowOrder = rows.Select(choice => WeaponRowKey(choice.Weapon)).ToList();
+            return rows;
+        }
+
+        /// <summary>Whether the rows are the same weapons as those kept in place, in any order.</summary>
+        private static bool SameWeapons(List<WeaponChoice> rows, List<object> kept)
+        {
+            return rows.Count == kept.Count && new HashSet<object>(kept).SetEquals(rows.Select(choice => WeaponRowKey(choice.Weapon)));
+        }
+
+        /// <summary>The ranking's entry for a weapon on offer, with the ammo it was judged on, or null.</summary>
+        public WeaponChoice ChoiceFor(ThingWithComps weapon)
+        {
+            return weapon == null ? null : rankedWeapons.Find(choice => choice.Weapon == weapon);
+        }
+
+        /// <summary>A weapon made new stands for its type (its material can change), a real one for itself.</summary>
+        private static object WeaponRowKey(ThingWithComps weapon)
+        {
+            return weapon.MapHeld == null ? (object)weapon.def : weapon;
+        }
+
+        /// <summary>The weapon browser's sort on a column, the way <see cref="CycleSort"/> runs: highest first, lowest first, then the ranking.</summary>
+        public void CycleWeaponSort(WeaponNumberDef number, bool reverse)
+        {
+            if (WeaponSortNumber != number)
+            {
+                WeaponSortNumber = number;
+                WeaponLowestFirst = reverse;
+            }
+            else if (WeaponLowestFirst != reverse)
+            {
+                WeaponSortNumber = null;
+            }
+            else
+            {
+                WeaponLowestFirst = !WeaponLowestFirst;
+            }
+        }
+
         /// <summary>Opens a slot. With <paramref name="followWhenFilled"/>, a layer opened while empty turns into the slot of the piece that fills it.</summary>
         public void OpenSlot(OutfitSlot slot, bool followWhenFilled = false)
         {
+            WeaponBrowserOpen = false;
+            TriedWeapon = null;
             Slot = new SlotView(this, slot);
             slotOpenedFor = (Pawn, Policy, source, Material);
             lastSlot = slot;
@@ -345,7 +570,7 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// </summary>
         public void KeepSlotOpen()
         {
-            if (Slot != null)
+            if (Slot != null || WeaponBrowserOpen)
             {
                 return;
             }

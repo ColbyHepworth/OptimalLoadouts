@@ -446,7 +446,8 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 foreach (RecipeDef recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
                 {
                     ThingDef product = recipe.ProducedThingDef;
-                    if (product?.apparel == null)
+                    // Weapons and their ammo too, for the weapon finder and its bills.
+                    if (product == null)
                     {
                         continue;
                     }

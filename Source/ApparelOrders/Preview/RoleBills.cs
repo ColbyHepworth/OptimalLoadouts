@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OptimalLoadouts.Orders;
+using OptimalLoadouts.WeaponOrders;
 using RimWorld;
 using Verse;
 
@@ -283,7 +284,51 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 }
                 plan.Add(bill);
             }
+            PlannedBill weapon = PlanWeapon(policy, map, colonists, fromPreview, planned, choice);
+            if (weapon != null)
+            {
+                plan.Add(weapon);
+            }
             return plan;
+        }
+
+        /// <summary>
+        /// The role's weapon: the best its weapon priorities rank among those the colony has researched, in the material
+        /// they rank first, for each colonist on the policy not carrying one (one with nobody on it). Null when the role
+        /// carries none or has no weapon priorities to rank by.
+        /// </summary>
+        private static PlannedBill PlanWeapon(ApparelPolicy policy, Map map, List<Pawn> colonists, bool fromPreview,
+            Dictionary<Building_WorkTable, int> planned, MaterialChoice choice)
+        {
+            ApparelOrdersComponent orders = ApparelOrdersComponent.Current;
+            IReadOnlyList<WeaponLine> lines = orders?.EffectiveWeaponLines(policy);
+            WeaponKind kind = orders?.WeaponKindOf(policy) ?? WeaponKind.Any;
+            if (lines == null || lines.Count == 0 || kind == WeaponKind.None || (colonists.Count == 0 && !fromPreview))
+            {
+                return null;
+            }
+            ThingWithComps best = WeaponRanking.Rank(WeaponSources.For(map, PieceSource.Researched, choice, lines), lines, kind, orders.ForbiddenWeaponsOf(policy),
+                    WeaponSources.AmmoFrom(PieceSource.Researched, map, weapon => orders.PinnedAmmoOf(policy, weapon)))
+                .FirstOrDefault(each => each.Allowed)?.Weapon;
+            if (best == null)
+            {
+                return null;
+            }
+            ThingDef def = best.def;
+            int toKeep = fromPreview ? 1 : colonists.Count;
+            int lacking = fromPreview ? 1 : colonists.Count(pawn => pawn.equipment?.Primary?.def != def);
+            int stored = StoredFor(def, policy, map);
+            int inBills = MakingOnce(def, map).Sum(bill => bill.repeatCount);
+            PlannedBill weapon = PlanFor(def, best.Stuff, toKeep, lacking - stored - inBills, map, planned, choice, policy, best.Stuff);
+            weapon.For = colonists;
+            weapon.Lacking = lacking;
+            weapon.Stored = stored;
+            weapon.InBills = inBills;
+            if (weapon.Outcome == PlannedBillOutcome.Add)
+            {
+                weapon.StartMakingOnce();
+            }
+            return weapon;
         }
 
         /// <summary>Makes the new bills and raises the targets the plan names, the ones that will change. Returns how many bills it added and raised.</summary>
@@ -347,6 +392,12 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         private static ThingDef MaterialFor(ThingDef item, RecipeDef recipe, MaterialChoice choice, ApparelPolicy policy)
         {
+            if (item.apparel == null)
+            {
+                // A weapon's materials rank by the policy's weapon priorities, as the weapon finder ranks them.
+                IReadOnlyList<WeaponLine> weaponLines = ApparelOrdersComponent.Current?.EffectiveWeaponLines(policy) ?? new List<WeaponLine>();
+                return WeaponRanking.MaterialsInOrder(item, choice, weaponLines).FirstOrDefault(stuff => recipe.fixedIngredientFilter.Allows(stuff));
+            }
             IReadOnlyList<OrderLine> lines = ApparelOrdersComponent.Current?.EffectiveLines(policy) ?? new List<OrderLine>();
             List<ThingDef> takes = choice.InOrderOfPreference(item, lines).Where(stuff => recipe.fixedIngredientFilter.Allows(stuff)).ToList();
             return takes.FirstOrDefault(stuff => AllowedIn(item, stuff, policy)) ?? takes.FirstOrDefault();
@@ -401,10 +452,15 @@ namespace OptimalLoadouts.ApparelOrders.Preview
 
         /// <summary>
         /// The pieces of the item in storage the policy's colonists could take, gathered as the game's apparel check
-        /// gathers them (outfit stands included): allowed by the policy, not forbidden, not burning.
+        /// gathers them (outfit stands included): allowed by the policy, not forbidden, not burning. For a weapon, which
+        /// the apparel policy doesn't cover, every one in storage that isn't forbidden.
         /// </summary>
         private static int StoredFor(ThingDef def, ApparelPolicy policy, Map map)
         {
+            if (def.IsWeapon && def.apparel == null)
+            {
+                return map.listerThings.ThingsOfDef(def).Count(thing => thing.IsInAnyStorage() && !thing.IsForbidden(Faction.OfPlayer) && !thing.IsBurning());
+            }
             var things = new List<Thing>();
             map.listerThings.GetAllThings(in things, ThingRequestGroup.Apparel, null, true);
             foreach (IHaulSource source in map.haulDestinationManager.AllHaulSourcesListForReading)
@@ -428,8 +484,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
         /// One item's bill. A "do until you have" bill for it is raised to the target, or left when it's high enough.
         /// Otherwise "do X times" bills that already cover what's missing are enough. Anything else is a new bill.
         /// </summary>
+        /// <param name="weaponStuff">For a weapon, the material its ranking picked, in place of the apparel material setting's.</param>
         private static PlannedBill PlanFor(ThingDef def, ThingDef stuff, int target, int missing, Map map, Dictionary<Building_WorkTable, int> planned,
-            MaterialChoice choice, ApparelPolicy policy)
+            MaterialChoice choice, ApparelPolicy policy, ThingDef weaponStuff = null)
         {
             // Materials short and skills nobody has yet aren't reasons not to add a bill: it waits for them, as any bill does.
             MissingToMake blocker = CraftableApparel.MissingFor(def, stuff, map)
@@ -475,7 +532,9 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 return new PlannedBill(def, stuff, target, anyBench ? PlannedBillOutcome.NoRoom : PlannedBillOutcome.CantMake,
                     why: anyBench ? null : "OL_Bills_NoBench".Translate().Resolve());
             }
-            ThingDef material = def.MadeFromStuff ? MaterialFor(def, bestRecipe, choice, policy) : null;
+            // The weapon finder's material, when this bench's recipe takes it.
+            bool weaponStuffTaken = weaponStuff != null && bestRecipe.fixedIngredientFilter.Allows(weaponStuff);
+            ThingDef material = !def.MadeFromStuff ? null : weaponStuffTaken ? weaponStuff : MaterialFor(def, bestRecipe, choice, policy);
             return new PlannedBill(def, material, target, PlannedBillOutcome.Add, best, recipe: bestRecipe);
         }
 
@@ -503,8 +562,12 @@ namespace OptimalLoadouts.ApparelOrders.Preview
                 bill.targetCount = planned.Target;
                 bill.includeEquipped = true;
             }
-            bill.hpRange = policy.filter.AllowedHitPointsPercents;
-            bill.qualityRange = policy.filter.AllowedQualityLevels;
+            // The policy's ranges are for its apparel. A weapon's bill keeps the game's own.
+            if (planned.Item.apparel != null)
+            {
+                bill.hpRange = policy.filter.AllowedHitPointsPercents;
+                bill.qualityRange = policy.filter.AllowedQualityLevels;
+            }
             if (planned.Stuff != null)
             {
                 foreach (ThingDef stuff in GenStuff.AllowedStuffsFor(planned.Item))

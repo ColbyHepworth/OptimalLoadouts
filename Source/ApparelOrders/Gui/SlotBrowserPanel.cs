@@ -20,25 +20,25 @@ namespace OptimalLoadouts.ApparelOrders.Gui
     /// </summary>
     public static class SlotBrowserPanel
     {
-        private const float RankWidth = 28f;
-        private const float ValueWidth = 64f;
+        internal const float RankWidth = 28f;
+        internal const float ValueWidth = 64f;
 
         /// <summary>The "+2" at a row's end for bonuses that have no column.</summary>
         private const float MoreWidth = 28f;
 
         /// <summary>On narrow screens, stat columns give way before a piece's name gets shorter than this.</summary>
-        private const float MinNameWidth = 120f;
+        internal const float MinNameWidth = 120f;
 
         /// <summary>Two lines of the small font, so stat names wrap instead of being cut off.</summary>
-        private const float HeaderHeight = 34f;
+        internal const float HeaderHeight = 34f;
 
         /// <summary>Vanilla's filter: Clear all and Allow all side by side, then the search box under them.</summary>
-        private const float AllButtonHeight = 24f;
+        internal const float AllButtonHeight = 24f;
 
-        private const float SearchGap = 3f;
+        internal const float SearchGap = 3f;
 
         /// <summary>The most of the room under the headers a piece's stats take when they go under the list.</summary>
-        private const float StatsShare = 0.5f;
+        internal const float StatsShare = 0.5f;
 
         /// <summary>The × on the added column's header, small enough to leave its name readable.</summary>
         private const float RemoveColumnSize = 12f;
